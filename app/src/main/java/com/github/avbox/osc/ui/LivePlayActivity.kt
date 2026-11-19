@@ -156,10 +156,10 @@ class LivePlayActivity : BaseActivity() {
     override fun shouldRefreshAutoSize(): Boolean = true
 
     override fun hideSysBar() {
-        if (fullScreen) super.hideSysBar()
+        if (fullScreen || isTabletLandscape()) super.hideSysBar()
     }
 
-    override fun keepStatusBarHidden(): Boolean = fullScreen
+    override fun keepStatusBarHidden(): Boolean = fullScreen || isTabletLandscape()
 
     override fun init() {
         enableTransparentEdgeToEdge()
@@ -360,6 +360,8 @@ class LivePlayActivity : BaseActivity() {
         super.onConfigurationChanged(newConfig)
         vm.setRotating(false)
         syncLandscapeNow()
+        applyHideStatusBarPref()
+        hideSysBar()
         applyStatusBarAppearance()
     }
 
