@@ -192,7 +192,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
         configuration.screenWidthDp > configuration.screenHeightDp
     if (tabletLandscape) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-            PlayerArea(state, actions, Modifier.fillMaxSize())
+            PlayerArea(
+                state = state,
+                actions = actions,
+                modifier = Modifier.fillMaxSize(),
+                showCornerButtons = state.overlay.visible,
+            )
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -271,7 +276,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
 }
 
 @Composable
-private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifier: Modifier) {
+private fun PlayerArea(
+    state: LivePlayUiState,
+    actions: LivePlayActions,
+    modifier: Modifier,
+    showCornerButtons: Boolean = true,
+) {
     val videoView = actions.player.videoView()
     Box(modifier = modifier.background(Color.Black)) {
         if (videoView != null) {
@@ -336,7 +346,9 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
             )
         }
         if (!state.frame.isFullBox) {
-            PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
+            if (showCornerButtons) {
+                PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
+            }
         } else if (state.overlay.visible) {
             IconButton(
                 onClick = actions.player.onExitFullscreen,
