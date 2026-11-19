@@ -155,6 +155,11 @@ class LivePlayActivity : BaseActivity() {
 
     override fun shouldRefreshAutoSize(): Boolean = true
 
+    // Live playback must follow the device sensor on compact screens too.
+    // BaseActivity otherwise locks screens below 600dp to portrait, which can
+    // fight a landscape configuration change and recreate this activity.
+    override fun orientationPolicyValue(): Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
     override fun hideSysBar() {
         if (fullScreen || isTabletLandscape()) super.hideSysBar()
     }
