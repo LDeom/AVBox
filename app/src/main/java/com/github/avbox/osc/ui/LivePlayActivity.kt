@@ -235,19 +235,30 @@ class LivePlayActivity : BaseActivity() {
     }
 
     override fun onPause() {
+        AppLog.i("LivePlayActivity onPause pid=${Process.myPid()} changingConfigurations=$isChangingConfigurations finishing=$isFinishing")
         super.onPause()
         if (!exitingLivePlay) kernelView?.pause()
     }
 
+    override fun onStop() {
+        AppLog.i("LivePlayActivity onStop pid=${Process.myPid()} changingConfigurations=$isChangingConfigurations finishing=$isFinishing")
+        super.onStop()
+    }
+
     override fun onDestroy() {
-        AppLog.i("LivePlayActivity destroy pid=${Process.myPid()} changingConfigurations=$isChangingConfigurations finishing=$isFinishing")
-        super.onDestroy()
+        val changingConfigurations = isChangingConfigurations
+        val finishing = isFinishing
+        AppLog.i("LivePlayActivity destroy pid=${Process.myPid()} changingConfigurations=$changingConfigurations finishing=$finishing orientation=${resources.configuration.orientation} requestedOrientation=$requestedOrientation")
         overlay.hideSwitchChannelSnapshot()
-        if (!isChangingConfigurations) PlaybackService.peek()?.exitLive()
+        // A non-finishing Activity teardown must not terminate the shared live
+        // playback session. In particular, preserve it if the platform
+        // recreates this Activity while applying a display configuration.
+        if (finishing && !changingConfigurations) PlaybackService.peek()?.exitLive()
         kernelView = null
         handler.removeCallbacksAndMessages(null)
         epgController.cancelAll()
         channelSourceLoader.cancelAll()
+        super.onDestroy()
     }
 
     private fun initVideoView() {
@@ -375,7 +386,7 @@ class LivePlayActivity : BaseActivity() {
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        AppLog.i("LivePlayActivity config pid=${Process.myPid()} orientation=${newConfig.orientation} screen=${newConfig.screenWidthDp}x${newConfig.screenHeightDp} density=${newConfig.densityDpi}")
+        AppLog.i("LivePlayActivity config pid=${Process.myPid()} orientation=${newConfig.orientation} screen=${newConfig.screenWidthDp}x${newConfig.screenHeightDp} smallest=${newConfig.smallestScreenWidthDp} density=${newConfig.densityDpi} requestedOrientation=$requestedOrientation")
         super.onConfigurationChanged(newConfig)
         vm.setRotating(false)
         syncLandscapeNow()
