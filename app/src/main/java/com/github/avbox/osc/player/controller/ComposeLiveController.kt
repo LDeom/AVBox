@@ -113,8 +113,10 @@ class ComposeLiveController(
         if (firstTouch) {
             if (abs(distanceX) < abs(distanceY)) {
                 if (!canChangeBrightnessVolume(e1)) return true
-                val halfScreen = PlayerUtils.getScreenWidth(context, true) / 2
-                if (e2.x > halfScreen) changeVolume = true else changeBrightness = true
+                val viewWidth = measuredWidth
+                if (viewWidth > 0) {
+                    if (e1.x > viewWidth / 2f) changeVolume = true else changeBrightness = true
+                }
             }
             firstTouch = false
         }
