@@ -70,7 +70,7 @@
 
         <activity
             android:name=".ui.LivePlayActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize" />
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|density" />
         <activity
             android:name=".ui.DetailActivity"
             android:launchMode="singleTop"
