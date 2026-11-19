@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -224,6 +225,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 actions = actions,
                 modifier = Modifier.fillMaxSize(),
                 showCornerButtons = state.overlay.visible,
+                blurVideo = state.channelList.channelDrawerVisible,
             )
             if (state.overlay.visible) {
                 Surface(
@@ -261,7 +263,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         .padding(start = 8.dp)
                         .width(340.dp),
                     shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.20f),
+                    color = Color.Black.copy(alpha = 0.22f),
                     shadowElevation = 20.dp,
                 ) {
                     ChannelListSection(
@@ -312,9 +314,14 @@ private fun PlayerArea(
     actions: LivePlayActions,
     modifier: Modifier,
     showCornerButtons: Boolean = true,
+    blurVideo: Boolean = false,
 ) {
     val videoView = actions.player.videoView()
-    Box(modifier = modifier.background(Color.Black)) {
+    Box(
+        modifier = modifier
+            .background(Color.Black)
+            .then(if (blurVideo) Modifier.blur(18.dp) else Modifier),
+    ) {
         if (videoView != null) {
             AndroidView(
                 factory = { videoView },
