@@ -5,6 +5,8 @@ package com.github.avbox.osc.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
@@ -191,32 +193,59 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val tabletLandscape = configuration.smallestScreenWidthDp >= 600 &&
         configuration.screenWidthDp > configuration.screenHeightDp
     if (tabletLandscape) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(state.channelList.channelDrawerVisible) {
+                    val edge = 36.dp.toPx()
+                    val trigger = 84.dp.toPx()
+                    var startX = -1f
+                    var drag = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { startX = it.x; drag = 0f },
+                        onDragEnd = {
+                            if (!state.channelList.channelDrawerVisible && startX >= 0f && startX <= edge && drag > trigger) actions.list.onToggleDrawer()
+                            startX = -1f
+                        },
+                        onDragCancel = { startX = -1f },
+                        onHorizontalDrag = { change, amount ->
+                            drag += amount
+                            if (!state.channelList.channelDrawerVisible && startX >= 0f && startX <= edge && drag > trigger) {
+                                actions.list.onToggleDrawer()
+                                startX = -1f
+                            }
+                        },
+                    )
+                },
+        ) {
             PlayerArea(
                 state = state,
                 actions = actions,
                 modifier = Modifier.fillMaxSize(),
                 showCornerButtons = state.overlay.visible,
             )
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth(0.72f)
-                    .padding(start = 16.dp, bottom = 16.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = Color.Black.copy(alpha = 0.58f),
-            ) {
-                ChannelInfoSection(
-                    info = state.channelInfo,
-                    timeshift = state.timeshift,
-                    overlay = state.overlay,
-                )
-            }
-            IconButton(
-                onClick = actions.list.onToggleDrawer,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-            ) {
-                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+            if (state.overlay.visible) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth(0.72f)
+                        .padding(start = 16.dp, bottom = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.Black.copy(alpha = 0.58f),
+                ) {
+                    ChannelInfoSection(
+                        info = state.channelInfo,
+                        timeshift = state.timeshift,
+                        overlay = state.overlay,
+                    )
+                }
+                IconButton(
+                    onClick = actions.list.onToggleDrawer,
+                    modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp),
+                ) {
+                    Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+                }
             }
             if (state.channelList.channelDrawerVisible) {
                 Box(
@@ -227,9 +256,10 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 )
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
+                        .align(Alignment.CenterStart)
                         .fillMaxHeight()
-                        .width(340.dp),
+                        .width(340.dp)
+                        .statusBarsPadding(),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shadowElevation = 16.dp,
                 ) {
@@ -237,7 +267,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         channelList = state.channelList,
                         onToggleGroup = actions.list.onToggleGroup,
                         onSelectChannel = actions.list.onSelectChannel,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().statusBarsPadding(),
                     )
                 }
             }
