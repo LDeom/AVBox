@@ -261,7 +261,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         .padding(start = 8.dp)
                         .width(340.dp),
                     shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f),
+                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.20f),
                     shadowElevation = 20.dp,
                 ) {
                     ChannelListSection(
