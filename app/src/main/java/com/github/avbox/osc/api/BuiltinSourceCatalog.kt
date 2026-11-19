@@ -11,26 +11,39 @@ import com.github.avbox.osc.util.KVKeys
  */
 internal object BuiltinSourceCatalog {
 
-    private const val VERSION = "1"
-    private const val SPLIT = "\t"
+    private const val VERSION = "2"
+    private const val SPLIT = "\\t"
+
+    private val replacedVodSources = listOf(
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/cat/tjs/tv_config.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/cat/tjs/18_tv_config.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0821.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0825.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0826.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0827.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/367.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/9918.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/99188.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/dianshi.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/fty.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/js.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/jsm.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/tools/dianshi.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/tools/jsm.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/xiaosa/api.json",
+    )
 
     private val vodSources = listOf(
-        source("TVBox 影视配置", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/cat/tjs/tv_config.json"),
-        source("TVBox 18+ 成人配置", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/cat/tjs/18_tv_config.json"),
-        source("TVBox 0821 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0821.json"),
-        source("TVBox 0825 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0825.json"),
-        source("TVBox 0826 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0826.json"),
-        source("TVBox 0827 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/0827.json"),
-        source("TVBox 367 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/367.json"),
-        source("TVBox 9918 成人 18+", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/9918.json"),
-        source("TVBox 99188 成人 18+", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/99188.json"),
-        source("TVBox 电视配置", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/dianshi.json"),
-        source("TVBox 饭太硬配置", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/fty.json"),
-        source("TVBox JS 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/js.json"),
-        source("TVBox JSM 综合", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/json/jsm.json"),
-        source("TVBox 工具版电视", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/tools/dianshi.json"),
-        source("TVBox 工具版 JSM", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/tools/jsm.json"),
-        source("TVBox 小洒配置", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/xiaosa/api.json"),
+        source("小洒点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/xiaosa/api.json?utm_source=chatgpt.com"),
+        source("JSM 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/jsm.json?utm_source=chatgpt.com"),
+        source("JS 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/js.json?utm_source=chatgpt.com"),
+        source("饭太硬点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/fty.json?utm_source=chatgpt.com"),
+        source("电视点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/dianshi.json?utm_source=chatgpt.com"),
+        source("0827 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0827.json?utm_source=chatgpt.com"),
+        source("367 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/367.json?utm_source=chatgpt.com"),
+        source("0826 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0826.json?utm_source=chatgpt.com"),
+        source("0825 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0825.json?utm_source=chatgpt.com"),
+        source("0821 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0821.json?utm_source=chatgpt.com"),
     )
 
     private val liveSources = listOf(
@@ -38,13 +51,24 @@ internal object BuiltinSourceCatalog {
     )
 
     fun installIfNeeded() {
-        if (KV.get(KVKeys.BUILTIN_SOURCE_CATALOG_VERSION, "") == VERSION) return
+        val installedVersion = KV.get(KVKeys.BUILTIN_SOURCE_CATALOG_VERSION, "")
+        if (installedVersion == VERSION) return
 
         val currentVod = KV.get(KVKeys.SUBSCRIBE_LIST, ArrayList<String>())
         val currentLive = KV.get(KVKeys.LIVE_SUBSCRIBE_LIST, ArrayList<String>())
-        KV.put(KVKeys.SUBSCRIBE_LIST, merge(currentVod, vodSources))
+        val migratedVod = if (installedVersion == "1") {
+            removeSources(currentVod, replacedVodSources)
+        } else {
+            currentVod
+        }
+        KV.put(KVKeys.SUBSCRIBE_LIST, merge(migratedVod, vodSources))
         KV.put(KVKeys.LIVE_SUBSCRIBE_LIST, merge(currentLive, liveSources))
         KV.put(KVKeys.BUILTIN_SOURCE_CATALOG_VERSION, VERSION)
+    }
+
+    private fun removeSources(current: ArrayList<String>, urls: List<String>): ArrayList<String> {
+        val replaced = urls.toHashSet()
+        return ArrayList(current.filterNot { subscriptionUrl(it) in replaced })
     }
 
     private fun merge(current: ArrayList<String>, defaults: List<String>): ArrayList<String> {
