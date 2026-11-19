@@ -11,7 +11,7 @@ import com.github.avbox.osc.util.KVKeys
  */
 internal object BuiltinSourceCatalog {
 
-    private const val VERSION = "2"
+    private const val VERSION = "3"
     private const val SPLIT = "\t"
 
     private val replacedVodSources = listOf(
@@ -33,17 +33,21 @@ internal object BuiltinSourceCatalog {
         "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/xiaosa/api.json",
     )
 
+    private val previousCatalogVodSources = listOf(
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/xiaosa/api.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/jsm.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/js.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/fty.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/dianshi.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0827.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/367.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0826.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0825.json?utm_source=chatgpt.com",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0821.json?utm_source=chatgpt.com",
+    )
+
     private val vodSources = listOf(
-        source("小洒点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/xiaosa/api.json?utm_source=chatgpt.com"),
-        source("JSM 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/jsm.json?utm_source=chatgpt.com"),
-        source("JS 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/js.json?utm_source=chatgpt.com"),
-        source("饭太硬点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/fty.json?utm_source=chatgpt.com"),
-        source("电视点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/dianshi.json?utm_source=chatgpt.com"),
-        source("0827 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0827.json?utm_source=chatgpt.com"),
-        source("367 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/367.json?utm_source=chatgpt.com"),
-        source("0826 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0826.json?utm_source=chatgpt.com"),
-        source("0825 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0825.json?utm_source=chatgpt.com"),
-        source("0821 点播", "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/audit/repair-sources-2026-11/0821.json?utm_source=chatgpt.com"),
+        source("自用仓库（多仓点播）", "https://gh-proxy.com/https://raw.githubusercontent.com/niubihu1/tvbox/main/%E8%87%AA%E7%94%A8%E4%BB%93%E5%BA%93.txt"),
     )
 
     private val liveSources = listOf(
@@ -56,8 +60,8 @@ internal object BuiltinSourceCatalog {
 
         val currentVod = KV.get(KVKeys.SUBSCRIBE_LIST, ArrayList<String>())
         val currentLive = KV.get(KVKeys.LIVE_SUBSCRIBE_LIST, ArrayList<String>())
-        val migratedVod = if (installedVersion == "1") {
-            removeSources(currentVod, replacedVodSources)
+        val migratedVod = if (installedVersion.isNotEmpty() && installedVersion != VERSION) {
+            removeSources(currentVod, replacedVodSources + previousCatalogVodSources)
         } else {
             currentVod
         }
