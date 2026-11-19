@@ -269,7 +269,9 @@ class LivePlayActivity : BaseActivity() {
 
     private val liveControlListener = object : ComposeLiveController.LiveControlListener {
         override fun onSingleTap(): Boolean {
-            if (fullScreen) {
+            if (isTabletLandscape()) {
+                if (vm.toggleOverlay()) overlay.scheduleOverlayHide()
+            } else if (fullScreen) {
                 if (vm.toggleOverlay()) overlay.scheduleOverlayHide()
             } else {
                 applyFullscreen(true)
@@ -366,6 +368,10 @@ class LivePlayActivity : BaseActivity() {
         val landNow = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         vm.setLandscapeNow(landNow)
     }
+
+    private fun isTabletLandscape(): Boolean =
+        resources.configuration.smallestScreenWidthDp >= 600 &&
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     private fun playChannel(channelGroupIndex: Int, liveChannelIndex: Int, changeSource: Boolean): Boolean {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
@@ -534,6 +540,7 @@ class LivePlayActivity : BaseActivity() {
     fun selectChannel(groupIndex: Int, position: Int) {
         vm.setTappedGroupIndex(groupIndex)
         clickLiveChannel(position)
+        vm.setChannelDrawerVisible(false)
     }
 
     private fun clickLiveChannel(position: Int) {
@@ -765,6 +772,8 @@ class LivePlayActivity : BaseActivity() {
         list = LiveChannelListActions(
             onToggleGroup = { toggleChannelGroup(it) },
             onSelectChannel = { groupIndex, position -> selectChannel(groupIndex, position) },
+            onToggleDrawer = { vm.setChannelDrawerVisible(!vm.state.value.channelList.channelDrawerVisible) },
+            onDismissDrawer = { vm.setChannelDrawerVisible(false) },
         ),
         settings = LiveSettingsActions(
             onDismiss = { vm.hideSettingsSheet() },
