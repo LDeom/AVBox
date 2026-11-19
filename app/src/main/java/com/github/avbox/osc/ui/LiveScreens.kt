@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -186,6 +188,57 @@ private fun LivePasswordDialog(
 @Composable
 private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val configuration = LocalConfiguration.current
+    val tabletLandscape = configuration.smallestScreenWidthDp >= 600 &&
+        configuration.screenWidthDp > configuration.screenHeightDp
+    if (tabletLandscape) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+            PlayerArea(state, actions, Modifier.fillMaxSize())
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(0.72f)
+                    .padding(start = 16.dp, bottom = 16.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = Color.Black.copy(alpha = 0.58f),
+            ) {
+                ChannelInfoSection(
+                    info = state.channelInfo,
+                    timeshift = state.timeshift,
+                    overlay = state.overlay,
+                )
+            }
+            IconButton(
+                onClick = actions.list.onToggleDrawer,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+            ) {
+                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+            }
+            if (state.channelList.channelDrawerVisible) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.48f))
+                        .clickable(onClick = actions.list.onDismissDrawer),
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .width(340.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shadowElevation = 16.dp,
+                ) {
+                    ChannelListSection(
+                        channelList = state.channelList,
+                        onToggleGroup = actions.list.onToggleGroup,
+                        onSelectChannel = actions.list.onSelectChannel,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+        return
+    }
     val shortEdge = minOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
     val longEdge = maxOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
     val previewHeight = (shortEdge * 9f / 16f)
