@@ -6,10 +6,10 @@ import android.media.AudioManager
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.Window
 import android.widget.FrameLayout
 import com.github.avbox.osc.player.BasePlayerView
-import com.github.avbox.osc.player.PlayerKernelView
 import com.github.avbox.osc.player.core.PlayState
 import com.github.avbox.osc.util.GestureHelper
 import com.github.avbox.osc.util.PlayerUtils
@@ -42,22 +42,23 @@ class ComposeLiveController(
 
     var listener: LiveControlListener? = null
 
-    private var videoView: PlayerKernelView? = null
-
     private val gestureDetector: GestureDetector = GestureDetector(context, this)
     private val audioManager: AudioManager =
         context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var streamVolume = 0
     private var brightness = 0f
-    private var firstTouch = false
+    private var currentPlayState = PlayState.IDLE
+    private var gestureDirectionLocked = false
     private var changeBrightness = false
     private var changeVolume = false
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     init {
         @Suppress("ClickableViewAccessibility")
         setOnTouchListener(this)
     }
 
     override fun setPlayState(playState: PlayState) {
+        currentPlayState = playState
         listener?.onPlayStateChanged(playState)
     }
 
@@ -74,8 +75,7 @@ class ComposeLiveController(
     }
 
     private fun gesturePlaybackState(): Boolean {
-        val view = videoView ?: return false
-        return when (view.playState) {
+        return when (currentPlayState) {
             PlayState.PLAYING, PlayState.PAUSED, PlayState.BUFFERING, PlayState.BUFFERED -> true
             else -> false
         }
@@ -96,7 +96,7 @@ class ComposeLiveController(
         streamVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         val activity = PlayerUtils.scanForActivity(context)
         brightness = activity?.window?.attributes?.screenBrightness ?: 0f
-        firstTouch = true
+        gestureDirectionLocked = false
         changeBrightness = false
         changeVolume = false
         return true
@@ -110,15 +110,21 @@ class ComposeLiveController(
     ): Boolean {
         if (e1 == null) return true
         if (!canHandleGesture(e1)) return true
-        if (firstTouch) {
-            if (abs(distanceX) < abs(distanceY)) {
-                if (!canChangeBrightnessVolume(e1)) return true
-                val viewWidth = measuredWidth
+
+        // Do not decide the gesture from a single MotionEvent delta: the first
+        // movement often contains a little horizontal jitter. Wait until the
+        // accumulated movement passes touch slop, then lock its direction.
+        if (!gestureDirectionLocked) {
+            val totalX = abs(e2.x - e1.x)
+            val totalY = abs(e2.y - e1.y)
+            if (totalX < touchSlop && totalY < touchSlop) return true
+            gestureDirectionLocked = true
+            if (totalY > totalX && canChangeBrightnessVolume(e1)) {
+                val viewWidth = width.takeIf { it > 0 } ?: measuredWidth
                 if (viewWidth > 0) {
-                    if (e1.x > viewWidth / 2f) changeVolume = true else changeBrightness = true
+                    if (e1.x >= viewWidth / 2f) changeVolume = true else changeBrightness = true
                 }
             }
-            firstTouch = false
         }
         if (changeBrightness) {
             slideToChangeBrightness(e1.y - e2.y)
