@@ -12,7 +12,7 @@ import com.github.avbox.osc.util.KVKeys
 internal object BuiltinSourceCatalog {
 
     private const val VERSION = "2"
-    private const val SPLIT = "\\t"
+    private const val SPLIT = "\t"
 
     private val replacedVodSources = listOf(
         "https://gh-proxy.com/https://raw.githubusercontent.com/LDeom/tvbox/master/cat/tjs/tv_config.json",
