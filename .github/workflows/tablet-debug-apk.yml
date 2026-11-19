@@ -48,7 +48,7 @@ jobs:
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -name sdkmanager -type f | head -n1)"
           test -n "$SDKMANAGER"
           yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" "platforms;android-37" "ndk;27.2.12479018" "build-tools;36.0.0"
+          "$SDKMANAGER" --channel=3 "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018"
 
       - name: Build debug APK
         run: |
