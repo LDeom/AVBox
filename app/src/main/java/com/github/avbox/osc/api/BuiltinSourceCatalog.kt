@@ -49,7 +49,8 @@ internal object BuiltinSourceCatalog {
 
     private fun merge(current: ArrayList<String>, defaults: List<String>): ArrayList<String> {
         val merged = ArrayList(current)
-        val knownUrls = merged.mapTo(HashSet()) { subscriptionUrl(it) }
+        val knownUrls = HashSet<String>()
+        merged.forEach { knownUrls.add(subscriptionUrl(it)) }
         defaults.forEach { item ->
             val url = subscriptionUrl(item)
             if (url.isNotEmpty() && knownUrls.add(url)) merged.add(item)
