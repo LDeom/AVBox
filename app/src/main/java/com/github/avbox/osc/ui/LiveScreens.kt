@@ -267,7 +267,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         channelList = state.channelList,
                         onToggleGroup = actions.list.onToggleGroup,
                         onSelectChannel = actions.list.onSelectChannel,
-                        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
