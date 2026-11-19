@@ -5,6 +5,8 @@ package com.github.avbox.osc.ui
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Handler
+import android.os.Bundle
+import android.os.Process
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -153,6 +155,11 @@ class LivePlayActivity : BaseActivity() {
 
     internal lateinit var channelSourceLoader: LiveChannelSourceLoader
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        AppLog.i("LivePlayActivity onCreate pid=${Process.myPid()} taskId=$taskId savedState=${savedInstanceState != null}")
+    }
+
     override fun shouldRefreshAutoSize(): Boolean = true
 
     // LivePlayActivity owns its orientation. Do not let BaseActivity's
@@ -233,9 +240,10 @@ class LivePlayActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        AppLog.i("LivePlayActivity destroy pid=${Process.myPid()} changingConfigurations=$isChangingConfigurations finishing=$isFinishing")
         super.onDestroy()
         overlay.hideSwitchChannelSnapshot()
-        PlaybackService.peek()?.exitLive()
+        if (!isChangingConfigurations) PlaybackService.peek()?.exitLive()
         kernelView = null
         handler.removeCallbacksAndMessages(null)
         epgController.cancelAll()
@@ -367,6 +375,7 @@ class LivePlayActivity : BaseActivity() {
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
+        AppLog.i("LivePlayActivity config pid=${Process.myPid()} orientation=${newConfig.orientation} screen=${newConfig.screenWidthDp}x${newConfig.screenHeightDp} density=${newConfig.densityDpi}")
         super.onConfigurationChanged(newConfig)
         vm.setRotating(false)
         syncLandscapeNow()
