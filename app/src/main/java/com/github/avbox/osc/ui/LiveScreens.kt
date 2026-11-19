@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
@@ -203,6 +204,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                     var startX = -1f
                     var drag = 0f
                     detectHorizontalDragGestures(
+                        pass = PointerEventPass.Initial,
                         onDragStart = { startX = it.x; drag = 0f },
                         onDragEnd = {
                             if (!state.channelList.channelDrawerVisible && startX >= 0f && startX <= edge && drag > trigger) actions.list.onToggleDrawer()
@@ -257,11 +259,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .fillMaxHeight()
-                        .width(340.dp)
-                        .statusBarsPadding(),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shadowElevation = 16.dp,
+                        .fillMaxHeight(0.96f)
+                        .padding(start = 8.dp)
+                        .width(340.dp),
+                    shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f),
+                    shadowElevation = 20.dp,
                 ) {
                     ChannelListSection(
                         channelList = state.channelList,
