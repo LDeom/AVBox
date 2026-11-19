@@ -155,10 +155,18 @@ class LivePlayActivity : BaseActivity() {
 
     override fun shouldRefreshAutoSize(): Boolean = true
 
-    // Live playback must follow the device sensor on compact screens too.
-    // BaseActivity otherwise locks screens below 600dp to portrait, which can
-    // fight a landscape configuration change and recreate this activity.
-    override fun orientationPolicyValue(): Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    // LivePlayActivity owns its orientation. Do not let BaseActivity's
+    // device-size policy overwrite live playback orientation during lifecycle
+    // callbacks or configuration changes.
+    override fun applyOrientationPolicy() = Unit
+
+    private fun applyLiveOrientation(fullscreen: Boolean) {
+        requestedOrientation = if (fullscreen) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
 
     override fun hideSysBar() {
         if (fullScreen || isTabletLandscape()) super.hideSysBar()
@@ -173,6 +181,7 @@ class LivePlayActivity : BaseActivity() {
         overlay = LiveOverlayController(vm, liveHost, handler, lifecycleScope)
         catchupController = LiveCatchupController(vm, liveHost, overlay)
         channelSourceLoader = LiveChannelSourceLoader(vm, liveHost, overlay)
+        applyLiveOrientation(fullScreen)
         syncLandscapeNow()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -331,11 +340,7 @@ class LivePlayActivity : BaseActivity() {
         if (fullScreen == full) return
         vm.setRotating(full != (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
         vm.setFullscreen(full)
-        requestedOrientation = if (full) {
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else {
-            orientationPolicyValue()
-        }
+        applyLiveOrientation(full)
         if (full) {
             vm.setOverlayVisible(true)
             overlay.scheduleOverlayHide()
