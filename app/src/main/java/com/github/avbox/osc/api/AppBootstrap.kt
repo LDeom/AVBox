@@ -66,6 +66,7 @@ object AppBootstrap {
     fun start() {
         if (started) return
         started = true
+        BuiltinSourceCatalog.installIfNeeded()
         installServerPorts()
         val generation = bootGeneration.next()
         scope.launch {
