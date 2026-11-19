@@ -174,6 +174,7 @@ class LivePlayActivity : BaseActivity() {
                 when {
                     vm.state.value.epg.sheetVisible -> vm.hideEpgSheet()
                     vm.state.value.settings.sheetVisible -> vm.hideSettingsSheet()
+                    vm.state.value.channelList.channelDrawerVisible -> vm.setChannelDrawerVisible(false)
                     fullScreen -> applyFullscreen(false)
                     vm.state.value.timeshift.isBackState -> catchupController.backToLiveFromEpg()
                     else -> {
