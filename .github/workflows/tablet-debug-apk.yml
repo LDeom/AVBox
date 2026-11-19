@@ -2,6 +2,11 @@ name: Build Tablet Test APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/tablet-debug-apk.yml
 
 permissions:
   contents: read
