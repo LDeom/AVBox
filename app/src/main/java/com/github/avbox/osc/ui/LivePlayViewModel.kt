@@ -64,6 +64,7 @@ internal data class LiveChannelListUi(
     val lockedGroups: Set<Int> = emptySet(),
     val confirmedPasswordGroups: Set<Int> = emptySet(),
     val scrollRequestId: Long = 0,
+    val channelDrawerVisible: Boolean = false,
 )
 
 internal data class LivePageFrame(
@@ -250,6 +251,10 @@ internal class LivePlayViewModel : ViewModel() {
 
     internal fun requestChannelScroll() {
         updateChannelList { it.copy(scrollRequestId = it.scrollRequestId + 1) }
+    }
+
+    internal fun setChannelDrawerVisible(visible: Boolean) {
+        updateChannelList { it.copy(channelDrawerVisible = visible) }
     }
 
     internal fun confirmPasswordGroup(index: Int) {
