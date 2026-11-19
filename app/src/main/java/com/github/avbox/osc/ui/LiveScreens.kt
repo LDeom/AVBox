@@ -62,10 +62,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -253,7 +257,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.48f))
+                        .background(Color.Black.copy(alpha = 0.30f))
                         .clickable(onClick = actions.list.onDismissDrawer),
                 )
                 Surface(
@@ -263,7 +267,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         .padding(start = 8.dp)
                         .width(340.dp),
                     shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp),
-                    color = Color.Black.copy(alpha = 0.22f),
+                    color = Color.Black.copy(alpha = 0.46f),
                     shadowElevation = 20.dp,
                 ) {
                     ChannelListSection(
@@ -320,7 +324,7 @@ private fun PlayerArea(
     Box(
         modifier = modifier
             .background(Color.Black)
-            .then(if (blurVideo) Modifier.blur(18.dp) else Modifier),
+            .then(if (blurVideo) Modifier.blur(30.dp) else Modifier),
     ) {
         if (videoView != null) {
             AndroidView(
@@ -599,6 +603,31 @@ private fun ChannelListSection(
 }
 
 @Composable
+private fun OutlinedListText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        Text(
+            text = text,
+            style = style.copy(
+                color = Color.Black,
+                drawStyle = Stroke(width = 4f, join = StrokeJoin.Round),
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = text,
+            style = style.copy(color = Color.White, drawStyle = Fill),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
 private fun GroupHeaderRow(
     group: LiveChannelGroup,
     expanded: Boolean,
@@ -612,10 +641,9 @@ private fun GroupHeaderRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
+        OutlinedListText(
             text = group.groupName ?: "",
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         if (locked) {
@@ -653,19 +681,18 @@ private fun ChannelRow(
             .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
+        OutlinedListText(
             text = channel.channelNum.toString(),
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
             modifier = Modifier.width(36.dp),
         )
-        Text(
+        OutlinedListText(
             text = channel.channelName ?: "",
-            fontSize = 15.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(
+                fontSize = 15.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            ),
+            modifier = Modifier.weight(1f),
         )
     }
 }
