@@ -1,20 +1,6 @@
 name: Build Tablet Test APK
 
 on:
-  push:
-    branches:
-      - feature/tablet-live-immersive
-    paths:
-      - '**.kt'
-      - '**.kts'
-      - '**.xml'
-      - 'gradle/**'
-      - 'gradle.properties'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'settings.gradle*'
-      - 'build.gradle*'
-      - '.github/workflows/tablet-debug-apk.yml'
   workflow_dispatch:
 
 permissions:
