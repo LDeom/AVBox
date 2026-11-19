@@ -96,6 +96,7 @@ object KVKeys {
     const val SOURCE_NAME_CACHE = "source_name_cache"
     const val SUBSCRIBE_LIST = "subscribe_list"
     const val LIVE_SUBSCRIBE_LIST = "live_subscribe_list"
+    const val BUILTIN_SOURCE_CATALOG_VERSION = "builtin_source_catalog_version"
     const val THEME_SOURCE = "theme_source"
     const val THEME_MODE = "theme_mode"
     const val THEME_SEED = "theme_seed"
