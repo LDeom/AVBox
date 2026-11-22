@@ -454,3 +454,14 @@
 - 第七轮：配置中心新增/编辑订阅对话框的保存按钮复用 normalizedSubscribe 校验，避免 UI 允许提交而 ViewModel 清洗后拒绝、对话框却提前关闭。提交：`ec1ead18d2f24a44ad7773b97f27bb95ea00decf`。
 
 - 复核配置切换 generation 保护时，恢复 onApiUrlChanged 耗时日志在配置失效前取起点。提交：`4c1fec8805e3600cec694e9a67ad88f714efd082`。
+
+
+## 2026-11-22 第八阶段：首页、详情与分类第一轮
+- 检查首页、详情页、分类二级页的加载、分页与请求过期保护，并对照 `avbox-mobile-ui-spec.md` §4.1。
+- 发现首页分类和分类二级页在快速筛选/重试时可能替换等待回调，但旧请求未取消；列表结果通道没有请求 token，旧请求迟到时可能被当前回调接收。
+- SourceViewModel 列表请求改为每次独立结果通道与请求代际，旧请求结果不再转发；新增 cancelList，首页和分类二级页 Loader 释放时取消请求。
+- 保留单独的首页推荐列表 Loader，避免列表请求隔离破坏推荐获取。
+- 确认详情页已有 detailToken + DetailResponseGuard 保护，本轮不重复实现。
+- 新增 SourceListRequestGateTest。
+- 提交：`82392a0b898ebc94931bd369165cddc66aadb782`、`719b1aa7ea166b2bd42e79032f81b8bf199762ee`、`0db7657179c5ab6133ef563e8168b123dd68c6a1`、`0c71e0e188d9a70a16eb4a62fa1f265d63d78507`、`b2584da51d811b035e18e56d655fabf2f1371cb5`。
+- 尚未运行 Gradle/单测或真机验证。
