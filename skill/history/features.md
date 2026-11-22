@@ -237,3 +237,9 @@
 - 修复 loadModule 对已带 js/lib/ 前缀路径重复拼接目录的问题；统一通过 jsLibAssetPath 处理路径。
 - 新增单元测试覆盖中文资源路径、嵌套路径及无效路径。
 - 尚未运行 Gradle 或真机测试。
+
+
+## 2026-11-22 第3阶段 JS 初始化超时清理安全
+- JS Spider 初始化超过等待时限时不再只取消任务后返回半初始化实例，而是抛出初始化失败，阻止 JsLoader 缓存无效 Spider。
+- 初始化失败时停止 Global 接收回调，并将 Global 与 QuickJSContext 清理排入同一单线程 Executor，避免从构造调用线程并发销毁仍在执行的 Context。
+- 尚未运行 Gradle、QuickJS native 压力测试或真机验证。
