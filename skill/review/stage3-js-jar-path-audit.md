@@ -54,3 +54,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - `readSimple` 原先使用 `available()` 预分配并单次 `read()`，现改为 `FileInputStream.use { readBytes() }`，保证读取完整文件并自动关闭流。
 - 原子写入测试增加 `saveCache` 替换及 `readSimple` 大文件完整读取用例。
 - 本轮未运行Gradle测试或设备验证；需在后续完整构建中确认。
+
+
+## 第五轮 Jar依赖缓存边界修复（2026-11-22）
+- `JarLoader.download` 原先调用 `create(file)` 先删除目标缓存，再将网络响应直接写入目标；未显式检查 HTTP 状态/空响应，下载失败仍返回目标文件，存在损坏或空 Jar 被后续加载的风险。
+- 现改为临时文件下载，校验 HTTP 成功状态、body存在、文件非空，完成后以备份方式替换目标；响应体与流均使用 `use` 关闭。
+- `copyAsset` 同步采用临时文件和备份替换，避免内置 Jar 复制失败破坏已有缓存。
+- 失败时删除临时文件并返回临时路径，`load` 的文件存在性检查会阻止错误文件进入 DexClassLoader。
+- 该改动目前只完成源码静态核对，未运行 Gradle/单测或设备验证；仍需验证取消/中断和不同文件系统的 rename 行为。
