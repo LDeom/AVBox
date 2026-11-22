@@ -561,12 +561,23 @@ class JsSpider : Spider {
     }
 
     private fun preloadTemplate() {
+        val content = FileUtils.loadModule("模板.js")
+        val invalidReason = JsModuleContent.invalidReason(content)
+        if (invalidReason != null) {
+            AppLog.i("echo-preloadTemplate-unavailable reason=" + invalidReason)
+            return
+        }
         try {
             // i18n: keep(R4:模板.js import 语句)
             val template = "import tpl from '模板.js';\n" +
                     "globalThis.muban = tpl.muban;\n" +
                     "globalThis.getMubans = tpl.getMubans;"
             requireNotNull(ctx) { "js context not ready" }.evaluateModule(template, "tv_box_template.js")
+            val getMubansType = requireNotNull(ctx) { "js context not ready" }
+                    .evaluate("typeof globalThis.getMubans") as? String
+            if (getMubansType != "function") {
+                AppLog.i("echo-preloadTemplate-incomplete missing=getMubans")
+            }
         } catch (th: Throwable) {
             AppLog.i("echo-preloadTemplate-error " + th.message)
         }
