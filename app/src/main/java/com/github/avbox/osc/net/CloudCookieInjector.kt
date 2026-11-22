@@ -28,16 +28,24 @@ object CloudCookieInjector {
         url: String?,
         headers: Map<String, String>,
     ): Map<String, String> {
-        val provider = providers.firstOrNull { item ->
-            item.aliases.any { alias ->
-                alias.equals(sourceKey, ignoreCase = true) || alias.equals(api, ignoreCase = true)
-            }
-        } ?: return headers
-        val target = url?.toHttpUrlOrNull() ?: return headers
-        if (provider.domains.none { target.host == it || target.host.endsWith(".$it") }) return headers
+        val provider = providerFor(sourceKey, api) ?: return headers
+        if (!matchesProvider(sourceKey, api, url)) return headers
         val cookie = CloudCredentialVault.read(provider.id) ?: return headers
         return merge(headers, cookie)
     }
+
+    internal fun matchesProvider(sourceKey: String?, api: String?, url: String?): Boolean {
+        val provider = providerFor(sourceKey, api) ?: return false
+        val target = url?.toHttpUrlOrNull() ?: return false
+        return provider.domains.any { target.host == it || target.host.endsWith(".$it") }
+    }
+
+    private fun providerFor(sourceKey: String?, api: String?): Provider? =
+        providers.firstOrNull { item ->
+            item.aliases.any { alias ->
+                alias.equals(sourceKey, ignoreCase = true) || alias.equals(api, ignoreCase = true)
+            }
+        }
 
     internal fun merge(headers: Map<String, String>, storedCookie: String): Map<String, String> {
         val merged = LinkedHashMap<String, String>()
