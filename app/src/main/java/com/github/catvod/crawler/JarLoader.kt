@@ -197,7 +197,7 @@ class JarLoader {
         if (generation != clearGeneration.get() || loaders.containsKey(key)) return
         val texts = RegexUtils.getPattern(";md5;").split(jar)
         val source = texts[0]
-        val md5 = if (texts.size > 1) texts[1].trim { it <= ' ' } else ""
+        var md5 = if (texts.size > 1) texts[1].trim { it <= ' ' } else ""
         val lock = lock("jar-cache:" + jarKey(source))
         synchronized(lock) {
             if (generation != clearGeneration.get() || loaders.containsKey(key)) return
