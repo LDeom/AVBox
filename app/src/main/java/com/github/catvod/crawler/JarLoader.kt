@@ -275,8 +275,11 @@ class JarLoader {
                 spider.siteKey = spiderKey
                 spider.initApi(SpiderApi())
                 SpiderInitWatch.begin()
-                spider.init(AppContextHolder.context(), spiderExt)
-                SpiderInitWatch.end()
+                try {
+                    spider.init(AppContextHolder.context(), spiderExt)
+                } finally {
+                    SpiderInitWatch.end()
+                }
                 if (generation != clearGeneration.get()) return SpiderNull()
                 spiders[spKey] = spider
                 Log.i(TAG, "getSpider success key=" + spKey)
