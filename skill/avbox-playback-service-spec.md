@@ -200,7 +200,7 @@ PlaybackService(前台服务,托管生命周期)
 - 云盘视频使用合成 VodInfo 与专用 source key（cloud:guangyapan），播放条目只保存内部标识 guangya://<fileId>，不把短时签名 URL 写入配置源、历史文件或分享链接。
 - PlaybackStarter 识别 guangya:// 后，在 IO 线程调用云盘 provider 换取临时 HTTPS 播放地址，再交给既有 playUrl / PlaybackEngine / PlayContainer 链路；不另建播放器内核。
 - 云盘会话的 source key 不在 ApiConfig 中注册，因此 PlaybackController.startSession 仅在 SourceBean 存在时更新当前点播源，避免播放个人云盘文件覆盖用户选中的点播源。
-- 临时播放地址只在应用内存和播放器请求中使用；PlaybackUrlLog.safe 对诊断日志隐藏路径、查询参数和 userinfo；云盘会话禁止外部投屏。
+- 临时播放地址只在应用内存和播放器请求中使用；MediaSources 通过内部传输标记为云盘播放选择独立标准 TLS 客户端，并在发出 HTTP 请求前移除内部标记；PlaybackUrlLog.safe 对诊断日志隐藏路径、查询参数和 userinfo；云盘会话禁止外部投屏。
 - 该链路目前完成代码接线，仍需真机验证下载地址有效期、HTTP Header/重定向、Exo 播放、旋转与退出清理。禁止新增公开分享、公共代理或外部转发能力。
 
 ## 4. 真机验收清单
