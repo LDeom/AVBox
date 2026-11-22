@@ -189,3 +189,8 @@
 - HttpGate.clear 改为通知队列中每个请求取消，避免未执行 _stream 的 JS resolve/reject hold 引用泄漏；新增 clear 测试。
 - Global 的 HTTP/stream 回调派发、请求入队与 destroy 通过 callbackLock 协调；销毁后阻止 QuickJS 回调触碰已销毁 Context，并关闭竞态中的流响应。
 - 未运行 Gradle/设备验证。
+
+## 2026-11-22 第3阶段 JsLoader缓存代际及HTTP队列竞态
+- JsLoader缓存读取、recentKey更新、Jar缓存替换均与clearGeneration/lifecycleLock协调，防止返回退役Spider、读取已清空类缓存或旧下载覆盖缓存。
+- Global迟到HTTP回调在销毁后不会再启动HttpGate排队请求。
+- 未运行 Gradle/设备验证。
