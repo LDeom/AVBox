@@ -107,7 +107,6 @@ object AppBootstrap {
             }
             if (!canContinue) return@launch
             val startedAt = System.currentTimeMillis()
-            
             AppLog.debugI("echo-switch: invalidate dt=" + (System.currentTimeMillis() - startedAt) + "ms")
             SearchSourcesState.refresh()
             subscriptionCidFlow.value = CurrentSubscription.cid()
@@ -219,11 +218,11 @@ object AppBootstrap {
                 false
             } else {
                 ConfigRepository.restoreVodSwitch(snapshot)
+                ApiConfig.get().invalidateVodConfig()
                 true
             }
         }
         if (!restored) return
-        ApiConfig.get().invalidateVodConfig()
         subscriptionCidFlow.value = CurrentSubscription.cid()
         val rollbackError = awaitLoadConfig(forceFresh = false)
         if (rollbackError != null || !bootGeneration.isLatest(generation)) {
