@@ -610,7 +610,7 @@
 
 ## 2026-11-22 网盘接入简化：Cookie 设置与来源限定注入
 - 按用户最新要求，将网盘功能收敛为设置页 Cookie 管理；覆盖配置中八家 provider：夸克、UC、百度、迅雷、阿里、光鸭、天翼、123 云盘。各 provider 独立保存、覆盖与清除，沿用 Android Keystore AES-GCM + AtomicFile，不回显已保存的 Cookie。
-- 新增 CloudCookieInjector，按 provider API 标识/站点 key 与服务域名双重匹配；JS HTTP 请求由 Global 将站点身份传给 Connect 注入，type-3 JAR 代理请求由 ProxyEntry 注入。Cookie 合并保留其他键，仅由设置值覆盖同名键。
+- 新增 CloudCookieInjector，按 HTTPS provider 服务域名注入；JS HTTP 请求由 Connect 注入，JAR 通用 OkHttp 网络拦截器覆盖普通 API 请求，type-3 JAR 代理请求另由 ProxyEntry 按 provider 标识与域名双重校验。Cookie 合并保留其他键，仅由设置值覆盖同名键。
 - 设置页移除短信登录、账号状态、文件列表与目录浏览 UI；删除 GuangYaPanClient 和 CloudDrivePlaybackActivity，并移除 PlaybackStarter 的 guangya:// 专用地址解析、PlaybackController 的 cloud: 特殊生命周期分支及 Manifest 注册。保留通用 Keystore 凭据保险库供 Cookie 使用。
 - 修正 Android device-transfer 排除规则，确保 cloud_credentials/ 目录不会随设备迁移复制。
 - 新增 CloudCookieInjectorTest，覆盖同名覆盖、Cookie 属性过滤与空 Cookie 输入。
