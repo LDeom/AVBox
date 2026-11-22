@@ -43,7 +43,9 @@ object SearchSourcesState {
     }
 
     private fun currentSearchableSources(): List<SourceBean> =
-        ApiConfig.get().getSourceBeanList()
-            .filter { it.isSearchable() && it.key.isNotBlank() }
-            .distinctBy { it.key }
+        normalizeSearchableSources(ApiConfig.get().getSourceBeanList())
 }
+
+
+internal fun normalizeSearchableSources(sources: List<SourceBean>): List<SourceBean> =
+    sources.filter { it.isSearchable() && it.key.isNotBlank() }.distinctBy { it.key }
