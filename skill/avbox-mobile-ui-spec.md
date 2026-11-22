@@ -889,10 +889,9 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 
 
 
-## 4.18 网盘账号管理（2026-11-22）
-- 偏好设置提供「网盘账号管理」入口，六家计划接入的网盘集中展示：阿里云盘、夸克、百度、115、UC、光鸭；未完成独立认证适配的 provider 必须明确显示「尚未接入」，不得伪装成已连接。
-- 光鸭账号仅允许个人账号文件浏览与 AVBox 应用内访问，不实现公共分享、外链分发或代理转发。
-- 光鸭登录采用独立适配器：手机号短信两阶段认证、验证码挑战失败时提示用户走官方验证，不绕过人机验证；成功后保存 access/refresh token，刷新令牌轮换时必须串行更新。
-- 每家网盘登录凭据使用独立 Android Keystore AES-GCM 密钥，加密后存入应用私有目录的独立 AtomicFile；不进入 MMKV、运行日志或日志导出。凭据文件必须从 Android 云备份和设备迁移中排除，避免 Keystore 密钥不随备份迁移导致无法解密。
-- 光鸭设置页支持账号状态检查、退出登录与个人目录浏览；目录请求在 IO 线程执行。视频文件点击后通过独立 Activity 和既有 PlayContainer/PlaybackEngine 播放，PlaybackStarter 识别内部 guangya:// 标识后在 IO 线程换取 HTTPS 临时地址；临时地址只在应用内存与播放器链路使用；播放器网络层使用独立标准 TLS 客户端，不复用 trust-all 客户端；不提供分享入口，并禁用该会话的外部投屏。
-- 后续各网盘必须按自身认证协议独立实现；Cookie 只允许绑定对应服务域，禁止全局注入任意请求。
+## 4.18 网盘 Cookie 设置（2026-11-22）
+- 设置页提供统一「云盘 Cookie」入口，按配置中实际存在的八家 provider 管理：夸克、UC、百度、迅雷、阿里、光鸭、天翼、123 云盘；每家独立填写、覆盖保存与清除，不提供短信登录、扫码登录、账号状态检查、文件浏览器或独立云盘播放页。
+- Cookie 使用 CloudCredentialVault：每个 provider 独立 Android Keystore AES-GCM 密钥与应用私有目录 AtomicFile；不进入 MMKV、普通配置 JSON、运行日志或日志导出。cloud_credentials/ 必须从云备份与设备迁移中排除。
+- CloudCookieInjector 按 TVBox provider API 标识/站点 key 识别来源，并仅在对应网盘服务域名范围内合并 Cookie；JS HTTP 请求通过 Global → Connect 注入，TVBox type-3 JAR 代理请求通过 ProxyEntry 注入。源请求显式提供的同名 Cookie 项由设置中保存的值覆盖，其余 Cookie 项保留。
+- 只对已识别的 provider 与匹配服务域的请求注入；普通点播/直播请求不得获得网盘 Cookie。JAR/JS 驱动是否实际使用 Cookie 仍取决于各驱动自身认证协议；使用 Token 或其他认证方式的驱动不能仅凭填写 Cookie 即视为已登录或已支持。
+- 不提供专用网盘播放、目录浏览、短信认证、公开分享或外链分发功能。若未来某驱动需要 Token，应先确认用户是否要扩展范围，再按其认证协议独立设计。
