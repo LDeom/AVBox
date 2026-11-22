@@ -85,8 +85,11 @@ class OkHttp {
 
         @JvmStatic
         fun noRedirect(timeout: Long): OkHttpClient {
-            val base = noRedirectClientProvider?.invoke() ?: client()
-            return base.newBuilder().dns(dns()).addNetworkInterceptor(CloudCookieNetworkInterceptor).connectTimeout(timeout, TimeUnit.MILLISECONDS).readTimeout(timeout, TimeUnit.MILLISECONDS).writeTimeout(timeout, TimeUnit.MILLISECONDS).followRedirects(false).followSslRedirects(false).build()
+            val provided = noRedirectClientProvider?.invoke()
+            val base = provided ?: client()
+            val builder = base.newBuilder().dns(dns())
+            if (provided != null) builder.addNetworkInterceptor(CloudCookieNetworkInterceptor)
+            return builder.connectTimeout(timeout, TimeUnit.MILLISECONDS).readTimeout(timeout, TimeUnit.MILLISECONDS).writeTimeout(timeout, TimeUnit.MILLISECONDS).followRedirects(false).followSslRedirects(false).build()
         }
 
         @JvmStatic
