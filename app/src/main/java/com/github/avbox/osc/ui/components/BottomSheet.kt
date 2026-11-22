@@ -361,6 +361,10 @@ private fun SheetSurface(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val panelMaxHeight = maxHeight * SheetMaxHeightFraction
         val panelMaxWidth = minOf(SheetMaxWidth, maxWidth * SHEET_END_WIDTH_FRACTION)
+        val dialogHorizontalMargin = minOf(DIALOG_HORIZONTAL_MARGIN, maxWidth * 0.06f)
+        val dialogMaxWidth = (maxWidth - dialogHorizontalMargin * 2).coerceAtLeast(0.dp)
+            .coerceAtMost(DialogMaxWidth)
+        val dialogMinWidth = minOf(DialogMinWidth, dialogMaxWidth)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -399,8 +403,8 @@ private fun SheetSurface(
                     .then(
                         when {
                             centered -> Modifier
-                                .padding(horizontal = DIALOG_HORIZONTAL_MARGIN)
-                                .widthIn(min = DialogMinWidth, max = DialogMaxWidth)
+                                .padding(horizontal = dialogHorizontalMargin)
+                                .widthIn(min = dialogMinWidth, max = dialogMaxWidth)
                                 .fillMaxWidth()
                                 .heightIn(max = panelMaxHeight)
 
