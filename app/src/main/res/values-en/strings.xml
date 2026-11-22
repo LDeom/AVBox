@@ -652,7 +652,7 @@
     <string name="cloud_drive_123">123 Pan</string>
     <string name="cloud_drive_cookie_notice">Enter cookies separately for each provider. Credentials are encrypted with Android Keystore and are not written to regular configuration files or runtime logs. Automatic use depends on support in the matching source and request bridge.</string>
     <string name="cloud_drive_cookie_input">Cookie</string>
-    <string name="cloud_drive_cookie_placeholder">Paste this provider's cookie</string>
+    <string name="cloud_drive_cookie_placeholder">Paste the provider cookie</string>
     <string name="cloud_drive_cookie_saved">Cookie encrypted and saved</string>
     <string name="cloud_drive_cookie_save_failed">Could not save cookie</string>
     <string name="cloud_drive_cookie_cleared">Cookie cleared</string>
