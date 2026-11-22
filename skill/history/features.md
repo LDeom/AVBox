@@ -636,3 +636,10 @@
 - 新提交触发的真实构建已越过重复 key 检查，暴露下一项资源错误：`values-en/strings.xml` 的 `cloud_drive_cookie_placeholder` 包含未转义英文撇号，AAPT2 在 `:app:mergeDebugResources` 阶段报告该字符串资源无效。
 - 将文案从 “Paste this provider's cookie” 调整为 “Paste the provider cookie”，避免 Android string resource 中未转义撇号导致解析失败；不改变设置功能。
 - 当前等待该提交触发的新构建验证；尚未宣称 APK 构建成功。
+
+
+## 2026-11-22 APK 构建第三轮修复：ConfigRepository 闭合括号
+- GitHub Actions run 45029067532（提交 cb270516b5bc24a7c72960f6b55d2821aa0a6d12）已越过资源合并阶段，Kotlin 编译在 `ConfigRepository.kt:86` 报告 `Syntax error: Missing '}'`。
+- 检查文件末尾确认 `switchLiveSource` 的 synchronized lambda 已闭合，但 `ConfigRepository` object 缺少最后一个闭合大括号；补齐对象闭合，不改源切换行为。
+- 修复提交：`fd4f1e797c3c4f36f52f5d8ecd83f521b2d204c6`。
+- 当前只完成源码结构修复并提交；后续构建仍需验证 Kotlin 编译、单元测试与 APK 签名/上传步骤，未宣称构建成功。
