@@ -251,7 +251,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         } catch (ignored: Throwable) {
             AppLog.d("SearchViewModel", "cancel previous search requests failed")
         }
-        activeJsSourceKeys.forEach(JsLoader::stop)
+        activeJsSourceKeys.forEach { JsLoader.stop(it) }
         activeJsSourceKeys.clear()
         for (entry in pendingSources) {
             entry.value.complete(Unit)
