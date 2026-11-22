@@ -50,6 +50,7 @@ private data class ApiEnvelope<T>(
 private data class CaptchaData(
     @SerializedName("captcha_token") val captchaToken: String = "",
     val url: String = "",
+    @SerializedName("captcha_url") val captchaUrl: String = "",
     val error: String = "",
     @SerializedName("error_description") val errorDescription: String = "",
 )
@@ -128,7 +129,7 @@ object GuangYaPanClient {
             ),
             deviceId,
         )
-        if (captcha.url.isNotBlank()) {
+        if (captcha.url.isNotBlank() || captcha.captchaUrl.isNotBlank()) {
             throw IOException("光鸭要求完成官方人机验证，请先在光鸭官方客户端完成验证后重试")
         }
         if (captcha.error.isNotBlank()) {
@@ -419,9 +420,12 @@ object GuangYaPanClient {
 
     private fun normalizePhone(value: String): String {
         val phone = value.trim().replace(" ", "")
-        return if (phone.startsWith("+")) phone
-        else if (phone.length == 11 && phone.all(Char::isDigit)) "+86 $phone"
-        else phone
+        return when {
+            phone.startsWith("+86") && phone.length > 3 -> "+86 " + phone.removePrefix("+86")
+            phone.startsWith("+") -> phone
+            phone.length == 11 && phone.all(Char::isDigit) -> "+86 $phone"
+            else -> phone
+        }
     }
 
     private data class PendingLogin(
