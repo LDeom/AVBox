@@ -564,3 +564,10 @@
 - 新增 `Http.resumeResponse`，在响应未成功交付给调用方且协程取消时关闭响应体；正常路径仍由 `response.use` 关闭。
 - 新增 `HttpTest.get_closesResponseWhenCancelledAfterDelivery` 覆盖该竞态，不改变重试、状态码、请求头和响应数据语义。
 - 尚未运行 Gradle 编译或单元测试；未做弱网/真机验证，未构建 APK。
+
+
+## 2026-11-22 第十一阶段第一轮：播放器手势开关与左右分区修正
+- 审查发现 VideoGestureSession 已携带 gestureEnabled，但手势状态机没有消费该字段，设置关闭后横向 seek、竖向调节仍可能执行；长按倍速也未检查开关。
+- 修复：手势开关关闭时拦截 seek、亮度/音量竖滑和长按倍速，单击仍保留用于控制栏显隐。
+- 修复：左右分区此前根据每次移动事件的 lastX 判断，跨越屏幕中线时可能从亮度切换成音量或反向切换；现在按按下瞬间的 downX 固定本次手势目标。
+- 新增 VideoGestureHandlerTest 覆盖开关关闭与跨中线拖动；尚未运行 Gradle/单测或真机验证。
