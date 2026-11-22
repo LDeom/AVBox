@@ -137,11 +137,22 @@ class JsSpider : Spider {
     }
 
     private fun <T> submitAndWait(task: Callable<T>): T? {
+        val pending = try {
+            executor.submit(task)
+        } catch (e: Exception) {
+            AppLog.i("echo-js-submitAndWait-rejected " + e)
+            return null
+        }
         try {
-            return executor.submit(task).get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            return pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         } catch (e: InterruptedException) {
+            pending.cancel(true)
             Thread.currentThread().interrupt()
             AppLog.i("echo-js-submitAndWait-interrupted")
+            return null
+        } catch (e: TimeoutException) {
+            pending.cancel(true)
+            AppLog.i("echo-js-submitAndWait-timeout")
             return null
         } catch (e: Exception) {
             AppLog.i("echo-js-submitAndWait-failed " + e)
@@ -152,12 +163,26 @@ class JsSpider : Spider {
     private fun call(func: String, vararg args: Any?): Any? {
         val target = jsObject ?: return null
         if (destroyed.get()) return null
+        val pending = try {
+            executor.submit(Callable { Async.run(target, func, args) })
+        } catch (e: Exception) {
+            AppLog.i("Executor 提交失败 " + e)
+            return null
+        }
         try {
-            val pending = executor.submit(Callable { Async.run(target, func, args) })
             val result = pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             return result.get(CALL_TIMEOUT_MS)
+        } catch (e: InterruptedException) {
+            pending.cancel(true)
+            Thread.currentThread().interrupt()
+            AppLog.i("Executor 等待被中断 " + e)
+            return null
+        } catch (e: TimeoutException) {
+            pending.cancel(true)
+            AppLog.i("Executor 执行超时，已请求取消 " + func)
+            return null
         } catch (e: Exception) {
-            AppLog.i("Executor 提交或等待失败 " + e)
+            AppLog.i("Executor 等待失败 " + e)
             return null
         }
     }
@@ -558,10 +583,24 @@ class JsSpider : Spider {
     private fun callConverted(func: String, converter: (Any?) -> Any?, vararg args: Any?): Any? {
         val target = jsObject ?: return null
         if (destroyed.get()) return null
+        val pending = try {
+            executor.submit(Callable { Async.run(target, func, args, converter) })
+        } catch (e: Exception) {
+            AppLog.i("echo-js-call-rejected " + e)
+            return null
+        }
         return try {
-            val pending = executor.submit(Callable { Async.run(target, func, args, converter) })
             val result = pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             result.get(CALL_TIMEOUT_MS)
+        } catch (e: InterruptedException) {
+            pending.cancel(true)
+            Thread.currentThread().interrupt()
+            AppLog.i("echo-js-call-interrupted " + func)
+            null
+        } catch (e: TimeoutException) {
+            pending.cancel(true)
+            AppLog.i("echo-js-call-timeout " + func)
+            null
         } catch (e: Exception) {
             AppLog.i("echo-js-call-failed " + e)
             null
