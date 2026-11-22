@@ -45,6 +45,7 @@ class Global {
 
     private val timer: Timer
     private val timerLock: Any = Any()
+    private val callbackLock: Any = Any()
     private val pendingTimerFunctions: MutableSet<PendingTimer> = ConcurrentHashMap.newKeySet()
     private val destroyed: AtomicBoolean = AtomicBoolean(false)
 
@@ -492,19 +493,27 @@ class Global {
 
     private fun settleStream(reply: StreamReply, result: JSObject?, message: String) {
         if (!reply.take()) return
-        try {
-            executor.submit(Runnable {
-                try {
-                    if (result != null) reply.ok(result) else reply.fail(message)
-                } catch (th: Throwable) {
-                    AppLog.e("Global", th)
-                } finally {
-                    reply.release()
-                }
-            })
-        } catch (th: Throwable) {
-            AppLog.d("Global", "executor shutdown, drop stream callback")
-            reply.release()
+        synchronized(callbackLock) {
+            if (destroyed.get() || executor.isShutdown) {
+                reply.release()
+                return
+            }
+            try {
+                executor.submit(Runnable {
+                    try {
+                        if (!destroyed.get()) {
+                            if (result != null) reply.ok(result) else reply.fail(message)
+                        }
+                    } catch (th: Throwable) {
+                        AppLog.e("Global", th)
+                    } finally {
+                        reply.release()
+                    }
+                })
+            } catch (th: Throwable) {
+                AppLog.d("Global", "executor shutdown, drop stream callback")
+                reply.release()
+            }
         }
     }
 
@@ -633,7 +642,9 @@ class Global {
     }
 
     fun destroy() {
-        if (!destroyed.compareAndSet(false, true)) return
+        synchronized(callbackLock) {
+            if (!destroyed.compareAndSet(false, true)) return
+        }
         synchronized(timerLock) {
             timer.cancel()
             for (pending in pendingTimerFunctions) {
@@ -683,17 +694,21 @@ class Global {
 
     private fun deliver(ctx: QuickJSContext?, complete: JSFunction, req: Req?, result: Connect.Result?, message: String) {
         if (ctx == null) return
-        try {
-            executor.submit(Runnable {
-                try {
-                    val obj = if (result != null && req != null) Connect.success(ctx, req, result) else Connect.error(ctx, message)
-                    complete.call(obj)
-                } catch (th: Throwable) {
-                    AppLog.e("Global", th)
-                }
-            })
-        } catch (ignored: RejectedExecutionException) {
-            AppLog.d("Global", "executor shutdown, drop callback")
+        synchronized(callbackLock) {
+            if (destroyed.get() || executor.isShutdown) return
+            try {
+                executor.submit(Runnable {
+                    if (destroyed.get()) return@Runnable
+                    try {
+                        val obj = if (result != null && req != null) Connect.success(ctx, req, result) else Connect.error(ctx, message)
+                        complete.call(obj)
+                    } catch (th: Throwable) {
+                        AppLog.e("Global", th)
+                    }
+                })
+            } catch (ignored: RejectedExecutionException) {
+                AppLog.d("Global", "executor shutdown, drop callback")
+            }
         }
     }
 
