@@ -660,4 +660,7 @@
     <string name="cloud_drive_cookie_cleared">Login state cleared</string>
     <string name="cloud_drive_cookie_copy">Copy Cookie</string>
     <string name="cloud_drive_cookie_copied">Cookie copied to clipboard. Handle it securely.</string>
+<string name="cloud_drive_login_loading">Loading login page %1$d%%</string>
+<string name="cloud_drive_login_page_error">Login page failed to load (error %1$d). Check your network and retry.</string>
+<string name="cloud_drive_login_http_error">Login page returned HTTP %1$d. Retry or use another login method.</string>
 </resources>

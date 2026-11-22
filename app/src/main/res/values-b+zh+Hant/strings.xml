@@ -658,4 +658,7 @@
     <string name="cloud_drive_cookie_invalid">Cookie 不可包含換行字元</string>
     <string name="cloud_drive_cookie_copy">複製 Cookie</string>
     <string name="cloud_drive_cookie_copied">Cookie 已複製到剪貼簿，請注意隱私安全。</string>
+<string name="cloud_drive_login_loading">正在載入登入頁面 %1$d%%</string>
+<string name="cloud_drive_login_page_error">登入網頁載入失敗（錯誤 %1$d），請檢查網路後重試。</string>
+<string name="cloud_drive_login_http_error">登入網頁返回 HTTP %1$d，請重試或使用其他登入方式。</string>
 </resources>

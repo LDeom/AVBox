@@ -9,6 +9,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceResponse
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,10 +66,15 @@ class CloudDriveLoginActivity : BaseActivity() {
                 val context = LocalContext.current
                 var pageTitle by remember { mutableStateOf("") }
                 var message by remember { mutableStateOf("") }
+                var loading by remember { mutableStateOf(false) }
+                var progress by remember { mutableStateOf(0) }
                 Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(provider.title) + " · " + stringResource(R.string.cloud_drive_browser_login), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.cloud_drive_login_instruction), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (pageTitle.isNotBlank()) Text(pageTitle, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    if (loading) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { CircularProgressIndicator(progress = { progress / 100f }, modifier = Modifier.padding(2.dp), strokeWidth = 2.dp); Text(stringResource(R.string.cloud_drive_login_loading, progress)) }
+
+                    if (message.isNotBlank()) TextButton(onClick = { loginWebView?.reload() }) { Text(stringResource(R.string.common_retry)) }
                     AndroidView(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         factory = { viewContext ->
@@ -90,12 +98,20 @@ class CloudDriveLoginActivity : BaseActivity() {
                                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                                 webChromeClient = object : WebChromeClient() {
                                     override fun onReceivedTitle(view: WebView?, title: String?) { pageTitle = title.orEmpty() }
+                                    override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress; loading = newProgress < 100 }
                                 }
                                 webViewClient = object : WebViewClient() {
                                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                                         return request?.url?.scheme?.lowercase() !in setOf("https", "http")
                                     }
-                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) { message = "" }
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) { message = ""; loading = true; progress = 0 }
+                                    override fun onPageFinished(view: WebView?, url: String?) { loading = false; progress = 100 }
+                                    override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                                        if (request?.isForMainFrame == true) { loading = false; message = context.getString(R.string.cloud_drive_login_page_error, error?.errorCode ?: -1) }
+                                    }
+                                    override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, response: WebResourceResponse?) {
+                                        if (request?.isForMainFrame == true && (response?.statusCode ?: 0) >= 400) { loading = false; message = context.getString(R.string.cloud_drive_login_http_error, response?.statusCode ?: -1) }
+                                    }
                                 }
                                 loadUrl(provider.loginUrl)
                                 loginWebView = this

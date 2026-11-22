@@ -660,4 +660,7 @@
     <string name="cloud_drive_cookie_cleared">登录状态已清除</string>
     <string name="cloud_drive_cookie_copy">复制 Cookie</string>
     <string name="cloud_drive_cookie_copied">Cookie 已复制到剪贴板，请注意隐私安全。</string>
+<string name="cloud_drive_login_loading">正在加载登录页面 %1$d%%</string>
+<string name="cloud_drive_login_page_error">登录网页加载失败（错误 %1$d），请检查网络后重试。</string>
+<string name="cloud_drive_login_http_error">登录网页返回 HTTP %1$d，请重试或使用其他登录方式。</string>
 </resources>

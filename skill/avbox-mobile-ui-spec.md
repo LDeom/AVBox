@@ -896,5 +896,5 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 - 登录 Cookie 按精确 host 序列化为 JSON，再通过 CloudCredentialVault 的 Android Keystore AES-GCM + AtomicFile 加密保存；旧版单行 Cookie 凭据仍可回退读取。
 - 请求注入按请求 URL 的精确 host 选择对应 Cookie，避免把登录 host 的 Cookie 广播到同一 provider 的所有服务域名。
 - 设置页清除账号会删除对应 provider 的加密凭据，并尝试按 allowlist host 清理 WebView CookieManager 会话；不调用全局 Cookie 删除。清理行为需真机验证，Cookie 的 path/domain 变体可能需要进一步适配。
-- 登录 URL 与 host allowlist 是首轮配置；真实登录跳转、验证码/扫码和 API host 需逐家真机验证。Token-only 驱动、独立 HTTP 栈 JAR 和配置中心凭据内部格式仍需后续适配。
+- 登录页提供加载进度、主框架加载错误/HTTP 错误提示与重试入口；登录 URL 与 host allowlist 是首轮配置，真实登录跳转、验证码/扫码和 API host 仍需逐家真机验证。Token-only 驱动、独立 HTTP 栈 JAR 和配置中心凭据内部格式仍需后续适配。
 
