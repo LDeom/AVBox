@@ -282,3 +282,9 @@
 - 修复 JarLoader.copyAsset 对路径执行全局字符串替换的问题，改为仅剥离 assets:// 或 assets/ 起始前缀，保留内部同名目录；拒绝空路径及 .. 路径段。
 - 内置 Jar 复制循环响应线程中断；增加路径单元测试。
 - 尚未运行 Gradle 或 Android 设备测试。
+
+
+## 2026-11-22 第3阶段 JarLoader 生命周期竞态收敛
+- 将 JarLoader 的 live Jar 登记、别名写入、recent/siteJarKeys 更新和 Spider 创建绑定 clearGeneration，避免 clear() 后旧请求重新注册状态或跨代际继续加载。
+- 主 Jar recent 更新与 setRecentJarKey 快照使用 lifecycleLock；Jar Spider 初始化监视器采用 try/finally 保证异常路径收尾。
+- 尚未运行 Gradle，真实并发 Jar 加载与清理需设备/压力测试验证。
