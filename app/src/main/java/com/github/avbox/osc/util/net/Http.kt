@@ -9,6 +9,7 @@ import java.util.LinkedHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -85,10 +86,14 @@ object Http {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    cont.resume(response)
+                    resumeResponse(cont, response)
                 }
             })
         }
+    }
+
+    internal fun resumeResponse(cont: CancellableContinuation<Response>, response: Response) {
+        cont.resume(response) { _, value, _ -> value.close() }
     }
 
     private fun client(): OkHttpClient {
