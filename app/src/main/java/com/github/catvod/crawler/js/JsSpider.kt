@@ -192,11 +192,7 @@ class JsSpider : Spider {
         if (destroyed.get()) return null
         val pending = submitTask(Callable { Async.run(target, func, args) })
             ?: return null
-        try {
-            AppLog.i("Executor 提交失败 " + e)
-            return null
-        }
-        try {
+        return try {
             val result = pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             return result.get(CALL_TIMEOUT_MS)
         } catch (e: InterruptedException) {
@@ -612,10 +608,6 @@ class JsSpider : Spider {
         if (destroyed.get()) return null
         val pending = submitTask(Callable { Async.run(target, func, args, converter) })
             ?: return null
-        try {
-            AppLog.i("echo-js-call-rejected " + e)
-            return null
-        }
         return try {
             val result = pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             result.get(CALL_TIMEOUT_MS)
