@@ -321,3 +321,10 @@
 ## 2026-11-22 第3阶段 已配置 JS API Jar 加载失败阻断
 - 当 TVBox/AVBox 配置显式提供 JS API Jar，但下载、校验或 Function/Method 类加载失败时，JsLoader 不再以 null dex 继续创建 Spider，而是返回 SpiderNull 并记录诊断；未配置 Jar 的旧源兼容行为不变。
 - 尚未运行 Gradle、真实 Jar 集成或真机测试。
+
+
+## 2026-11-22 第5阶段播放器稳定性与旋转问题启动
+- 按用户要求跳过第4阶段，直接启动第5阶段；首轮静态审查 LivePlayActivity、BaseActivity、AndroidManifest、PlaybackEngine 与播放服务化规范。
+- 核实 LivePlayActivity 已声明 orientation 等 configChanges、覆写 BaseActivity 方向策略为空操作，并在非 finishing 的配置变化销毁时保留直播会话；暂未发现应盲目增加方向锁或修改 Manifest 的证据。
+- 确认 PlaybackEngine.enterLive/exitLive 会改变播放器内核生命周期，不应从普通方向变化回调重复调用。
+- 新增审查报告 skill/review/stage5-player-stability-rotation-audit.md；尚未运行 Gradle、未做真机旋转测试，本轮未修改播放器核心逻辑、未构建 APK。
