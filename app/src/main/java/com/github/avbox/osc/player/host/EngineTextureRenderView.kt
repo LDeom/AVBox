@@ -17,6 +17,8 @@ class EngineTextureRenderView(
 
     private var mediaPlayer: KernelPlayer? = null
 
+    private var released = false
+
     private var texture: SurfaceTexture? = null
 
     private var surface: Surface? = null
@@ -43,11 +45,12 @@ class EngineTextureRenderView(
     }
 
     override fun setOnSurfaceReadyListener(listener: Runnable?) {
+        if (released) return
         surfaceReadyListener = listener
     }
 
     override fun setOutputSize(width: Int, height: Int) {
-        if (width <= 0 || height <= 0) return
+        if (released || width <= 0 || height <= 0) return
         if (width == outputWidth && height == outputHeight) return
         outputWidth = width
         outputHeight = height
@@ -67,6 +70,7 @@ class EngineTextureRenderView(
     }
 
     fun refreshSurface(): Boolean {
+        if (released) return false
         val surfaceTexture = texture ?: return false
         val player = mediaPlayer ?: return false
         releaseRetiredSurface()
@@ -84,6 +88,7 @@ class EngineTextureRenderView(
     }
 
     override fun attachToPlayer(player: KernelPlayer) {
+        if (released) return
         mediaPlayer = player
         val current = surface
         if (current != null) {
@@ -115,8 +120,12 @@ class EngineTextureRenderView(
     override fun doScreenShot(): Bitmap? = bitmap
 
     override fun release() {
+        if (released) return
+        released = true
+        surfaceTextureListener = null
         mediaPlayer?.detachVideoSurface()
         mediaPlayer = null
+        surfaceReadyListener = null
         releaseRetiredSurface()
         surface?.release()
         surface = null
@@ -139,6 +148,10 @@ class EngineTextureRenderView(
     }
 
     override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture, width: Int, height: Int) {
+        if (released) {
+            surfaceTexture.release()
+            return
+        }
         AppLog.i(
             "echo-texture: available id=" + System.identityHashCode(surfaceTexture)
                 + " size=" + width + "x" + height
@@ -166,6 +179,7 @@ class EngineTextureRenderView(
     }
 
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+        if (released) return
         AppLog.i(
             "echo-texture: size-changed id=" + System.identityHashCode(surface)
                 + " size=" + width + "x" + height,
@@ -173,6 +187,7 @@ class EngineTextureRenderView(
     }
 
     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+        if (released) return false
         AppLog.i(
             "echo-texture: destroyed id=" + System.identityHashCode(surface)
                 + " retained=" + (texture === surface)
