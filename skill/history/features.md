@@ -347,3 +347,10 @@
 - EngineTextureRenderView 增加 SurfaceTexture available、sizeChanged、destroyed 生命周期日志，记录纹理 identity、尺寸、播放器绑定状态、是否复用 retained Texture 及 destroyed 回调返回值。
 - 用于与 LivePlayActivity PID/Activity 生命周期及 PlayerEngine surface bind/detach 日志交叉判断旋转时的故障层级。
 - 本次仅增加诊断，不改变 SurfaceTexture 所有权和回调行为；尚未执行 Gradle、真机旋转和播放器压力测试。
+
+
+## 2026-11-22 第5阶段快速重播与 TextureView 生命周期优化
+- BasePlayerView 新增统一 releaseActiveRenderView()，确保重新播放时先移除并释放旧渲染宿主，再释放旧 KernelPlayer；addDisplay/release 共用该流程。
+- startPlay 每次调用都递增请求序号，release 也递增序号，避免此前异步读取的历史进度结果在新播放请求或播放器释放后迟到并触发 startPrepare。
+- EngineTextureRenderView 增加幂等退役标志，释放时先关闭 SurfaceTextureListener 与回调引用，并在 attach/refresh/尺寸/SurfaceTexture 回调中拒绝退役后的工作，避免释放后重建 Surface。
+- 本轮已静态回读修改；未运行 Gradle/单元测试/真机压力测试，未构建 APK。
