@@ -213,18 +213,18 @@ class SpiderLoader {
     }
 
     private fun replaceCache(temp: File, cache: File, epoch: Long): File {
-        if (isJarLoadStale(epoch) || Thread.currentThread().isInterrupted) {
-            throw InterruptedException("Jar download became stale before cache replacement")
+        if (Thread.currentThread().isInterrupted) {
+            throw InterruptedException("Jar download interrupted before cache replacement")
         }
         val downloaded = FileUtils.readSimple(temp)
                 ?: throw IllegalStateException("Cannot read downloaded Jar")
         if (downloaded.isEmpty()) throw IllegalStateException("Downloaded Jar is empty")
-        if (!FileUtils.writeSimple(downloaded, cache)) {
-            throw IllegalStateException("Cannot safely replace Jar cache")
+        val replaced = jarLoadEpoch.runIfCurrent(epoch) {
+            if (!FileUtils.writeSimple(downloaded, cache)) {
+                throw IllegalStateException("Cannot safely replace Jar cache")
+            }
         }
-        if (isJarLoadStale(epoch)) {
-            AppLog.debugI("echo-switch: Jar cache updated after epoch changed")
-        }
+        if (!replaced) throw InterruptedException("Jar download became stale before cache replacement")
         temp.delete()
         return cache
     }
