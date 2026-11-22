@@ -174,7 +174,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     Text(stringResource(R.string.common_save))
                                 }
                                 TextButton(
-                                    enabled = busy[provider.id] != true && configured[provider.id] == true,
+                                    enabled = busy[provider.id] != true,
                                     onClick = {
                                         scope.launch {
                                             busy[provider.id] = true
