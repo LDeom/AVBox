@@ -377,6 +377,8 @@ class Global {
         if (destroyed.get()) return null
         val complete = options.getJSFunction("complete")
         if (complete == null) return req(url, options)
+        val reply = HttpReply(complete)
+        reply.hold()
         val ctx = runtime
         return try {
             val req = Req.objectFrom(JSUtils.toJsonObject(options).toString())
@@ -386,19 +388,19 @@ class Global {
                 httpGate.dispatch(HttpGate.Request(
                     start = Runnable {
                         try {
-                            Connect.to(url, req, httpTag).enqueue(getCallback(complete, req, ctx))
+                            Connect.to(url, req, httpTag).enqueue(getCallback(reply, req, ctx))
                         } catch (th: Throwable) {
                             httpGate.finish()
-                            deliver(ctx, complete, req, null, th.message.orEmpty())
+                            deliver(ctx, reply, req, null, th.message.orEmpty())
                         }
                     },
-                    fail = { message -> deliver(ctx, complete, req, null, message) }
+                    fail = { message -> deliver(ctx, reply, req, null, message) }
                 ))
             }
             null
         } catch (th: Throwable) {
             AppLog.e("Global", th)
-            deliver(ctx, complete, null, null, th.message.orEmpty())
+            deliver(ctx, reply, null, null, th.message.orEmpty())
             null
         }
     }
@@ -694,7 +696,7 @@ class Global {
         for (token in sessions) JsSession.find(token)?.cancelCalls()
     }
 
-    private fun getCallback(complete: JSFunction, req: Req, ctx: QuickJSContext?): Callback {
+    private fun getCallback(reply: HttpReply, req: Req, ctx: QuickJSContext?): Callback {
         return object : Callback {
             override fun onResponse(call: Call, response: Response) {
                 var result: Connect.Result? = null
@@ -708,10 +710,11 @@ class Global {
                     if (destroyed.get()) {
                         httpGate.clear()
                         httpGate.finish()
+                        reply.release()
                         return
                     }
                     httpGate.finish()
-                    deliver(ctx, complete, req, result, message)
+                    deliver(ctx, reply, req, result, message)
                 }
             }
 
@@ -720,31 +723,39 @@ class Global {
                     if (destroyed.get()) {
                         httpGate.clear()
                         httpGate.finish()
+                        reply.release()
                         return
                     }
                     httpGate.finish()
-                    deliver(ctx, complete, req, null, e.message.orEmpty())
+                    deliver(ctx, reply, req, null, e.message.orEmpty())
                 }
             }
         }
     }
 
-    private fun deliver(ctx: QuickJSContext?, complete: JSFunction, req: Req?, result: Connect.Result?, message: String) {
-        if (ctx == null) return
+    private fun deliver(ctx: QuickJSContext?, reply: HttpReply, req: Req?, result: Connect.Result?, message: String) {
         synchronized(callbackLock) {
-            if (destroyed.get() || executor.isShutdown) return
+            if (destroyed.get() || executor.isShutdown || ctx == null) {
+                reply.release()
+                return
+            }
+            if (!reply.take()) return
             try {
                 executor.submit(Runnable {
-                    if (destroyed.get()) return@Runnable
                     try {
-                        val obj = if (result != null && req != null) Connect.success(ctx, req, result) else Connect.error(ctx, message)
-                        complete.call(obj)
+                        if (!destroyed.get()) {
+                            val obj = if (result != null && req != null) Connect.success(ctx, req, result) else Connect.error(ctx, message)
+                            reply.call(obj)
+                        }
                     } catch (th: Throwable) {
                         AppLog.e("Global", th)
+                    } finally {
+                        reply.release()
                     }
                 })
             } catch (ignored: RejectedExecutionException) {
                 AppLog.d("Global", "executor shutdown, drop callback")
+                reply.release()
             }
         }
     }
@@ -753,6 +764,31 @@ class Global {
     @ContextSetter
     fun setJSContext(runtime: QuickJSContext) {
         this.runtime = runtime
+    }
+
+    private class HttpReply(private val complete: JSFunction) {
+        private val delivered = AtomicBoolean(false)
+        private val released = AtomicBoolean(false)
+
+        fun hold() {
+            complete.hold()
+        }
+
+        fun take(): Boolean = delivered.compareAndSet(false, true)
+
+        fun call(result: JSObject) {
+            complete.call(result)
+        }
+
+        fun release() {
+            if (released.compareAndSet(false, true)) {
+                try {
+                    complete.release()
+                } catch (th: Throwable) {
+                    AppLog.d("Global", "release http callback failed")
+                }
+            }
+        }
     }
 
     private class PendingTimer(val function: JSFunction)
