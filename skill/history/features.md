@@ -557,3 +557,10 @@
 - 首页与栏目二级页网格统一按当前 Compose 容器可用宽度选择最低列数；360dp 手机仍保持三列，窄分屏/自由窗口可降低到两列或一列。
 - WindowSizeTest 新增窄分屏列数和卡片宽度断言；既有手机方向锁定阈值测试保留。
 - 尚未运行 Gradle 编译或单元测试，未做平板/折叠屏/自由窗口真机验证；未构建 APK。
+
+
+## 2026-11-22 第十阶段第一轮：HTTP 响应取消资源回收
+- 审查 OkHttp await 层发现：`onResponse` 已取得响应，但协程在恢复调度前取消时，普通 `resume(response)` 没有取消清理回调，响应体可能绕过 `response.use`，延迟关闭并占用连接资源。
+- 新增 `Http.resumeResponse`，在响应未成功交付给调用方且协程取消时关闭响应体；正常路径仍由 `response.use` 关闭。
+- 新增 `HttpTest.get_closesResponseWhenCancelledAfterDelivery` 覆盖该竞态，不改变重试、状态码、请求头和响应数据语义。
+- 尚未运行 Gradle 编译或单元测试；未做弱网/真机验证，未构建 APK。
