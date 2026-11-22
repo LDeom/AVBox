@@ -3,6 +3,7 @@ package com.github.avbox.osc.player.controller
 import android.app.Activity
 import android.content.Context
 import android.media.AudioManager
+import android.provider.Settings
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.avbox.osc.R
@@ -72,8 +73,10 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
     fun beginSession(width: Int, height: Int, screenWidth: Int, downY: Float): VideoGestureSession {
         seekTargetMs = -1
         val activity = host.playerActivity()
-        brightnessBase = activity?.window?.attributes?.screenBrightness?.let {
-            if (it < 0f) 0.5f else it
+        brightnessBase = activity?.window?.attributes?.screenBrightness?.let { windowValue ->
+            if (windowValue >= 0f) windowValue else runCatching {
+                Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255f
+            }.getOrDefault(0.5f)
         }
         volumeBase = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC)
         cachedStreamMax = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 0

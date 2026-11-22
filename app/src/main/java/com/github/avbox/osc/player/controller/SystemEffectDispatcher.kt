@@ -27,6 +27,6 @@ class SystemEffectDispatcher(
     }
 
     private fun applyVolume(index: Int) {
-        audio()?.setStreamVolume(AudioManager.STREAM_MUSIC, index, 0)
+        audio()?.setStreamVolume(AudioManager.STREAM_MUSIC, index, AudioManager.FLAG_SHOW_UI)
     }
 }
