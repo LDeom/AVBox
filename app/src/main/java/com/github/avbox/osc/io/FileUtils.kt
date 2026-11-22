@@ -515,14 +515,27 @@ object FileUtils {
             } else if (name.startsWith("clan://localhost/")) {
                 rel = get(LocalAddress.get() + "file/" + name.replace("clan://localhost/", ""))
             } else if (name.startsWith("clan://")) {
-                val substring = name.substring(7)
-                val indexOf = substring.indexOf('/')
-                rel = get("http://" + substring.substring(0, indexOf) + "/file/" + substring.substring(indexOf + 1))
+                val moduleUrl = clanModuleUrl(name)
+                if (moduleUrl != null) {
+                    rel = get(moduleUrl)
+                } else {
+                    AppLog.i("echo-loadModule invalid clan url " + name)
+                }
             }
         } catch (e: Exception) {
             AppLog.e("FileUtils", e)
         }
         return rel
+    }
+
+    internal fun clanModuleUrl(name: String): String? {
+        if (!name.startsWith("clan://")) return null
+        val address = name.substring(7)
+        val separator = address.indexOf('/')
+        if (separator <= 0) return null
+        val host = address.substring(0, separator)
+        val path = address.substring(separator + 1)
+        return "http://" + host + "/file/" + path
     }
 
     private val cachedDirFiles: MutableMap<String, Set<String>> = ConcurrentHashMap()
