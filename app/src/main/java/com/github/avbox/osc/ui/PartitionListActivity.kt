@@ -359,9 +359,10 @@ private fun VideoGrid(
     resetKey: Any? = null,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val availableGridWidthDp = (maxWidth - 32.dp).value.toInt()
     val gridColumns = WindowSize.gridColumns(
-        availableWidthDp = (maxWidth - 32.dp).value.toInt(),
-        minColumns = 3,
+        availableWidthDp = availableGridWidthDp,
+        minColumns = WindowSize.gridMinColumns(availableGridWidthDp),
     )
     val gridState = rememberLazyGridState()
     LaunchedEffect(resetKey) {
