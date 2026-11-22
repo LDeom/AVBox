@@ -34,6 +34,13 @@ import java.util.function.Supplier
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
+internal enum class LiveConfigApplyResult {
+    Applied,
+    CollectionChanged,
+    Empty,
+    Stale,
+}
+
 internal fun isCurrentLiveConfigRequest(
     requestId: Long,
     activeRequestId: Long,
@@ -283,14 +290,21 @@ class ConfigLoader(private val owner: ApiConfig) {
     }
 
     suspend fun loadLiveConfig(useCache: Boolean): String? {
-        val requestId = liveLoadGeneration.incrementAndGet()
+        val requestId = synchronized(ConfigRepository.liveSourceLock) {
+            liveLoadGeneration.incrementAndGet()
+        }
         cancelFetch(KIND_LIVE)
         return suspendCancellableCoroutine { cont ->
             cont.invokeOnCancellation {
-                if (liveLoadGeneration.get() == requestId) {
-                    liveLoadGeneration.compareAndSet(requestId, requestId + 1)
-                    cancelFetch(KIND_LIVE)
+                val shouldCancel = synchronized(ConfigRepository.liveSourceLock) {
+                    if (liveLoadGeneration.get() == requestId) {
+                        liveLoadGeneration.compareAndSet(requestId, requestId + 1)
+                        true
+                    } else {
+                        false
+                    }
                 }
+                if (shouldCancel) cancelFetch(KIND_LIVE)
             }
             configLoadExecutor.execute(Runnable {
                 if (!cont.isActive || liveLoadGeneration.get() != requestId) return@Runnable
@@ -315,6 +329,27 @@ class ConfigLoader(private val owner: ApiConfig) {
             ApiConfig.effectiveLiveUrl(),
         )
 
+    private fun applyLiveConfigIfCurrent(
+        requestId: Long,
+        apiUrl: String,
+        body: String,
+    ): LiveConfigApplyResult = synchronized(ConfigRepository.liveSourceLock) {
+        if (!isCurrentLiveLoad(requestId, apiUrl)) {
+            LiveConfigApplyResult.Stale
+        } else if (switchLiveApiCollectionIfNeeded(apiUrl, body)) {
+            LiveConfigApplyResult.CollectionChanged
+        } else {
+            clearLiveApiLinesIfUnmatched(apiUrl)
+            owner.parseLiveConfigContent(apiUrl, body)
+            if (!owner.hasLiveConfigResult()) {
+                LiveConfigApplyResult.Empty
+            } else {
+                owner.loadedLiveConfigUrl = apiUrl
+                LiveConfigApplyResult.Applied
+            }
+        }
+    }
+
     private fun runLoadLiveConfig(
         useCache: Boolean,
         requestId: Long,
@@ -338,21 +373,21 @@ class ConfigLoader(private val owner: ApiConfig) {
         AppLog.i("echo-load live config " + liveApiUrl)
         if (useCache && live_cache.exists() && isRemoteSource(liveApiUrl)) {
             try {
-                if (!isCurrentLiveLoad(requestId, liveApiUrl)) {
-                    callback.error("stale")
-                    return
-                }
                 val json = readConfigFile(live_cache)
-                if (switchLiveApiCollectionIfNeeded(liveApiUrl, json)) {
-                    runLoadLiveConfig(false, requestId, callback)
-                    return
-                }
-                clearLiveApiLinesIfUnmatched(liveApiUrl)
-                owner.parseLiveConfigContent(liveApiUrl, json)
-                if (owner.hasLiveConfigResult()) {
-                    owner.loadedLiveConfigUrl = liveApiUrl
-                    callback.success()
-                    return
+                when (applyLiveConfigIfCurrent(requestId, liveApiUrl, json)) {
+                    LiveConfigApplyResult.Stale -> {
+                        callback.error("stale")
+                        return
+                    }
+                    LiveConfigApplyResult.CollectionChanged -> {
+                        runLoadLiveConfig(false, requestId, callback)
+                        return
+                    }
+                    LiveConfigApplyResult.Applied -> {
+                        callback.success()
+                        return
+                    }
+                    LiveConfigApplyResult.Empty -> Unit
                 }
             } catch (th: Throwable) {
                 AppLog.e("ApiConfig", th)
@@ -361,25 +396,26 @@ class ConfigLoader(private val owner: ApiConfig) {
         fetchConfigAsync(liveApiUrl, liveApiConfigUrl, liveConfigKey, KIND_LIVE, object : ConfigFetchCallback {
             override fun success(body: String) {
                 try {
-                    if (!isCurrentLiveLoad(requestId, liveApiUrl)) {
-                        callback.error("stale")
-                        return
+                    when (applyLiveConfigIfCurrent(requestId, liveApiUrl, body)) {
+                        LiveConfigApplyResult.Stale -> {
+                            callback.error("stale")
+                            return
+                        }
+                        LiveConfigApplyResult.CollectionChanged -> {
+                            FileUtils.saveCache(live_cache, body)
+                            runLoadLiveConfig(false, requestId, callback)
+                            return
+                        }
+                        LiveConfigApplyResult.Empty -> {
+                            AppLog.e("echo-live-config-empty url=$liveApiUrl")
+                            callback.error(ApiConfig.str(R.string.toast_live_config_parse_failed))
+                            return
+                        }
+                        LiveConfigApplyResult.Applied -> {
+                            FileUtils.saveCache(live_cache, body)
+                            callback.success()
+                        }
                     }
-                    if (switchLiveApiCollectionIfNeeded(liveApiUrl, body)) {
-                        FileUtils.saveCache(live_cache, body)
-                        runLoadLiveConfig(false, requestId, callback)
-                        return
-                    }
-                    clearLiveApiLinesIfUnmatched(liveApiUrl)
-                    owner.parseLiveConfigContent(liveApiUrl, body)
-                    if (!owner.hasLiveConfigResult()) {
-                        AppLog.e("echo-live-config-empty url=$liveApiUrl")
-                        callback.error(ApiConfig.str(R.string.toast_live_config_parse_failed))
-                        return
-                    }
-                    owner.loadedLiveConfigUrl = liveApiUrl
-                    FileUtils.saveCache(live_cache, body)
-                    callback.success()
                 } catch (th: Throwable) {
                     AppLog.e("ApiConfig", th)
                     callback.error(ApiConfig.str(R.string.toast_live_config_parse_failed))
@@ -402,16 +438,20 @@ class ConfigLoader(private val owner: ApiConfig) {
                 if (live_cache.exists()) {
                     try {
                         val json = readConfigFile(live_cache)
-                        if (switchLiveApiCollectionIfNeeded(liveApiUrl, json)) {
-                            runLoadLiveConfig(false, requestId, callback)
-                            return
-                        }
-                        clearLiveApiLinesIfUnmatched(liveApiUrl)
-                        owner.parseLiveConfigContent(liveApiUrl, json)
-                        if (owner.hasLiveConfigResult()) {
-                            owner.loadedLiveConfigUrl = liveApiUrl
-                            callback.success()
-                            return
+                        when (applyLiveConfigIfCurrent(requestId, liveApiUrl, json)) {
+                            LiveConfigApplyResult.Stale -> {
+                                callback.error("stale")
+                                return
+                            }
+                            LiveConfigApplyResult.CollectionChanged -> {
+                                runLoadLiveConfig(false, requestId, callback)
+                                return
+                            }
+                            LiveConfigApplyResult.Applied -> {
+                                callback.success()
+                                return
+                            }
+                            LiveConfigApplyResult.Empty -> Unit
                         }
                     } catch (th: Throwable) {
                         AppLog.e("ApiConfig", th)
