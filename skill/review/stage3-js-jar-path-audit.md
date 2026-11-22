@@ -172,3 +172,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 保留 clan://host/ 的空文件路径行为及原有 http://host/file/path 映射。
 - 新增 FileUtilsModulePathTest 覆盖正常主机路径、缺少主机/分隔符及空路径。
 - 尚未运行 Gradle 测试；网络端点及真实设备本地代理仍待集成验证。
+
+
+## 第二十一轮 file:// 模块 URI 规范化（2026-11-22）
+- 将 file:// 模块地址解析抽离为 fileModulePath，避免对完整 URI 连续执行宽泛字符串替换。
+- 兼容 file:///path 与 file://path 两种既有输入形式；拒绝空路径及非 file:// 地址。
+- loadModule 使用规范化后的相对路径拼接本地代理地址，保持原有 LocalAddress/file/ 路由方式。
+- 新增测试覆盖两种有效 URI 形式及空/非目标 URI。
+- 代码结构已回读检查；尚未运行 Gradle 测试，也未验证设备端 LocalAddress 路由。
