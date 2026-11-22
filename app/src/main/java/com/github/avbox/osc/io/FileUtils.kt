@@ -510,8 +510,12 @@ object FileUtils {
             } else if (isAsFile(name, "js/lib")) {
                 rel = asOpen("js/lib/" + name)
             } else if (name.startsWith("file://")) {
-                rel = get(LocalAddress.get() + "file/" + name.replace("file:///", "")
-                        .replace("file://", ""))
+                val modulePath = fileModulePath(name)
+                if (modulePath != null) {
+                    rel = get(LocalAddress.get() + "file/" + modulePath)
+                } else {
+                    AppLog.i("echo-loadModule invalid file url " + name)
+                }
             } else if (name.startsWith("clan://localhost/")) {
                 rel = get(LocalAddress.get() + "file/" + name.replace("clan://localhost/", ""))
             } else if (name.startsWith("clan://")) {
@@ -526,6 +530,13 @@ object FileUtils {
             AppLog.e("FileUtils", e)
         }
         return rel
+    }
+
+    internal fun fileModulePath(name: String): String? {
+        if (!name.startsWith("file://")) return null
+        val path = name.removePrefix("file://").removePrefix("/")
+        if (path.isEmpty()) return null
+        return path
     }
 
     internal fun clanModuleUrl(name: String): String? {
