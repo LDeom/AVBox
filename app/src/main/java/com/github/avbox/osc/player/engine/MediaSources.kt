@@ -146,8 +146,7 @@ class MediaSources(
         val strictTls = headers?.entries?.any {
             HEADER_STRICT_TLS.equals(it.key, ignoreCase = true) && it.value.equals("true", ignoreCase = true)
         } == true
-        val normalized = toRequestHeaders(headers)
-        normalized.keys.removeAll { HEADER_STRICT_TLS.equals(it, ignoreCase = true) }
+        val normalized = toNetworkRequestHeaders(headers)
         var userAgent: String? = null
         val requestHeaders = HashMap<String, String>()
         for (entry in normalized.entries) {
@@ -285,6 +284,12 @@ class MediaSources(
         @JvmStatic
         fun toRequestHeaders(headers: Map<String, String>?): HashMap<String, String> =
             HttpHeaders.toRequestHeaders(headers)
+
+        @JvmStatic
+        fun toNetworkRequestHeaders(headers: Map<String, String>?): HashMap<String, String> =
+            toRequestHeaders(headers).apply {
+                keys.removeAll { HEADER_STRICT_TLS.equals(it, ignoreCase = true) }
+            }
 
         @JvmStatic
         fun inferContentType(fileName: String, headers: Map<String, String>?): Int {
