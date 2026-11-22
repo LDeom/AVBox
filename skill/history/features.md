@@ -583,8 +583,8 @@
 
 ## 2026-11-22 网盘账号接入第一轮：Keystore 加密凭据底座
 - 新增 AES-GCM 凭据封装格式，随机生成 96-bit IV，使用 128-bit GCM tag，并带版本字段；同一明文每次加密得到不同密文，密文篡改会认证失败。
-- 新增 CloudCredentialVault，通过 Android Keystore 管理 AES-256 密钥，MMKV 只保存 Base64 密文；按 provider ID 隔离读写/删除，整个账号集合加密后落盘。
-- 新增 MMKV 字符串键登记，避免凭据密文绕过 KVKeySpec 类型约束。
+- 新增 CloudCredentialVault，通过 Android Keystore 管理 AES-256 密钥，使用应用私有目录中的 AtomicFile 同步写入 AES-GCM 密文；按 provider ID 隔离读写/删除，整个账号集合加密后落盘。
+- 凭据文件不经过 MMKV，避免其异步落盘窗口影响登录态持久化；普通设置仍沿用既有 KV。
 - 新增 AES-GCM 纯 JVM 单元测试，覆盖往返、随机 IV 与篡改检测。
 - 本轮仅建立安全存储底座，尚未接入网盘登录 UI、短信/扫码流程、文件浏览或播放接口；Keystore 设备兼容、备份恢复及真实账号测试仍待验证。
 - 代码提交：33925d74a3d22d5e2005818912e0295700cc8706、5a5d83c47c5b59665796beb81ebc920938fc4920、726bc34da766451ff6b7657aec234c32d828f153，随后补齐 KV 键登记及测试修正。
