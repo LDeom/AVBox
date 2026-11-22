@@ -59,6 +59,7 @@
 - `b71fde11c17261d7a98828da2fdc65027e543a6e`（新增主分类选择 action）
 - `903991e2bff092daa017dabfe9d6ac55850c8806`（连接 Activity 既有分组选择/密码流程）
 - `1422cbf90b51ee3dc8536f9949af0494c7efb827`（横屏双栏 UI）
+- `2e69790466efaebcdda3cd5c22cf974593ddd1e3`（切换主分类后请求定位当前频道）
 
 ### 验证与限制
 - 已回读修改文件并核对调用链：主分类点击 → 设置 tappedGroupIndex → 密码检查 → 展开分类；子频道点击沿用既有播放入口。
