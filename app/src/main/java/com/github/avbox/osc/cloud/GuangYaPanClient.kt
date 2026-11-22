@@ -221,6 +221,9 @@ object GuangYaPanClient {
                 credential,
             )
         }
+        if (response.code == 401 || response.code == 403) {
+            throw IOException("光鸭登录状态已失效，请重新登录")
+        }
         if (response.msg.isNotBlank() && !response.msg.equals("success", ignoreCase = true)) {
             throw IOException(response.msg)
         }
@@ -310,15 +313,26 @@ object GuangYaPanClient {
             .post(gson.toJson(body).toRequestBody(jsonType))
             .build()
         val type = TypeToken.getParameterized(ApiEnvelope::class.java, T::class.java).type
-        return execute(request, type)
+        return execute(request, type, allowAuthError = true)
     }
 
-    private fun <T> execute(request: Request, type: java.lang.reflect.Type): T {
+    private fun <T> execute(
+        request: Request,
+        type: java.lang.reflect.Type,
+        allowAuthError: Boolean = false,
+    ): T {
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
-            if (!response.isSuccessful) throw IOException("光鸭服务请求失败（HTTP " + response.code + "）")
+            val authError = allowAuthError && response.code in 401..403
+            if (!response.isSuccessful && !authError) {
+                throw IOException("光鸭服务请求失败（HTTP " + response.code + "）")
+            }
             val parsed = runCatching { gson.fromJson<T>(text, type) }.getOrNull()
                 ?: throw IOException("光鸭服务返回了无法识别的数据")
+            if (authError && parsed is ApiEnvelope<*>) {
+                @Suppress("UNCHECKED_CAST")
+                return (parsed.copy(code = response.code) as T)
+            }
             if (parsed is ApiEnvelope<*> && parsed.error.isNotBlank()) {
                 throw IOException(parsed.errorDescription.ifBlank { parsed.error })
             }
