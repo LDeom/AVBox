@@ -559,7 +559,7 @@ object FileUtils {
             var code = ""
             val file = open(name)
             if (file.exists()) {
-                code = readSimple(file)?.let { String(it, Charset.defaultCharset()) } ?: ""
+                code = readSimple(file)?.let { String(it, Charsets.UTF_8) } ?: ""
             }
             if (TextUtils.isEmpty(code)) {
                 return ""
