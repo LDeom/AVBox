@@ -479,10 +479,17 @@ internal fun relativeRefs(text: String): List<String> {
             .substringBefore(';')
             .substringBefore('?')
             .substringBefore('#')
-        if (raw.isEmpty() || raw.endsWith("/") || raw.contains("..")) continue
+        if (!isSafeRelativeRef(raw)) continue
         refs.add(raw)
     }
     return refs.toList()
+}
+
+internal fun isSafeRelativeRef(ref: String): Boolean {
+    if (ref.isEmpty() || ref.startsWith('/') || ref.startsWith('\\\\')) return false
+    if (ref.contains('\\\\') || ref.any { it.isISOControl() }) return false
+    val segments = ref.split('/')
+    return segments.all { it.isNotEmpty() && it != "." && it != ".." }
 }
 
 private val RELATIVE_REF = Regex("\"\\./([^\"\\\\]*)")
