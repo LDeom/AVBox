@@ -280,6 +280,8 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
     fun checkDanmu(danmu: String?, callback: DanmuLoadController.LoadCallback?) =
         overlays.checkDanmu(danmu, callback)
 
+    fun reloadSelectedDanmuSource() = overlays.reloadSelectedDanmuSource()
+
     fun startDanmuIfReady() = overlays.startDanmuIfReady()
 
     fun resetDanmuState() = overlays.resetDanmuState()

@@ -76,13 +76,15 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
         val title = vod?.name.orEmpty()
         val series = if (vod == null) null else host.scheduler.currentSeries(vod.playFlag, vod.playIndex)
         val episode = series?.name.orEmpty()
-        if (!danmu.isNullOrBlank()) {
+        val jsPluginMode = com.github.avbox.osc.util.DanmuSettingsState.sourceMode ==
+            com.github.avbox.osc.util.DanmuSettingsState.SOURCE_JS_PLUGIN
+        if (!jsPluginMode && !danmu.isNullOrBlank()) {
             controller.check(danmu, title, episode, callback)
             return
         }
 
         controller.check(null, title, episode, callback)
-        if (title.isBlank()) return
+        if (!jsPluginMode || title.isBlank()) return
         jsDanmuJob = scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching { JsDanmuPluginLoader.searchAndLoad(host.context, title, episode) }
@@ -99,6 +101,11 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
                 AppLog.e("echo-danmu JS plugin load failed: " + (it.message ?: it.javaClass.simpleName))
             }
         }
+    }
+
+    fun reloadSelectedDanmuSource() {
+        if (!host.isAttached()) return
+        checkDanmu(host.scheduler.playDanmu())
     }
 
     fun startDanmuIfReady() {

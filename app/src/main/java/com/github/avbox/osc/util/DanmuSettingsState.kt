@@ -13,9 +13,13 @@ data class DanmuSettingsConfig(
     val sizeScale: Float,
     val randomColor: Boolean,
     val api: String,
+    val sourceMode: String,
 )
 
 object DanmuSettingsState {
+
+    const val SOURCE_VIDEO = "video"
+    const val SOURCE_JS_PLUGIN = "js_plugin"
 
     private val PALETTE = arrayOf(
             "#ffffff", "#70f3ff", "#44cef6", "#3eede7", "#00e079", "#2edfa3",
@@ -35,6 +39,7 @@ object DanmuSettingsState {
         sizeScale = clamp(KV.get(KVKeys.DANMU_SIZE_SCALE, 0.8f), 0.6f, 2.0f),
         randomColor = KV.get(KVKeys.DANMU_RANDOM_COLOR, false),
         api = KV.get(KVKeys.DANMU_API, ""),
+        sourceMode = KV.get(KVKeys.DANMU_SOURCE_MODE, SOURCE_VIDEO),
     )
 
     var open: Boolean
@@ -80,6 +85,14 @@ object DanmuSettingsState {
         set(value) {
             KV.put(KVKeys.DANMU_RANDOM_COLOR, value)
             current = current.copy(randomColor = value)
+        }
+
+    var sourceMode: String
+        get() = current.sourceMode
+        set(value) {
+            val mode = if (value == SOURCE_JS_PLUGIN) SOURCE_JS_PLUGIN else SOURCE_VIDEO
+            KV.put(KVKeys.DANMU_SOURCE_MODE, mode)
+            current = current.copy(sourceMode = mode)
         }
 
     var api: String

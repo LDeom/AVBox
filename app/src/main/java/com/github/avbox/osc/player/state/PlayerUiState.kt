@@ -557,6 +557,7 @@ class DanmuSettingSheetState(
     val onOpenSearch: () -> Unit,
     val onReset: () -> Unit = {},
     val onSettingsApplied: (Boolean) -> Unit = {},
+    val onSourceChanged: (String) -> Unit = {},
 )
 
 class DanmuSearchSheetState(
