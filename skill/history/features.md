@@ -168,3 +168,8 @@
 - Proxy、Danmaku 反射方法仅在代际校验通过后写入共享注册表。
 - JsLoader遇到线程中断时停止JS API Jar重试并保留中断标记。
 - 尚未运行 Gradle 测试或真机验证。
+
+## 2026-11-22 第3阶段 QuickJS 任务取消优化
+- JsSpider 的同步等待、JS调用及转换调用在超时/线程中断时显式取消对应 Future；中断时恢复中断标记。
+- 处理 Executor 拒绝提交的异常，避免调用路径异常外溢。
+- 尚未运行 Gradle 或真机测试；native QuickJS 执行中断能力仍待验证。
