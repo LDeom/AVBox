@@ -112,6 +112,9 @@
         <activity
             android:name=".ui.CloudDriveSettingsActivity"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.CloudDrivePlaybackActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode|colorMode" />
 
         <service
             android:name=".dlna.DLNACastService"
