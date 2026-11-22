@@ -225,7 +225,7 @@ class JarLoader {
             } else if (source.startsWith("file")) {
                 load(key, local(source), generation)
             } else if (source.startsWith("clan://")) {
-                load(key, download(clanToAddress(source), file), generation)
+                load(key, download(clanToAddress(source), file, generation), generation)
             }
         }
     }
