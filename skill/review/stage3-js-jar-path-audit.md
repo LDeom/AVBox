@@ -88,3 +88,9 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - SpiderLoader只允许当前epoch提交Jar缓存；过期下载在写入前被拒绝。
 - 新增当前epoch执行、过期epoch拒绝两项单元测试。
 - 已完成源码与测试用例编写，尚未运行Gradle测试或真机验证。
+
+## 第十轮缓存并发写入保护（2026-11-22）
+- FileUtils.writeSimple增加对象级同步，避免多个JS模块/Jar任务并发使用同一目标的固定.tmp/.bak文件时互相覆盖或误删临时文件。
+- setCacheByte的DRPY标记固定使用US-ASCII，避免设备默认字符集影响二进制缓存头。
+- 新增8个并发写入任务测试，验证最终文件完整匹配其中一次写入且无残留.tmp/.bak。
+- 当前仅提交源码和测试；未运行Gradle测试或真机验证。
