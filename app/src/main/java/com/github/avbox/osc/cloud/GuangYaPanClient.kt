@@ -85,7 +85,12 @@ object GuangYaPanClient {
     private val gson = Gson()
     private val refreshLock = Any()
     private val http: OkHttpClient by lazy {
-        (HttpClients.ItvClient ?: OkHttpClient.Builder().build()).newBuilder()
+        OkHttpClient.Builder()
+            .proxySelector(HttpClients.proxySelector())
+            .proxyAuthenticator(HttpClients.proxyAuthenticator())
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
             .callTimeout(30, TimeUnit.SECONDS)
             .build()
     }
