@@ -215,13 +215,13 @@ class JarLoader {
             } else if (TextUtils.isEmpty(md5) && exists(file) && !FileUtils.isWeekAgo(file)) {
                 load(key, file, generation)
             } else if (source.startsWith("http")) {
-                load(key, download(source, file, generation), generation)
+                download(source, file, generation)?.let { load(key, it, generation) }
             } else if (source.startsWith("assets")) {
-                load(key, copyAsset(source, file, generation), generation)
+                copyAsset(source, file, generation)?.let { load(key, it, generation) }
             } else if (source.startsWith("file")) {
                 load(key, local(source), generation)
             } else if (source.startsWith("clan://")) {
-                load(key, download(clanToAddress(source), file, generation), generation)
+                download(clanToAddress(source), file, generation)?.let { load(key, it, generation) }
             }
         }
     }
@@ -406,7 +406,7 @@ class JarLoader {
         throw ClassNotFoundException(name)
     }
 
-    private fun download(url: String, file: File, generation: Long): File {
+    private fun download(url: String, file: File, generation: Long): File? {
         val temp = File(file.absolutePath + ".tmp")
         try {
             val parent = file.parentFile
@@ -444,10 +444,10 @@ class JarLoader {
             AppLog.e("JarLoader", e)
             if (temp.exists()) temp.delete()
         }
-        return temp
+        return null
     }
 
-    private fun copyAsset(url: String, file: File, generation: Long): File {
+    private fun copyAsset(url: String, file: File, generation: Long): File? {
         val temp = File(file.absolutePath + ".tmp")
         try {
             if (generation != clearGeneration.get()) throw InterruptedException("Asset Jar generation expired")
@@ -479,7 +479,7 @@ class JarLoader {
             AppLog.e("JarLoader", e)
             if (temp.exists()) temp.delete()
         }
-        return temp
+        return null
     }
 
     private fun replaceCacheFile(temp: File, target: File, generation: Long): Boolean {
