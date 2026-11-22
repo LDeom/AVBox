@@ -543,7 +543,9 @@ object FileUtils {
 
     internal fun jsLibAssetPath(name: String): String? {
         if (name.isEmpty()) return null
-        if (name.startsWith("js/lib/")) return name
+        if (name.startsWith("js/lib/")) {
+            return name.takeIf { it.length > "js/lib/".length }
+        }
         if (name.contains('/')) return null
         return "js/lib/" + name
     }
