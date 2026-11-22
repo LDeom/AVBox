@@ -91,3 +91,13 @@
 ## 2026-11-22 第4阶段播放线路审查
 - 初步检查 PlayUrlResolver、RetryPolicy、PlaybackAttemptState及HTTP状态测试；报告记录于 `skill/review/stage4-playback-routing-audit.md`。
 - 未发现可凭当前局部证据安全直接修改的缺陷，完整解析/嗅探/取消链路仍待深入。未运行Gradle。
+
+
+## 2026-11-22 第3阶段 JS模块路径第二轮核查
+- 追踪 QuickJS `ModuleLoader.moduleNormalizeName` 到 `UriUtil.resolve`，模块加载通过 `FileUtils.loadModule` 获取内容；模块编译/读取失败目前可能返回空模块 bytecode，属于潜在掩盖依赖缺失的兼容行为。
+- 已将证据与待验证集成边界追加至 `skill/review/stage3-js-jar-path-audit.md`。未改变兼容加载策略，未执行Gradle。
+
+## 2026-11-22 第5阶段直播旋转生命周期第二轮静态核查
+- 复核 LivePlayActivity 的 manifest `configChanges`、`onConfigurationChanged`、`applyFullscreen`、`onDestroy` 与共享 PlaybackService 生命周期，以及 BaseActivity 的方向策略和系统栏处理。
+- 当前代码已具备配置变化接管和共享会话保留保护，但旋转是否仍引发 Activity 重建/进程重启尚无真机日志证据，暂不作未经证实的修改。
+- 尚未运行Gradle构建/单测或真机验证。
