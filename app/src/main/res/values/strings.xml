@@ -657,4 +657,5 @@
     <string name="cloud_drive_cookie_saved">Cookie 已加密保存</string>
     <string name="cloud_drive_cookie_save_failed">Cookie 保存失败</string>
     <string name="cloud_drive_cookie_cleared">Cookie 已清除</string>
+    <string name="cloud_drive_cookie_invalid">Cookie 不能包含换行符</string>
 </resources>
