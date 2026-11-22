@@ -140,6 +140,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
     }
 
     override fun onCleared() {
+        val jsSourceKeysToStop = activeJsSourceKeys.toList()
+        activeJsSourceKeys.clear()
         searchJob?.cancel()
         suggestJob?.cancel()
         try {
@@ -147,8 +149,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         } catch (ignored: Throwable) {
             AppLog.d("SearchViewModel", "cancel search requests failed")
         }
-        activeJsSourceKeys.forEach { JsLoader.stop(it) }
-        activeJsSourceKeys.clear()
+        jsSourceKeysToStop.forEach { JsLoader.stop(it) }
     }
 
     private fun fetchHotSearch() {
@@ -273,36 +274,40 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         }
         _running.value = true
         searchJob = scope.launch {
-            coroutineScope {
-                sources.map { bean ->
-                    async {
-                        semaphore.withPermit {
-                            if (myToken != token) return@async
-                            val sourceKey = bean.key.orEmpty()
-                            val done = kotlinx.coroutines.CompletableDeferred<Unit>()
-                            pendingSources[sourceKey] = done
-                            try {
-                                val completed = withTimeoutOrNull(SEARCH_TIMEOUT_MS) {
-                                    searchCaller.getSearch(bean.key, t, tokenStr)
-                                    done.await()
-                                    true
-                                } ?: false
-                                if (!completed && myToken == token) {
-                                    updateEmptyResultIfPending(sourceKey)
+            try {
+                coroutineScope {
+                    sources.map { bean ->
+                        async {
+                            semaphore.withPermit {
+                                if (myToken != token) return@async
+                                val sourceKey = bean.key.orEmpty()
+                                val done = kotlinx.coroutines.CompletableDeferred<Unit>()
+                                pendingSources[sourceKey] = done
+                                try {
+                                    val completed = withTimeoutOrNull(SEARCH_TIMEOUT_MS) {
+                                        searchCaller.getSearch(bean.key, t, tokenStr)
+                                        done.await()
+                                        true
+                                    } ?: false
+                                    if (!completed && myToken == token) {
+                                        updateEmptyResultIfPending(sourceKey)
+                                    }
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    AppLog.e("SearchViewModel", e)
+                                    if (myToken == token) updateEmptyResultIfPending(sourceKey)
+                                } finally {
+                                    pendingSources.remove(sourceKey, done)
                                 }
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                AppLog.e("SearchViewModel", e)
-                                if (myToken == token) updateEmptyResultIfPending(sourceKey)
-                            } finally {
-                                pendingSources.remove(sourceKey, done)
                             }
                         }
-                    }
-                }.awaitAll()
+                    }.awaitAll()
+                }
+                if (myToken == token) _running.value = false
+            } finally {
+                if (myToken == token) activeJsSourceKeys.clear()
             }
-            if (myToken == token) _running.value = false
         }
     }
 
