@@ -128,6 +128,7 @@ open class BasePlayerView @JvmOverloads constructor(
     }
 
     protected open fun startPlay(): Boolean {
+        val seq = ++startPlaySeq
         if (showNetWarning()) {
             kernelPlayer?.abortStart()
             dispatchPlayState(PlayState.START_ABORT)
@@ -149,7 +150,6 @@ open class BasePlayerView @JvmOverloads constructor(
             startPrepare(false)
             return true
         }
-        val seq = ++startPlaySeq
         scope.launch {
             val saved = sink.getSavedProgress(key)
             if (seq != startPlaySeq) return@launch
@@ -301,6 +301,7 @@ open class BasePlayerView @JvmOverloads constructor(
     }
 
     open fun release() {
+        startPlaySeq++
         val hadActiveState = lastReportedPlayState != PlayState.IDLE
         if (hadActiveState) captureLivePosition()
         audioFocusHelper?.abandonFocus()
