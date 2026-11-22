@@ -495,6 +495,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun onFullScreenToggleRequested(requested: Boolean, facts: DetailPlaybackFacts) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.fullscreen", "start", "requested=$requested")
         if (requested) {
             val reason = DetailFullScreenGate.refusalReason(
                 _pageState.value,
@@ -534,6 +535,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     internal fun onPlayRequested(entry: DetailPlaybackEntry) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.play.request", "start", "entryPresent=true")
         val list = vodInfo?.seriesMap?.get(vodInfo?.playFlag)
         if (list.isNullOrEmpty()) {
             _toastEvent.tryEmit(str(R.string.detail_no_playable_content))
@@ -651,6 +653,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun retry() {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.retry", "start")
         if (vodId.isEmpty()) return
         detailRetryTarget = null
         loadDetail(vodId, sourceKey)
@@ -870,6 +873,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         synchronized(fallbackCandidates) { fallbackCandidates.firstOrNull { it.sourceKey == key } }
 
     fun switchSource(video: Movie.Video) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.source.switch", "start")
         stopPlaybackForSwitch()
         captureFallbackEpisode()
         detailRetryTarget = null
@@ -1077,6 +1081,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     private fun candidateKey(key: String, id: String): String = "$key|$id"
 
     fun onEpisodeClick(position: Int) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.episode.select", "start", "position=$position")
         val info = vodInfo ?: return
         val list = info.seriesMap?.get(info.playFlag) ?: return
         if (position < 0 || position >= list.size) return
@@ -1086,6 +1091,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun onFlagClick(flagName: String) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.line.select", "start", "flagPresent=${flagName.isNotBlank()}")
         val info = vodInfo ?: return
         if (info.playFlag == flagName) return
         val oldList = info.seriesMap?.get(info.playFlag)
@@ -1105,6 +1111,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun toggleReverse() {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.episode.reverse", "start")
         val info = vodInfo ?: return
         val list = info.seriesMap?.get(info.playFlag) ?: return
         if (list.size <= 1) return
@@ -1113,6 +1120,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun toggleCollect() {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.collect.toggle", "start")
         val info = vodInfo ?: return
         val key = sourceKey
         if (_collected.value) {
@@ -1178,10 +1186,12 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun switchQuality(position: Int) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.quality.select", "start", "position=$position")
         sendCommand(PlaybackCommand.SelectQuality(position))
     }
 
     fun onQualitySelectionAccepted(position: Int) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.quality.accept", "start", "position=$position")
         _qualitySelected.value = position
     }
 
@@ -1221,6 +1231,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun toggleVideoCollect(video: Movie.Video, toCollect: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "detail.collect", "start", "collect=$toCollect")
         viewModelScope.launch(Dispatchers.IO) {
             if (toCollect) {
                 AppGraph.collectRepository.insertVodCollect(video.sourceKey, toVodInfo(video))

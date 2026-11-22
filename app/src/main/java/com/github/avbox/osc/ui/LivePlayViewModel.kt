@@ -165,6 +165,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setFullscreen(full: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.fullscreen", "start", "enabled=$full")
         updateFrame { it.copy(fullScreen = full) }
     }
 
@@ -173,6 +174,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setLandscapeNow(landscape: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.orientation", "start", "landscape=$landscape")
         updateFrame { it.copy(landscapeNow = landscape) }
     }
 
@@ -181,6 +183,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun toggleOverlay(): Boolean {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.overlay.toggle", "start")
         var next = false
         updateOverlay {
             next = !it.visible
@@ -234,6 +237,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setPlayingChannel(item: LiveChannelItem?) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.channel.select", "start", "hasChannel=${item != null}")
         updateChannelList { it.copy(playingChannel = item) }
     }
 
@@ -242,6 +246,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun expandChannelGroup(index: Int) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.channel_group.expand", "start", "index=$index")
         updateChannelList { it.copy(expandedGroups = it.expandedGroups + index) }
     }
 
@@ -254,6 +259,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setChannelDrawerVisible(visible: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.channel_drawer", "start", "visible=$visible")
         updateChannelList { it.copy(channelDrawerVisible = visible) }
     }
 
@@ -397,6 +403,7 @@ internal class LivePlayViewModel : ViewModel() {
     private var liveConfigRequestId = 0
 
     fun onSettingClicked(groupIndex: Int, position: Int, host: Host) {
+        AppLog.operationEvent(AppLog.newOperationId(), "live.setting.click", "start", "group=$groupIndex position=$position")
         if (groupIndex in 0..2 && host.currentChannelItem() == null) {
             host.toast(str(R.string.live_please_select_channel))
             return

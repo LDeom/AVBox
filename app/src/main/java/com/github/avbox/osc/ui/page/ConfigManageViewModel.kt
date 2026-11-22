@@ -174,18 +174,21 @@ class ConfigManageViewModel(
     )
 
     private fun updateTmdbEnabled(enabled: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.tmdb.enabled", "start", "enabled=$enabled")
         KV.put(KVKeys.TMDB_ENABLE, enabled)
         tmdbState.value = tmdbState.value.copy(enabled = enabled)
         TmdbPoster.notifyConfigChanged()
     }
 
     private fun updateTmdbPosterStyle(style: TmdbPosterStyle) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.tmdb.poster_style", "start", "style=$style")
         KV.put(KVKeys.TMDB_POSTER_STYLE, style.ordinal)
         tmdbState.value = tmdbState.value.copy(posterStyle = style)
         TmdbPoster.notifyConfigChanged()
     }
 
     private fun updateTmdbApiKey(value: String) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.tmdb.api_key", "start", "valueProvided=${value.isNotBlank()}")
         KV.put(KVKeys.TMDB_API_KEY, value)
         tmdbState.value = tmdbState.value.copy(apiKey = value)
         TmdbPoster.notifyConfigChanged()
@@ -220,6 +223,7 @@ class ConfigManageViewModel(
     }
 
     private fun testTmdbApi() {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.tmdb.api_test", "start")
         if (!beginTmdbTest(TmdbTest.Api)) return
         tmdbState.value = tmdbState.value.copy(apiBaseError = false)
         val apiKey = tmdbState.value.apiKey.trim()
@@ -245,6 +249,7 @@ class ConfigManageViewModel(
     }
 
     private fun testTmdbImage() {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.tmdb.image_test", "start")
         if (!beginTmdbTest(TmdbTest.Image)) return
         tmdbState.value = tmdbState.value.copy(imageBaseError = false)
         val apiKey = tmdbState.value.apiKey.trim()
@@ -373,6 +378,7 @@ class ConfigManageViewModel(
     }
 
     fun requestSwitch(item: SubscribeSource, vod: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.switch_request", "start", "mode=${if (vod) "vod" else "live"}")
         if (item.url in _disabledUrls.value) {
             _pendingSwitch.value = PendingSwitch(item, vod)
         } else if (vod) {
@@ -383,6 +389,7 @@ class ConfigManageViewModel(
     }
 
     fun enableAndSwitch() {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.enable_switch", "start")
         val pending = _pendingSwitch.value ?: return
         _pendingSwitch.value = null
         BootGuard.enableSource(pending.item.url)
@@ -391,6 +398,7 @@ class ConfigManageViewModel(
     }
 
     fun followLiveNow() {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.follow_live", "start")
         applyLiveFollowVod()
         _liveActiveUrl.value = ""
         _liveFollow.value = true
@@ -398,6 +406,7 @@ class ConfigManageViewModel(
     }
 
     fun deleteSelected(mode: SubscribeMode) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.delete_selected", "start", "mode=$mode count=${_selected.value.size}")
         val vod = mode == SubscribeMode.Vod
         val items = if (vod) _vodItems.value else _liveItems.value
         val target = _selected.value.filterNot { isInUse(parseSubscribe(it).url, vod) }
@@ -434,6 +443,7 @@ class ConfigManageViewModel(
     }
 
     fun commitAdd(vod: Boolean, name: String, url: String) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.add", "start", "mode=${if (vod) "vod" else "live"} hasName=${name.isNotBlank()} hasUrl=${url.isNotBlank()}")
         if (normalizedSubscribe(name, url) == null) return
         val mode = if (vod) SubscribeMode.Vod else SubscribeMode.Live
         val newItems = saveSubscribe(mode, name, url)
@@ -445,6 +455,7 @@ class ConfigManageViewModel(
     }
 
     fun addLocalSource(name: String, url: String): Boolean {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.add_local", "start", "hasName=${name.isNotBlank()} hasUrl=${url.isNotBlank()}")
         val source = normalizedSubscribe(name, url) ?: return false
         val existed = loadSubscribes(SubscribeMode.Vod).any { parseSubscribe(it).url == source.url }
         _vodItems.value = saveSubscribe(SubscribeMode.Vod, source.name, source.url)
@@ -452,6 +463,7 @@ class ConfigManageViewModel(
     }
 
     fun commitEdit(vod: Boolean, target: SubscribeSource, name: String, url: String) {
+        AppLog.operationEvent(AppLog.newOperationId(), "config.source.edit", "start", "mode=${if (vod) "vod" else "live"} hasUrl=${url.isNotBlank()}")
         val source = normalizedSubscribe(name, url) ?: return
         val mode = if (vod) SubscribeMode.Vod else SubscribeMode.Live
         val newValue = source.name + SUBSCRIBE_SPLIT + source.url

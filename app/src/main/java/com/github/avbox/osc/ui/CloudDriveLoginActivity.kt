@@ -210,6 +210,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     }
 
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                        AppLog.operationEvent(AppLog.newOperationId(), "cloud.browser.navigation", "start", "provider=${provider.id} host=${runCatching { android.net.Uri.parse(url.orEmpty()).host.orEmpty() }.getOrDefault("")}")
                                         message = ""
                                         loading = true
                                         progress = 0
@@ -219,6 +220,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     }
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
+                                        AppLog.operationEvent(AppLog.newOperationId(), "cloud.browser.navigation", "finished", "provider=${provider.id} host=${runCatching { android.net.Uri.parse(url.orEmpty()).host.orEmpty() }.getOrDefault("")}")
                                         loading = false
                                         progress = 100
                                         val host = runCatching { android.net.Uri.parse(url).host.orEmpty() }.getOrDefault("")
@@ -232,6 +234,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     ) {
                                         if (request?.isForMainFrame == true) {
                                             loading = false
+                                            AppLog.operationEvent(AppLog.newOperationId(), "cloud.browser.navigation", "error", "provider=${provider.id} errorCode=${error?.errorCode ?: -1}")
                                             message = context.getString(
                                                 R.string.cloud_drive_login_page_error,
                                                 error?.errorCode ?: -1,
@@ -249,6 +252,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     ) {
                                         if (request?.isForMainFrame == true && (response?.statusCode ?: 0) >= 400) {
                                             loading = false
+                                            AppLog.operationEvent(AppLog.newOperationId(), "cloud.browser.navigation", "http_error", "provider=${provider.id} status=${response?.statusCode ?: -1}")
                                             message = context.getString(
                                                 R.string.cloud_drive_login_http_error,
                                                 response?.statusCode ?: -1,

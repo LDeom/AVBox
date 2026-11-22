@@ -151,6 +151,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun toggleVideoCollect(video: Movie.Video, toCollect: Boolean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.collect", "start", "collect=$toCollect")
         viewModelScope.launch(Dispatchers.IO) {
             if (toCollect) {
                 AppGraph.collectRepository.insertVodCollect(video.sourceKey, toVodInfo(video))
@@ -214,12 +215,14 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun reload() {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.reload", "start")
         AppLog.i("echo--sort-reload")
         SourceRuntimeState.clearRuntimeCache()
         loadHome()
     }
 
     fun switchSource(bean: SourceBean) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.source.switch", "start", "source=${bean.key}")
         AppLog.i("echo--sort-switch: key=${bean.key}")
         ApiConfig.get().setSourceBean(bean)
         _currentSource.value = bean
@@ -229,10 +232,12 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     fun isSubscribeDisabled(item: SubscribeSource): Boolean = BootGuard.isDisabledSource(item.url)
 
     fun switchSubscribe(item: SubscribeSource) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.subscribe.switch", "start", "hasUrl=${item.url.isNotBlank()}")
         AppBootstrap.switchVodSubscription(item.url)
     }
 
     fun refreshSubscribes() {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.subscribe.refresh", "start")
         val items = vodSubscribes()
         val active = KV.get(KVKeys.API_URL, "")
         _subscribeItems.value = items
@@ -242,6 +247,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun loadHome() {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.load", "start")
         _sources.value = ApiConfig.get().switchSourceBeanList()
         refreshSubscribes()
         val home = ApiConfig.get().homeSourceBean()
@@ -279,6 +285,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun retryPartition(partition: Partition) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.partition.retry", "start", "category=${partition.sort.id.orEmpty()} page=${partition.nextPage}")
         if (partition.state != PartitionState.Error) return
         listRetried.remove(partition.sort.id)
         _partitions.value = _partitions.value.map {
@@ -288,6 +295,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun retrySort() {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.sort.retry", "start")
         val key = loadingSourceKey ?: return
         AppLog.i("echo--sort-manual-retry: key=$key")
         _sortLoadFailed.value = false
@@ -300,6 +308,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun ensureLoaded(sortId: String) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.partition.ensure", "start", "category=$sortId")
         _activeSortId.value = sortId
         val current = _partitions.value.firstOrNull { it.sort.id == sortId } ?: return
         if (current.state != PartitionState.Idle) return
@@ -541,6 +550,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun loadMorePartition(partition: Partition) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.partition.load_more", "start", "category=${partition.sort.id.orEmpty()} page=${partition.nextPage}")
         if (partition.state != PartitionState.Ready || !partition.hasMore) return
         val loader = loaders[partition.sort.id] ?: return
         if (loader.busy) return
@@ -548,6 +558,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun applyFilter(partition: Partition, filterSelect: Map<String, String>) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.partition.filter", "start", "category=${partition.sort.id.orEmpty()} filterCount=${filterSelect.size}")
         partition.sort.filterSelect = HashMap(filterSelect)
         _partitions.value = _partitions.value.map {
             if (it.sort.id == partition.sort.id) {
@@ -560,10 +571,12 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     fun handleAction(video: Movie.Video) {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.video.action", "start")
         actionViewModel.action(video.sourceKey, video.action)
     }
 
     fun refreshPartitions() {
+        AppLog.operationEvent(AppLog.newOperationId(), "home.partition.refresh", "start")
         val vertical = HomeSettings.layout == HomeSettings.HomeLayout.Vertical
         val active = _activeSortId.value
         val targets = if (vertical) {
