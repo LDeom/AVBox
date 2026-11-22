@@ -34,7 +34,6 @@ class JsModuleContentTest {
     }
 
     @Test
-    @Test
     fun errorDetectionDoesNotDependOnDeviceLocale() {
         val previous = Locale.getDefault()
         try {
@@ -46,6 +45,7 @@ class JsModuleContentTest {
         }
     }
 
+    @Test
     fun acceptsValidJavaScriptAndJsonText() {
         assertFalse(JsModuleContent.isInvalid("export default { home: () => [] }"))
         assertFalse(JsModuleContent.isInvalid("""{"code":200,"data":[]}"""))
