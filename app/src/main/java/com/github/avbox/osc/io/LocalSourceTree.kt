@@ -136,6 +136,9 @@ object LocalSourceTree {
 
 }
 
+internal fun hasPersistedReadGrant(treeUri: String, persistedReadUris: Set<String>): Boolean =
+    treeUri in persistedReadUris
+
 internal fun relativeUnder(root: String, path: String): String? {
     if (!path.startsWith("$root/")) return null
     return path.substring(root.length + 1)
