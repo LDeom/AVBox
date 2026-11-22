@@ -152,7 +152,7 @@ class ConfigManageViewModel(
         }
         viewModelScope.launch {
             AppBootstrap.state.collect { boot ->
-                if (boot is AppBootstrap.Boot.Ready) refreshActiveSnapshot()
+                if (boot is AppBootstrap.Boot.Ready || boot is AppBootstrap.Boot.Error) refreshActiveSnapshot()
             }
         }
     }
