@@ -34,7 +34,6 @@ import java.util.Locale
 import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 
 class MediaSources(
@@ -143,10 +142,7 @@ class MediaSources(
     }
 
     fun createDataSourceFactory(headers: Map<String, String>?): DataSource.Factory {
-        val strictTls = headers?.entries?.any {
-            HEADER_STRICT_TLS.equals(it.key, ignoreCase = true) && it.value.equals("true", ignoreCase = true)
-        } == true
-        val normalized = toNetworkRequestHeaders(headers)
+        val normalized = toRequestHeaders(headers)
         var userAgent: String? = null
         val requestHeaders = HashMap<String, String>()
         for (entry in normalized.entries) {
@@ -156,7 +152,7 @@ class MediaSources(
                 requestHeaders[entry.key] = entry.value
             }
         }
-        val selectedClient = if (strictTls) STRICT_TLS_CLIENT else client ?: HttpClients.itvClient() ?: FallbackClient.INSTANCE
+        val selectedClient = client ?: HttpClients.itvClient() ?: FallbackClient.INSTANCE
         val httpFactory = OkHttpDataSource.Factory(selectedClient)
         httpFactory.setUserAgent(userAgent)
         httpFactory.setDefaultRequestProperties(requestHeaders)
@@ -193,20 +189,7 @@ class MediaSources(
 
         const val TYPE_ISO = 100
 
-        const val HEADER_STRICT_TLS = "X-AVBox-Strict-TLS"
-
         const val EXTRA_HEADERS = "avbox.extras.httpHeaders"
-
-        private val STRICT_TLS_CLIENT: OkHttpClient by lazy {
-            OkHttpClient.Builder()
-                .proxySelector(HttpClients.proxySelector())
-                .proxyAuthenticator(HttpClients.proxyAuthenticator())
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(20, TimeUnit.SECONDS)
-                .writeTimeout(20, TimeUnit.SECONDS)
-                .callTimeout(30, TimeUnit.SECONDS)
-                .build()
-        }
 
         private object FallbackClient {
             val INSTANCE: OkHttpClient = OkHttpClient.Builder().build()
@@ -267,7 +250,6 @@ class MediaSources(
                 val value = entry.value
                 if (key != null && value != null) {
                     if (HEADER_ISO.equals(key, ignoreCase = true)) continue
-                    if (HEADER_STRICT_TLS.equals(key, ignoreCase = true)) continue
                     sorted[key.trim { it <= ' ' }] = value.trim { it <= ' ' }
                 }
             }
@@ -284,12 +266,6 @@ class MediaSources(
         @JvmStatic
         fun toRequestHeaders(headers: Map<String, String>?): HashMap<String, String> =
             HttpHeaders.toRequestHeaders(headers)
-
-        @JvmStatic
-        fun toNetworkRequestHeaders(headers: Map<String, String>?): HashMap<String, String> =
-            toRequestHeaders(headers).apply {
-                keys.removeAll { HEADER_STRICT_TLS.equals(it, ignoreCase = true) }
-            }
 
         @JvmStatic
         fun inferContentType(fileName: String, headers: Map<String, String>?): Int {
