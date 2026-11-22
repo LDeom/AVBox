@@ -465,3 +465,12 @@
 - 新增 SourceListRequestGateTest。
 - 提交：`82392a0b898ebc94931bd369165cddc66aadb782`、`719b1aa7ea166b2bd42e79032f81b8bf199762ee`、`0db7657179c5ab6133ef563e8168b123dd68c6a1`、`0c71e0e188d9a70a16eb4a62fa1f265d63d78507`、`b2584da51d811b035e18e56d655fabf2f1371cb5`。
 - 尚未运行 Gradle/单测或真机验证。
+
+
+## 2026-11-22 第八阶段：首页、详情与分类第二轮
+- 修复首页同一订阅源刷新/重试时旧分类元数据响应可能覆盖新结果的问题：SourceViewModel.getSort 每次建立独立结果通道与请求代际，取消上一条请求链，只有当前代际可转发。
+- 每次元数据请求单独创建首页推荐列表 Loader，避免共享旧请求的结果通道。
+- HomeViewModel 清理时取消分类元数据、推荐元数据请求和看门狗。
+- 扩展 SourceListRequestGateTest，覆盖排序请求代际。
+- 提交：`c40a7837aa9fb8355a1f0c4a8237b1cc442fb422`、`4d7e211b58a31ed5db02972a65e29f8672740e43`、`8e4cabed92158fb4e39514bbda46347dca5d673d`。
+- 尚未运行 Gradle/单测或真机验证。
