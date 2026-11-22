@@ -90,4 +90,5 @@
     <string name="tab_following">追劇</string>
     <string name="tab_mine">我的</string>
     <string name="following_empty">暫無追劇</string>
+    <string name="settings_group_runtime_log">運行日誌</string><string name="settings_runtime_log_enabled">啟用運行日誌</string><string name="settings_runtime_log_enabled_subtitle">開啟後記錄應用診斷資訊，關閉後停止寫入日誌檔</string><string name="settings_runtime_log_export">匯出運行日誌</string><string name="settings_runtime_log_export_subtitle">儲存日誌檔，方便排查播放或設定問題</string><string name="toast_runtime_log_exported">運行日誌已匯出</string><string name="toast_runtime_log_export_failed">匯出運行日誌失敗</string>
 </resources>
