@@ -350,9 +350,9 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                             modifier = Modifier.fillMaxWidth().height(1.dp)
                                 .background(Color.White.copy(alpha = 0.14f)),
                         )
-                        ChannelListSection(
+                        LandscapeChannelListSection(
                             channelList = state.channelList,
-                            onToggleGroup = actions.list.onToggleGroup,
+                            onSelectGroup = actions.list.onSelectGroup,
                             onSelectChannel = actions.list.onSelectChannel,
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                         )
@@ -770,6 +770,125 @@ private fun ChannelListSection(
                         channel.channelIndex == channelList.playingChannelIndex,
                     onSelect = { onSelectChannel(group?.groupIndex ?: 0, row.channelPos) },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LandscapeChannelListSection(
+    channelList: LiveChannelListUi,
+    onSelectGroup: (Int) -> Unit,
+    onSelectChannel: (Int, Int) -> Unit,
+    modifier: Modifier,
+) {
+    val groups = channelList.rows.mapNotNull { row ->
+        if (row.channel == null) row.group else null
+    }
+    val selectedGroup = groups.firstOrNull { it.groupIndex == channelList.tappedGroupIndex }
+        ?: groups.firstOrNull()
+    val selectedGroupIndex = selectedGroup?.groupIndex ?: -1
+    val channels = channelList.rows.filter {
+        it.channel != null && it.group?.groupIndex == selectedGroupIndex
+    }
+    val listState = rememberLazyListState()
+    LaunchedEffect(channelList.scrollRequestId, selectedGroupIndex, channelList.playingChannelIndex) {
+        val target = channels.indexOfFirst {
+            it.group?.groupIndex == channelList.playingGroupIndex &&
+                it.channel?.channelIndex == channelList.playingChannelIndex
+        }
+        if (target >= 0) listState.animateScrollToItem(target)
+    }
+    Row(modifier = modifier) {
+        LazyColumn(
+            modifier = Modifier.weight(0.38f).fillMaxHeight(),
+            contentPadding = PaddingValues(bottom = 20.dp),
+        ) {
+            itemsIndexed(groups, key = { _, group -> "main_" + group.groupIndex }) { _, group ->
+                val selected = group.groupIndex == selectedGroupIndex
+                val locked = channelList.lockedGroups.contains(group.groupIndex)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (selected) Color.White.copy(alpha = 0.14f) else Color.Transparent,
+                            RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+                        )
+                        .clickable { onSelectGroup(group.groupIndex) }
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        OutlinedListText(
+                            text = group.groupName.orEmpty(),
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            text = (group.liveChannels?.size ?: 0).toString(),
+                            color = Color.White.copy(alpha = 0.62f),
+                            fontSize = 11.sp,
+                        )
+                    }
+                    if (locked) {
+                        Icon(
+                            imageVector = Icons.Filled.Lock,
+                            contentDescription = stringResource(R.string.live_need_password),
+                            tint = Color.White.copy(alpha = 0.82f),
+                            modifier = Modifier.size(15.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = if (selected) 1f else 0.48f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(1.dp)
+                .background(Color.White.copy(alpha = 0.16f)),
+        )
+        if (selectedGroup == null) {
+            Box(modifier = Modifier.weight(0.62f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(R.string.live_empty_channels),
+                    color = Color.White.copy(alpha = 0.72f),
+                    fontSize = 13.sp,
+                )
+            }
+        } else if (channelList.lockedGroups.contains(selectedGroupIndex)) {
+            Box(modifier = Modifier.weight(0.62f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(R.string.live_need_password),
+                    color = Color.White.copy(alpha = 0.78f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(0.62f).fillMaxHeight(),
+                contentPadding = PaddingValues(bottom = 20.dp),
+            ) {
+                itemsIndexed(channels, key = { _, row -> row.key }) { _, row ->
+                    val channel = row.channel ?: return@itemsIndexed
+                    ChannelRow(
+                        row = row,
+                        selected = selectedGroupIndex == channelList.playingGroupIndex &&
+                            channel.channelIndex == channelList.playingChannelIndex,
+                        onSelect = { onSelectChannel(selectedGroupIndex, row.channelPos) },
+                    )
+                }
             }
         }
     }
