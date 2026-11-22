@@ -334,3 +334,10 @@
 - 修复 BasePlayerView.release() 仅在 lastReportedPlayState 非 IDLE 时才移除并释放 activeRenderView 的问题。
 - 现在无论播放器状态如何，release() 都会移除并释放当前渲染视图、清空引用并关闭 keepScreenOn；进度保存、播放位置复位和状态派发仍保留原有 hadActiveState 条件。
 - 尚未运行 Gradle、单元测试或 SurfaceView/TextureView 真机验证。
+
+
+## 2026-11-22 第5阶段 Surface/Texture 释放顺序修复
+- 继续交叉审查 DetailActivity/LivePlayActivity 配置变化声明、直播方向策略、PlaybackEngine 挂摘及 SurfaceView/TextureView 输出生命周期。
+- 确认 BasePlayerView.release() 原先先销毁 ExoPlayer，再调用渲染宿主 detachVideoSurface；现调整为先移除并释放渲染宿主、解除视频输出，再释放 KernelPlayer/ExoPlayer，统一资源释放顺序。
+- 直播 Activity 已有 PID 与生命周期日志；正常旋转配置声明静态上应由 onConfigurationChanged 处理，但仍需通过真机日志区分 Activity 重建与进程重启。
+- 尚未运行 Gradle/设备测试；未构建 APK。
