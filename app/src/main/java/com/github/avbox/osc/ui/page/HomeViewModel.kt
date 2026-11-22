@@ -458,16 +458,15 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             loadSemaphore.withPermit {
                 if (generation != loadGeneration || loader.released || loader.sourceKey != loadingSourceKey) return@withPermit
                 val sortId = current.sort.id.orEmpty()
+                var requestId = 0L
                 val result = withTimeoutOrNull(20_000) {
                     suspendCancellableCoroutine<LoaderResult> { cont ->
-                        loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
+                        requestId = loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
                     }
                 }
-                if (result == null) {
-                    loader.release()
-                    if (loaders[sortId] === loader) loaders.remove(sortId)
+                if (result == null && loader.cancelRequest(requestId)) {
                     applyPartitionTimeout(sortId, page, generation, sourceKey)
-                } else if (!result.stale) {
+                } else if (result != null && !result.stale) {
                     applyPartitionResult(sortId, page, result.absXml)
                 }
             }
@@ -577,6 +576,11 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         @Volatile
         private var pending: ((LoaderResult) -> Unit)? = null
 
+        private var requestSequence = 0L
+
+        @Volatile
+        private var pendingRequestId = 0L
+
         @Volatile
         var busy: Boolean = false
             private set
@@ -592,26 +596,49 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         init {
             observeScope.launch {
                 svm.listResult.flow.collect { abs ->
-                    val current = pending
-                    pending = null
-                    busy = false
-                    current?.invoke(LoaderResult(stale = false, absXml = abs))
+                    deliverResult(abs)
                 }
             }
         }
 
-        fun request(page: Int, onDone: (LoaderResult) -> Unit) {
+        @Synchronized
+        private fun deliverResult(absXml: AbsXml?) {
+            val current = pending
+            pending = null
+            pendingRequestId = 0L
+            busy = false
+            current?.invoke(LoaderResult(stale = false, absXml = absXml))
+        }
+
+        @Synchronized
+        fun request(page: Int, onDone: (LoaderResult) -> Unit): Long {
             pending?.invoke(LoaderResult(stale = true, absXml = null))
+            requestSequence += 1
+            pendingRequestId = requestSequence
             pending = onDone
             busy = true
             svm.getList(sourceKey, sort, page)
+            return requestSequence
         }
 
+        @Synchronized
+        fun cancelRequest(requestId: Long): Boolean {
+            if (requestId == 0L || pendingRequestId != requestId || pending == null) return false
+            pending?.invoke(LoaderResult(stale = true, absXml = null))
+            pending = null
+            pendingRequestId = 0L
+            busy = false
+            svm.cancelList()
+            return true
+        }
+
+        @Synchronized
         fun release() {
             released = true
             svm.cancelList()
             pending?.invoke(LoaderResult(stale = true, absXml = null))
             pending = null
+            pendingRequestId = 0L
             busy = false
             observeScope.cancel()
         }
