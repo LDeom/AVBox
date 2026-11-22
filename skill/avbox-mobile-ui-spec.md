@@ -892,6 +892,6 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 ## 4.18 网盘 Cookie 设置（2026-11-22）
 - 设置页提供统一「云盘 Cookie」入口，按配置中实际存在的八家 provider 管理：夸克、UC、百度、迅雷、阿里、光鸭、天翼、123 云盘；每家独立填写、覆盖保存与清除，不提供短信登录、扫码登录、账号状态检查、文件浏览器或独立云盘播放页。
 - Cookie 使用 CloudCredentialVault：每个 provider 独立 Android Keystore AES-GCM 密钥与应用私有目录 AtomicFile；不进入 MMKV、普通配置 JSON、运行日志或日志导出。cloud_credentials/ 必须从云备份与设备迁移中排除。
-- CloudCookieInjector 按 TVBox provider API 标识/站点 key 识别来源，并仅在对应网盘服务域名范围内合并 Cookie；JS HTTP 请求通过 Global → Connect 注入，TVBox type-3 JAR 代理请求通过 ProxyEntry 注入。源请求显式提供的同名 Cookie 项由设置中保存的值覆盖，其余 Cookie 项保留。
+- CloudCookieInjector 仅对 HTTPS 且匹配网盘服务域名的请求合并 Cookie；JS HTTP 请求通过 Connect 注入，TVBox JAR 的 OkHttp 网络拦截器覆盖普通 API 请求，type-3 JAR 代理请求另由 ProxyEntry 按 provider 标识与域名双重校验。源请求显式提供的同名 Cookie 项由设置中保存的值覆盖，其余 Cookie 项保留。
 - 只对已识别的 provider 与匹配服务域的请求注入；普通点播/直播请求不得获得网盘 Cookie。JAR/JS 驱动是否实际使用 Cookie 仍取决于各驱动自身认证协议；使用 Token 或其他认证方式的驱动不能仅凭填写 Cookie 即视为已登录或已支持。
 - 不提供专用网盘播放、目录浏览、短信认证、公开分享或外链分发功能。若未来某驱动需要 Token，应先确认用户是否要扩展范围，再按其认证协议独立设计。
