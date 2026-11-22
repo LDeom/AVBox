@@ -360,7 +360,7 @@ class Global {
         try {
             val req = Req.objectFrom(JSUtils.toJsonObject(options).toString())
             requireSession(req)
-            val res = Connect.to(url, req, httpTag).execute()
+            val res = Connect.to(url, req, httpTag, siteKey).execute()
             return Connect.success(ctx, req, res)
         } catch (e: Exception) {
             return Connect.error(ctx)
