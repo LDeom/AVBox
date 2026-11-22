@@ -531,9 +531,10 @@ class Global {
     private fun streamCallback(ctx: QuickJSContext, reply: StreamReply, sessionId: Int?): Callback {
         return object : Callback {
             override fun onResponse(call: Call, response: Response) {
-                httpGate.finish()
                 synchronized(callbackLock) {
                     if (destroyed.get() || executor.isShutdown) {
+                        httpGate.clear()
+                        httpGate.finish()
                         response.close()
                         settleStream(reply, null, "executor shutdown")
                         return
@@ -555,8 +556,11 @@ class Global {
             }
 
             override fun onFailure(call: Call, e: IOException) {
-                httpGate.finish()
-                settleStream(reply, null, e.message.orEmpty())
+                synchronized(callbackLock) {
+                    if (destroyed.get()) httpGate.clear()
+                    httpGate.finish()
+                    settleStream(reply, null, e.message.orEmpty())
+                }
             }
         }
     }
@@ -699,15 +703,27 @@ class Global {
                 } catch (th: Throwable) {
                     message = th.message.orEmpty()
                 }
-                httpGate.finish()
-                if (executor.isShutdown) return
-                deliver(ctx, complete, req, result, message)
+                synchronized(callbackLock) {
+                    if (destroyed.get()) {
+                        httpGate.clear()
+                        httpGate.finish()
+                        return
+                    }
+                    httpGate.finish()
+                    deliver(ctx, complete, req, result, message)
+                }
             }
 
             override fun onFailure(call: Call, e: IOException) {
-                httpGate.finish()
-                if (executor.isShutdown) return
-                deliver(ctx, complete, req, null, e.message.orEmpty())
+                synchronized(callbackLock) {
+                    if (destroyed.get()) {
+                        httpGate.clear()
+                        httpGate.finish()
+                        return
+                    }
+                    httpGate.finish()
+                    deliver(ctx, complete, req, null, e.message.orEmpty())
+                }
             }
         }
     }
