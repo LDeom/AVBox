@@ -82,3 +82,9 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 普通Jar和img+Jar两种下载结果均改用FileUtils.writeSimple进行安全替换，不再先删除旧缓存再rename/copy。
 - 下载内容先完整读入并拒绝空文件；替换失败保留原缓存，临时文件由finally清理。
 - 尚未运行Gradle测试或真机验证；需要进一步验证取消时序和缓存并发。
+
+## 第九轮 Jar缓存提交与源切换epoch原子协调（2026-11-22）
+- LoadEpoch新增runIfCurrent，在同一同步锁下验证快照并执行缓存提交；next同步递增epoch，避免源切换与缓存替换交错。
+- SpiderLoader只允许当前epoch提交Jar缓存；过期下载在写入前被拒绝。
+- 新增当前epoch执行、过期epoch拒绝两项单元测试。
+- 已完成源码与测试用例编写，尚未运行Gradle测试或真机验证。
