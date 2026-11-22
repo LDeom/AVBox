@@ -669,4 +669,5 @@
     <string name="cloud_drive_folder_depth">目录层级：%1$d</string>
     <string name="cloud_drive_parent">上级</string>
     <string name="cloud_drive_empty">此目录暂无文件</string>
+    <string name="cloud_drive_cast_disabled">个人网盘文件仅支持 AVBox 应用内播放</string>
 </resources>
