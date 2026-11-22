@@ -29,6 +29,8 @@
     <string name="live_epg_of">节目单 · %1$s</string>
     <string name="live_epg_empty">暂无节目单</string>
     <string name="live_settings">直播设置</string>
+    <string name="live_main_categories">主分类</string>
+    <string name="live_now_playing">正在播放</string>
     <string name="live_channel_list">频道列表</string>
     <string name="live_need_password">需密码</string>
     <string name="live_replaying">回看中</string>
