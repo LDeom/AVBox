@@ -50,4 +50,17 @@ class SearchHitsTest {
     fun sources_handlesEmptyInput() {
         assertTrue(SearchHits.sources(emptyList()).isEmpty())
     }
+
+    @Test
+    fun sources_keepsSameTitleFromDifferentSources() {
+        val first = result("source-a", 1, 1)
+        val second = result("source-b", 2, 1)
+        first.videos.first().name = "同一部影片"
+        second.videos.first().name = "同一部影片"
+
+        val hits = SearchHits.sources(listOf(first, second))
+
+        assertEquals(2, hits.size)
+        assertEquals(listOf("source-a", "source-b"), hits.map { it.sourceKey })
+    }
 }
