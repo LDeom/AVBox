@@ -14,7 +14,7 @@
 - 建立 AES-GCM 加密信封与 Android Keystore 凭据保险库。
 - 凭据密文通过应用私有目录的 AtomicFile 同步写入；Keystore 密钥独立保存在 Android Keystore。
 - 凭据不写日志；provider ID 做格式约束；认证数据读取失败时抛出错误，不静默生成新密钥覆盖旧凭据。
-- 新增纯 JVM 加密封装测试。凭据文件使用 AtomicFile，写入后执行 fd.sync()，并在失败时回滚临时文件。
+- 新增纯 JVM 加密封装测试，覆盖加密往返、随机 IV 与密文篡改认证失败。凭据文件使用 AtomicFile，写入后执行 fd.sync()，并在失败时回滚临时文件。
 
 ## 风险与边界
 - Android Keystore 的设备/ROM 兼容、密钥失效与应用数据备份恢复仍需真机验证。
