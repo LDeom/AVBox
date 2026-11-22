@@ -119,26 +119,18 @@ class CloudDriveLoginActivity : BaseActivity() {
                     ) {
                         TextButton(onClick = {
                             loginWebView?.let { view ->
-                                val currentScale = view.scale.takeIf { it > 0f } ?: 1f
-                                val target = (currentScale * 0.9f).coerceIn(0.5f, 3f)
-                                view.zoomBy(target / currentScale)
-                                zoomPercent = (target * 100).roundToInt()
+                                view.adjustZoom(0.9f)
                             }
                         }) { Text("−") }
                         Text("${zoomPercent}% ", style = MaterialTheme.typography.labelMedium)
                         TextButton(onClick = {
                             loginWebView?.let { view ->
-                                val currentScale = view.scale.takeIf { it > 0f } ?: 1f
-                                val target = (currentScale * 1.1f).coerceIn(0.5f, 3f)
-                                view.zoomBy(target / currentScale)
-                                zoomPercent = (target * 100).roundToInt()
+                                view.adjustZoom(1.1f)
                             }
                         }) { Text("+") }
                         TextButton(onClick = {
                             loginWebView?.let { view ->
-                                val scale = view.scale
-                                if (scale > 0f) view.zoomBy(1f / scale)
-                                zoomPercent = 100
+                                view.setZoomScale(1f)
                             }
                         }) { Text("重置") }
                         TextButton(onClick = { loginWebView?.goBack() }, enabled = loginWebView?.canGoBack() == true) { Text("后退") }
@@ -156,6 +148,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         factory = { viewContext ->
                             DesktopPanWebView(viewContext).apply {
+                                onZoomChanged = { zoomPercent = it }
                                 settings.apply {
                                     javaScriptEnabled = true
                                     domStorageEnabled = true
@@ -330,9 +323,26 @@ class CloudDriveLoginActivity : BaseActivity() {
 }
 
 private class DesktopPanWebView(context: Context) : WebView(context) {
+    var onZoomChanged: ((Int) -> Unit)? = null
     private var mouseDragging = false
     private var lastMouseX = 0f
     private var lastMouseY = 0f
+
+    fun adjustZoom(factor: Float) {
+        val currentScale = scale.takeIf { it > 0f } ?: 1f
+        val targetScale = (currentScale * factor).coerceIn(0.5f, 3f)
+        if (targetScale != currentScale) {
+            zoomBy(targetScale / currentScale)
+            onZoomChanged?.invoke((targetScale * 100).roundToInt())
+        }
+    }
+
+    fun setZoomScale(targetScale: Float) {
+        val currentScale = scale.takeIf { it > 0f } ?: 1f
+        val safeTarget = targetScale.coerceIn(0.5f, 3f)
+        if (safeTarget != currentScale) zoomBy(safeTarget / currentScale)
+        onZoomChanged?.invoke((safeTarget * 100).roundToInt())
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
@@ -374,7 +384,7 @@ private class DesktopPanWebView(context: Context) : WebView(context) {
             val horizontal = event.getAxisValue(MotionEvent.AXIS_HSCROLL)
             if (event.metaState and android.view.KeyEvent.META_CTRL_ON != 0 && vertical != 0f) {
                 val factor = if (vertical > 0f) 1.1f else 0.9f
-                zoomBy(factor)
+                adjustZoom(factor)
             } else if (vertical != 0f || horizontal != 0f) {
                 scrollBy((-horizontal * 64f).roundToInt(), (-vertical * 64f).roundToInt())
             } else {
