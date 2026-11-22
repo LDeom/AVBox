@@ -10,4 +10,6 @@ object SearchSettings {
     }
 
     internal fun normalize(text: String?): String = StringUtils.normalizeTitle(text)
+
+    internal fun normalizeSearchThreads(value: Int): Int = value.coerceIn(1, 64)
 }
