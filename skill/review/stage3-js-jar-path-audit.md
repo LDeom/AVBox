@@ -294,3 +294,9 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 现仅将 Init 类本身不存在视为可选扩展并兼容跳过；若类存在但方法缺失、方法签名不兼容、依赖类缺失或 init 执行抛错，则异常向上传播到 load()，阻止该 Jar 注册为可用加载器。
 - 成功执行 Init 时记录明确诊断日志。
 - 该策略保留无 Init 类的旧 Jar 兼容性，同时避免吞掉真实初始化失败。仍需以包含/不包含 Init 的真实 Jar 验证行为；未运行 Gradle、DexClassLoader 或设备测试。
+
+
+## 第三十三轮 已配置 JS API Jar 加载失败阻断（2026-11-22）
+- 复核 JsLoader.getSpider() 发现：配置明确提供 jar URL 时，loadJarInternal() 若下载、MD5 校验或自定义 API 类识别失败，原逻辑仍继续创建 JsSpider，传入 null dex，造成 Spider 初始化成功但 JS API 扩展缺失。
+- 现当配置了非空 Jar 且未取得有效 Class 时直接返回 SpiderNull，并记录站点级诊断；未配置 Jar 的旧源行为保持不变。
+- 该处理避免把显式依赖加载失败伪装成正常 Spider。仍需用有效/无效 JS API Jar 的真实配置回归，未运行 Gradle、DexClassLoader 或真机测试。
