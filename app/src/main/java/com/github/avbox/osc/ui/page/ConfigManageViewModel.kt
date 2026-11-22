@@ -462,8 +462,8 @@ class ConfigManageViewModel(
         closeEdit()
         val item = parseSubscribe(newValue)
         if (vod) {
-            if (target.url == _activeUrl.value && url != _activeUrl.value) switchToVod(item)
-        } else if (!_liveFollow.value && target.url == _liveActiveUrl.value && url != _liveActiveUrl.value) {
+            if (target.url == _activeUrl.value && source.url != _activeUrl.value) switchToVod(item)
+        } else if (!_liveFollow.value && target.url == _liveActiveUrl.value && source.url != _liveActiveUrl.value) {
             switchToLive(item)
         }
     }
@@ -491,7 +491,7 @@ class ConfigManageViewModel(
         val source = requireNotNull(normalizedSubscribe(name, url)) { "subscribe url missing" }
         val value = source.name + SUBSCRIBE_SPLIT + source.url
         val list = ArrayList(loadSubscribes(mode))
-        val existIndex = list.indexOfFirst { parseSubscribe(it).url == url }
+        val existIndex = list.indexOfFirst { parseSubscribe(it).url == source.url }
         if (existIndex >= 0) list[existIndex] = value else list.add(value)
         KV.put(subscribeKeyOf(mode), list)
         return list
@@ -504,7 +504,7 @@ class ConfigManageViewModel(
         val index = list.indexOfFirst { parseSubscribe(it).url == original.url }
         if (index < 0) return list
         list[index] = value
-        val dupIndex = list.indexOfFirst { it != value && parseSubscribe(it).url == url }
+        val dupIndex = list.indexOfFirst { it != value && parseSubscribe(it).url == source.url }
         if (dupIndex >= 0) list.removeAt(dupIndex)
         KV.put(subscribeKeyOf(mode), list)
         return list
