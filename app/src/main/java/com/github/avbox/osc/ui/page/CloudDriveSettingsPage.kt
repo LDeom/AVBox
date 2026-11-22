@@ -1,6 +1,5 @@
 package com.github.avbox.osc.ui.page
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -57,11 +57,11 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     val folderStack = remember { mutableStateListOf<String>() }
     val currentParent = folderStack.lastOrNull().orEmpty()
 
-    fun loadFiles() {
+    fun loadFiles(parentId: String = currentParent) {
         scope.launch {
             busy = true
             val result = runCatching {
-                withContext(Dispatchers.IO) { GuangYaPanClient.listFiles(currentParent) }
+                withContext(Dispatchers.IO) { GuangYaPanClient.listFiles(parentId) }
             }
             files.clear()
             result.onSuccess {
@@ -252,7 +252,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     enabled = !busy && folderStack.isNotEmpty(),
                                     onClick = {
                                         if (folderStack.isNotEmpty()) folderStack.removeAt(folderStack.lastIndex)
-                                        loadFiles()
+                                        loadFiles(folderStack.lastOrNull().orEmpty())
                                     },
                                 ) { Text(stringResource(R.string.cloud_drive_parent)) }
                                 TextButton(enabled = !busy, onClick = { loadFiles() }) {
@@ -268,7 +268,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                         .fillMaxWidth()
                                         .clickable(enabled = file.isFolder && !busy) {
                                             folderStack.add(file.fileId)
-                                            loadFiles()
+                                            loadFiles(file.fileId)
                                         }
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
