@@ -188,7 +188,7 @@ class SpiderLoader {
                     output.flush()
                     closeQuietly(output)
                     outputStream = null
-                    result = replaceCache(temp, cache)
+                    result = replaceCache(temp, cache, epoch)
                 }
             } catch (th: Throwable) {
                 error = th.message
