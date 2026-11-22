@@ -26,14 +26,18 @@ class JsLoader {
 
     private val clearGeneration: AtomicLong = AtomicLong(0)
     private val creationLock: Any = Any()
+    private val lifecycleLock: Any = Any()
     private val destroyExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "js-loader-destroy") }
 
     fun clear() {
-        clearGeneration.incrementAndGet()
-        val stale = ArrayList(spiders.values)
-        spiders.clear()
-        classes.clear()
-        recentKey = ""
+        val stale = synchronized(lifecycleLock) {
+            clearGeneration.incrementAndGet()
+            val current = ArrayList(spiders.values)
+            spiders.clear()
+            classes.clear()
+            recentKey = ""
+            current
+        }
         for (spider in stale) {
             try {
                 spider.cancelByTag()
@@ -44,7 +48,8 @@ class JsLoader {
         }
     }
 
-    private fun loadClassLoader(jar: String, key: String): Boolean {
+    private fun loadClassLoader(jar: String, key: String, generation: Long): Boolean {
+        if (generation != clearGeneration.get()) return false
         var success = false
         var classInit: Class<*>? = null
         try {
@@ -82,7 +87,10 @@ class JsLoader {
             } while (count < 5)
 
             if (success) {
-                classes[key] = requireNotNull(classInit) { "class init is null" }
+                synchronized(lifecycleLock) {
+                    if (generation != clearGeneration.get()) return false
+                    classes[key] = requireNotNull(classInit) { "class init is null" }
+                }
             }
         } catch (th: Throwable) {
             AppLog.e("JsLoader", th)
@@ -90,7 +98,8 @@ class JsLoader {
         return success
     }
 
-    private fun loadJarInternal(jar: String, md5: String, key: String): Class<*>? {
+    private fun loadJarInternal(jar: String, md5: String, key: String, generation: Long): Class<*>? {
+        if (generation != clearGeneration.get()) return null
         if (classes.containsKey(key)) {
             Log.i("JSLoader", "echo-loadJarInternal cached")
             return classes[key]
@@ -104,12 +113,12 @@ class JsLoader {
         }
         if (!md5.isEmpty()) {
             if (cache.exists() && MD5.fileMd5(cache).equals(md5, ignoreCase = true)) {
-                loadClassLoader(cache.absolutePath, key)
+                loadClassLoader(cache.absolutePath, key, generation)
                 return classes[key]
             }
         } else {
             if (cache.exists() && !FileUtils.isWeekAgo(cache)) {
-                if (loadClassLoader(cache.absolutePath, key)) {
+                if (loadClassLoader(cache.absolutePath, key, generation)) {
                     return classes[key]
                 }
             }
@@ -145,7 +154,7 @@ class JsLoader {
                 throw IllegalStateException("Cannot safely replace JS API Jar cache")
             }
             temp.delete()
-            loadClassLoader(cache.absolutePath, key)
+            loadClassLoader(cache.absolutePath, key, generation)
             return classes[key]
         } catch (e: Throwable) {
             AppLog.e("JsLoader", e)
@@ -174,7 +183,7 @@ class JsLoader {
                 val jarUrl = urls[0]
                 val jarKey = requireNotNull(MD5.string2MD5(jarUrl)) { "jar md5 is null" }
                 val jarMd5 = if (urls.size > 1) urls[1].trim { it <= ' ' } else ""
-                classLoader = loadJarInternal(jarUrl, jarMd5, jarKey)
+                classLoader = loadJarInternal(jarUrl, jarMd5, jarKey, generation)
             }
             var sp: Spider? = null
             try {
@@ -183,10 +192,15 @@ class JsLoader {
                 sp = created
                 created.siteKey = key
                 created.init(AppContextHolder.context(), ext)
-                if (generation == clearGeneration.get()) {
-                    spiders[key] = created
-                    return created
+                val registered = synchronized(lifecycleLock) {
+                    if (generation != clearGeneration.get()) {
+                        false
+                    } else {
+                        spiders[key] = created
+                        true
+                    }
                 }
+                if (registered) return created
                 destroyLater(created)
                 return SpiderNull()
             } catch (th: Throwable) {
