@@ -2,6 +2,7 @@ package com.github.catvod.net
 
 import androidx.collection.ArrayMap
 
+import com.github.avbox.osc.net.CloudCookieNetworkInterceptor
 import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.util.SSL.SSLSocketFactoryCompat
 
@@ -58,8 +59,8 @@ class OkHttp {
             synchronized(OkHttp::class.java) {
                 client?.let { return it }
                 val base = baseClientProvider?.invoke()
-                if (base != null) return base.newBuilder().dns(dns()).build().also { client = it }
-                val builder = OkHttpClient.Builder().dns(dns()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+                if (base != null) return base.newBuilder().dns(dns()).addNetworkInterceptor(CloudCookieNetworkInterceptor).build().also { client = it }
+                val builder = OkHttpClient.Builder().dns(dns()).addNetworkInterceptor(CloudCookieNetworkInterceptor).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                 proxySelectorProvider?.invoke()?.let { builder.proxySelector(it) }
                 proxyAuthenticatorProvider?.invoke()?.let { builder.proxyAuthenticator(it) }
                 setOkHttpSsl(builder)
@@ -85,7 +86,7 @@ class OkHttp {
         @JvmStatic
         fun noRedirect(timeout: Long): OkHttpClient {
             val base = noRedirectClientProvider?.invoke() ?: client()
-            return base.newBuilder().dns(dns()).connectTimeout(timeout, TimeUnit.MILLISECONDS).readTimeout(timeout, TimeUnit.MILLISECONDS).writeTimeout(timeout, TimeUnit.MILLISECONDS).followRedirects(false).followSslRedirects(false).build()
+            return base.newBuilder().dns(dns()).addNetworkInterceptor(CloudCookieNetworkInterceptor).connectTimeout(timeout, TimeUnit.MILLISECONDS).readTimeout(timeout, TimeUnit.MILLISECONDS).writeTimeout(timeout, TimeUnit.MILLISECONDS).followRedirects(false).followSslRedirects(false).build()
         }
 
         @JvmStatic
