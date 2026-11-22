@@ -13,7 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicLong
 import org.json.JSONObject
+
+internal fun isCurrentSourceListRequest(requestId: Long, activeRequestId: Long): Boolean =
+    requestId == activeRequestId
 
 class SourceViewModel : ViewModel() {
 
@@ -41,13 +45,14 @@ class SourceViewModel : ViewModel() {
     private val gson = Gson()
     private val pushDetailResolver = PushDetailResolver(gson, detailResult)
     private val resultParser = SourceResultParser(gson, searchResult, detailResult, pushDetailResolver)
-    private val listLoader = ListLoader(gson, SourceRuntimeState.extendCache, listResult, resultParser)
     private val sortLoader = SortLoader(gson, SourceRuntimeState.extendCache, SourceRuntimeState.sortCache, sortResult, listLoader, resultParser)
     private val detailLoader = DetailLoader(gson, SourceRuntimeState.extendCache, detailResult, resultParser)
     private val searchLoader = SearchLoader(gson, SourceRuntimeState.extendCache, searchResult, resultParser)
     private val playLoader = PlayLoader(gson, SourceRuntimeState.extendCache, playResult, preloadResult)
 
     private val rootJob = SupervisorJob()
+    private val listRequestGeneration = AtomicLong(0)
+    private var listChain = SupervisorJob(rootJob)
 
     private val requestScope: CoroutineScope by lazy { CoroutineScope(rootJob + Dispatchers.Main.immediate) }
 
@@ -65,8 +70,35 @@ class SourceViewModel : ViewModel() {
         requestScope.launch { sortLoader.getSort(sourceKey, withRec) }
     }
 
+    @Synchronized
     fun getList(sourceKey: String?, sortData: MovieSort.SortData?, page: Int) {
-        requestScope.launch { listLoader.getList(sourceKey, sortData, page) }
+        val requestId = listRequestGeneration.incrementAndGet()
+        listChain.cancel()
+        val chain = SupervisorJob(rootJob)
+        listChain = chain
+        requestScope.launch(chain) {
+            val requestResult = SourceChannel<AbsXml?>()
+            val loader = ListLoader(gson, SourceRuntimeState.extendCache, requestResult, resultParser)
+            val forwardJob = launch {
+                requestResult.flow.collect { result ->
+                    if (isCurrentSourceListRequest(requestId, listRequestGeneration.get())) {
+                        listResult.postValue(result)
+                    }
+                }
+            }
+            try {
+                loader.getList(sourceKey, sortData, page)
+            } finally {
+                forwardJob.cancel()
+            }
+        }
+    }
+
+    @Synchronized
+    fun cancelList() {
+        listRequestGeneration.incrementAndGet()
+        listChain.cancel()
+        listChain = SupervisorJob(rootJob)
     }
 
     fun getDetail(sourceKey: String?, urlid: String) {
@@ -138,6 +170,7 @@ class SourceViewModel : ViewModel() {
     }
 
     override fun onCleared() {
+        rootJob.cancel()
         super.onCleared()
     }
 }
