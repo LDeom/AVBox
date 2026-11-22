@@ -110,8 +110,8 @@ class CloudDriveLoginActivity : BaseActivity() {
                             val manager = CookieManager.getInstance()
                             manager.flush()
                             val cookieText = provider.cookieHosts.mapNotNull { host ->
-                                manager.getCookie("https://$host/").orEmpty().takeIf { it.isNotBlank() }?.let { "$host\\n$it" }
-                            }.joinToString("\\n\\n")
+                                manager.getCookie("https://$host/").orEmpty().takeIf { it.isNotBlank() }?.let { "$host\n$it" }
+                            }.joinToString("\n\n")
                             if (cookieText.isBlank()) {
                                 message = context.getString(R.string.cloud_drive_login_cookie_missing)
                             } else {
