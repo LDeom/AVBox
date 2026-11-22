@@ -56,16 +56,22 @@ private data class CaptchaData(
 
 private data class VerificationData(
     @SerializedName("verification_id") val verificationId: String = "",
+    val error: String = "",
+    @SerializedName("error_description") val errorDescription: String = "",
 )
 
 private data class VerifyData(
     @SerializedName("verification_token") val verificationToken: String = "",
+    val error: String = "",
+    @SerializedName("error_description") val errorDescription: String = "",
 )
 
 private data class TokenData(
     @SerializedName("access_token") val accessToken: String = "",
     @SerializedName("refresh_token") val refreshToken: String = "",
     @SerializedName("expires_in") val expiresIn: Long = 0,
+    val error: String = "",
+    @SerializedName("error_description") val errorDescription: String = "",
 )
 
 private data class UserData(val sub: String = "")
@@ -139,6 +145,7 @@ object GuangYaPanClient {
             deviceId,
             captchaToken,
         )
+        if (verification.error.isNotBlank()) throw IOException(verification.errorDescription.ifBlank { verification.error })
         if (verification.verificationId.isBlank()) throw IOException("光鸭未返回短信验证会话")
         savePending(phone, deviceId, verification.verificationId, captchaToken)
         return "验证码已发送，请在有效期内完成登录"
@@ -159,6 +166,7 @@ object GuangYaPanClient {
             ),
             pending.deviceId,
         )
+        if (verified.error.isNotBlank()) throw IOException(verified.errorDescription.ifBlank { verified.error })
         if (verified.verificationToken.isBlank()) throw IOException("短信验证码校验失败")
         val token = postAccount<TokenData>(
             "/v1/auth/signin",
@@ -170,6 +178,7 @@ object GuangYaPanClient {
             ),
             pending.deviceId,
         )
+        if (token.error.isNotBlank()) throw IOException(token.errorDescription.ifBlank { token.error })
         if (token.accessToken.isBlank() || token.refreshToken.isBlank()) {
             throw IOException("光鸭登录成功但未返回完整令牌")
         }
@@ -293,6 +302,7 @@ object GuangYaPanClient {
             ),
             current.deviceId,
         )
+        if (refreshed.error.isNotBlank()) throw IOException(refreshed.errorDescription.ifBlank { refreshed.error })
         if (refreshed.accessToken.isBlank()) throw IOException("光鸭令牌刷新失败")
         CloudCredentialVault.write(
             CREDENTIAL_ID,
