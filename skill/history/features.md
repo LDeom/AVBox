@@ -196,3 +196,10 @@
 - 未运行 Gradle/设备验证。
 
 - 补全 stream HTTP 成功回调的 HttpGate.finish()，避免 in-flight 计数不释放导致后续请求队列停滞。
+
+## 2026-11-22 第3阶段 HTTP 回调引用与队列关闭修复
+- _http complete JSFunction 由 HttpReply 持有并在完成/失败/销毁时一次性释放。
+- Spider 销毁时取消专属 HTTP 请求标签；迟到回调不会访问已销毁 Context。
+- StreamReply hold 部分失败回滚，release 幂等。
+- HttpGate 执行器关闭时逐项失败待处理请求，不再静默丢弃；新增关闭状态测试。
+- 未运行 Gradle/设备验证。
