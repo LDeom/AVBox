@@ -122,3 +122,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - TimerTask 从待执行集合移除并提交至 JS 单线程 Executor 的过程与 destroy 同步，保证已提交回调排在 JsSpider 后续 Context 销毁任务之前；销毁后回调不会再执行 JS。
 - 处理 delay 缺失、负数、Timer.schedule 异常及 Executor 拒绝提交时的引用释放。
 - 未运行 Gradle、QuickJS native 测试或设备验证。
+
+## 第十五轮 Async 结果幂等与 HTTP/QuickJS 销毁竞态（2026-11-22）
+- Async.Result 原先允许多次 complete/completeExceptionally 覆盖结果；Promise then/catch 或异常竞争时可能迟到结果覆盖先完成结果。现在以 AtomicBoolean 保证 first-completion-wins，结果字段 volatile，新增成功/失败/null 三类单测。
+- HttpGate.clear() 原先直接清空待处理请求，不调用 Request.fail；_stream 请求的 StreamReply 已 hold resolve/reject，导致回调引用不能释放。现在 clear 委托 cancelPending，逐项通知取消。
+- 新增 HttpGate.clear 的待处理回调取消测试。
+- Global 的异步 HTTP/stream 回调现在通过 callbackLock 与 destroy 串行化：已提交回调排在 JsSpider Context 销毁任务之前；销毁后不再提交/执行QuickJS回调；stream response 在销毁竞态中关闭并释放回调引用。
+- _http/_stream 的请求入队与 destroy 同步，防止队列清理后又提交新请求。
+- 未运行 Gradle、QuickJS native 测试或设备验证。
