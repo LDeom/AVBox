@@ -258,3 +258,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 主 Jar load 的 recent 更新也绑定加载代际；setRecentJarKey 的 recent/loader 快照在生命周期锁内取得。
 - Jar Spider 初始化监视器改为 try/finally，初始化异常时也会结束监视，避免监视状态残留。
 - 上述均为静态并发审查及代码修复；尚无并发单元测试覆盖真实 DexClassLoader/Jar加载清理竞态，未运行 Gradle/native/真机测试。
+
+
+## 第二十九轮 Jar Spider 缓存注册原子性补充（2026-11-22）
+- 继续追踪发现 getSpider() 初始化 Jar Spider 后，generation 检查与 spiders[spKey] 写入原先分成两个步骤；clear() 若恰好发生在两者之间，旧 Spider 仍可能在清理后重新进入缓存。
+- 现将 generation 校验与 Spider 缓存注册放入同一个 lifecycleLock 临界区；若注册时已跨代际，则通过 SpiderReaper.retire 回收新建实例并返回 SpiderNull。
+- 二次缓存检查也在 lifecycleLock 下同时验证 generation；空 live Jar 输入不再创建无意义 key 或登记 live 状态。
+- 该修复针对静态可确认的竞态；尚无可运行的 JarLoader 并发单元测试，仍需真实 Android/DexClassLoader 压力测试。
