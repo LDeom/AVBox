@@ -448,3 +448,5 @@
 - 新增 LiveConfigRequestGateTest，覆盖有效请求、旧 generation、URL 改变。
 - 提交：`9baa708b13c4cc9700012d152e903b41003e2159`、`b074ccb1c39ba9bf976198c64b7173d6b7bb65a2`、`d0f6271994091c6d3210b9d2570bda9b2e036bc5`、`37469f358c25e0ae4e5bf7073e70f9fbcbd77e36`、`a455d0327c28aea2b462f1c1c8dd59ac9f69a111`。
 - 尚未运行 Gradle/单测或真机验证。
+
+- 追加网络任务入队保护：旧直播请求即使在尚未创建网络 Call 时也会于实际请求前再次检查 generation/URL，不再因取消时机错过而占用网络执行队列。提交：`7418d4232bf3a54b7f0d3e012f4780c34fd85778`。
