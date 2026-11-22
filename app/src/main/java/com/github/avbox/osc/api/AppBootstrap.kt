@@ -105,15 +105,35 @@ object AppBootstrap {
 
     fun switchVodSubscription(url: String): Boolean {
         val followLive = ApiConfig.isLiveFollowVod()
+        val snapshot = ConfigRepository.snapshotVodSwitch()
         if (ConfigRepository.switchVodSource(url)) {
             ApiConfig.get().invalidateLiveConfig()
             return followLive
         }
-        onApiUrlChanged()
+        val generation = bootGeneration.next()
+        ApiConfig.get().cancelPendingLoads()
+        _state.value = Boot.Loading
+        AppLog.debugI("echo-switch: request")
+        scope.launch {
+            ApiConfig.get().invalidateVodConfig()
+            SearchSourcesState.refresh()
+            subscriptionCidFlow.value = CurrentSubscription.cid()
+            startInit(
+                forceFresh = true,
+                offline = false,
+                generation = generation,
+                rollbackSnapshot = snapshot,
+            )
+        }
         return followLive
     }
 
-    private fun startInit(forceFresh: Boolean, offline: Boolean, generation: Long = bootGeneration.next()) {
+    private fun startInit(
+        forceFresh: Boolean,
+        offline: Boolean,
+        generation: Long = bootGeneration.next(),
+        rollbackSnapshot: ConfigRepository.VodSwitchSnapshot? = null,
+    ) {
         scope.launch {
             initMutex.withLock {
                 if (!offline && !bootGeneration.isLatest(generation)) {
@@ -129,7 +149,11 @@ object AppBootstrap {
                             jarInitOk = true
                         } else {
                             if (bootGeneration.isLatest(generation)) {
-                                _state.value = Boot.Error(err)
+                                if (rollbackSnapshot != null) {
+                                    rollbackVodSwitch(rollbackSnapshot, generation, err)
+                                } else {
+                                    _state.value = Boot.Error(err)
+                                }
                             }
                             return@withLock
                         }
@@ -155,6 +179,32 @@ object AppBootstrap {
                 }
             }
         }
+    }
+
+    private suspend fun rollbackVodSwitch(
+        snapshot: ConfigRepository.VodSwitchSnapshot,
+        generation: Long,
+        switchError: String,
+    ) {
+        ConfigRepository.restoreVodSwitch(snapshot)
+        ApiConfig.get().invalidateVodConfig()
+        subscriptionCidFlow.value = CurrentSubscription.cid()
+        val rollbackError = awaitLoadConfig(forceFresh = false)
+        if (rollbackError != null || !bootGeneration.isLatest(generation)) {
+            if (bootGeneration.isLatest(generation)) {
+                _state.value = Boot.Error(rollbackError ?: switchError)
+            }
+            return
+        }
+        if (!ApiConfig.get().getSpider().isNullOrEmpty()) {
+            val jarError = awaitLoadJar()
+            if (!jarError.isNullOrEmpty()) toast(jarError)
+        }
+        if (!bootGeneration.isLatest(generation)) return
+        ApiConfig.get().warmSearchSpiders()
+        SearchSourcesState.refresh()
+        _state.value = Boot.Ready(generation)
+        AppLog.debugI("echo-switch: rollback restored")
     }
 
     private const val CONFIG_CACHE_TTL_MS = 12 * 60 * 60 * 1000L
