@@ -351,52 +351,83 @@ class JarLoader {
     }
 
     private fun download(url: String, file: File): File {
-        var inputStream: InputStream? = null
-        var outputStream: FileOutputStream? = null
+        val temp = File(file.absolutePath + ".tmp")
         try {
-            val response = Http.getSync(url)
-            val input = response.body.byteStream()
-            inputStream = input
-            val output = FileOutputStream(create(file))
-            outputStream = output
-            val buffer = ByteArray(16384)
-            var length = 0
-            while (input.read(buffer).also { length = it } != -1) {
-                if (Thread.interrupted()) return file
-                output.write(buffer, 0, length)
+            val parent = file.parentFile
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                throw IllegalStateException("Cannot create Jar cache directory")
             }
-            output.flush()
+            if (temp.exists()) temp.delete()
+            Http.getSync(url).use { response ->
+                if (!response.isSuccessful) throw IllegalStateException("Jar HTTP " + response.code)
+                val body = response.body ?: throw IllegalStateException("Jar response body is empty")
+                body.byteStream().use { input ->
+                    FileOutputStream(temp).use { output ->
+                        val buffer = ByteArray(16384)
+                        while (true) {
+                            if (Thread.currentThread().isInterrupted) throw InterruptedException("Jar download interrupted")
+                            val length = input.read(buffer)
+                            if (length < 0) break
+                            output.write(buffer, 0, length)
+                        }
+                        output.flush()
+                    }
+                }
+            }
+            if (!temp.exists() || temp.length() <= 0L) {
+                throw IllegalStateException("Downloaded Jar is empty")
+            }
+            if (!replaceCacheFile(temp, file)) {
+                throw IllegalStateException("Cannot replace Jar cache")
+            }
+            return file
         } catch (e: Throwable) {
             AppLog.e("JarLoader", e)
-        } finally {
-            close(inputStream)
-            close(outputStream)
+            if (temp.exists()) temp.delete()
         }
-        return file
+        return temp
     }
 
     private fun copyAsset(url: String, file: File): File {
-        var inputStream: InputStream? = null
-        var outputStream: FileOutputStream? = null
+        val temp = File(file.absolutePath + ".tmp")
         try {
             val path = url.replace("assets://", "").replace("assets/", "")
             val input = requireNotNull(AppContextHolder.context()) { "app context not ready" }.assets.open(path)
-            inputStream = input
-            val output = FileOutputStream(create(file))
-            outputStream = output
-            val buffer = ByteArray(16384)
-            var length = 0
-            while (input.read(buffer).also { length = it } != -1) {
-                output.write(buffer, 0, length)
+            input.use { source ->
+                FileOutputStream(temp).use { output ->
+                    val buffer = ByteArray(16384)
+                    while (true) {
+                        val length = source.read(buffer)
+                        if (length < 0) break
+                        output.write(buffer, 0, length)
+                    }
+                    output.flush()
+                }
             }
-            output.flush()
+            if (!temp.exists() || temp.length() <= 0L) {
+                throw IllegalStateException("Asset Jar is empty")
+            }
+            if (!replaceCacheFile(temp, file)) {
+                throw IllegalStateException("Cannot replace asset Jar cache")
+            }
+            return file
         } catch (e: Throwable) {
             AppLog.e("JarLoader", e)
-        } finally {
-            close(inputStream)
-            close(outputStream)
+            if (temp.exists()) temp.delete()
         }
-        return file
+        return temp
+    }
+
+    private fun replaceCacheFile(temp: File, target: File): Boolean {
+        val backup = File(target.absolutePath + ".bak")
+        if (backup.exists() && !backup.delete()) return false
+        if (target.exists() && !target.renameTo(backup)) return false
+        if (!temp.renameTo(target)) {
+            if (backup.exists()) backup.renameTo(target)
+            return false
+        }
+        if (backup.exists()) backup.delete()
+        return true
     }
 
     private fun local(path: String): File {
