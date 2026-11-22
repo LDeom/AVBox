@@ -516,8 +516,16 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 p
             } else if (videos.isEmpty() && page == Partition.FIRST_PAGE) {
                 Partition(p.sort, PartitionState.Empty, emptyList(), Partition.FIRST_PAGE, maxPage)
+            } else if (videos.isEmpty()) {
+                Partition(
+                    p.sort,
+                    PartitionState.Ready,
+                    p.videos,
+                    page,
+                    if (maxPage > 0) minOf(maxPage, page - 1) else page - 1,
+                )
             } else {
-                val merged = if (page == 0) videos else p.videos + videos
+                val merged = if (page == Partition.FIRST_PAGE) videos else p.videos + videos
                 Partition(p.sort, PartitionState.Ready, merged, page + 1, maxPage)
             }
         }
