@@ -259,9 +259,10 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
                 }
             }
             if (requestLevel != _level.value || requestLoader !== loader) return@launch
-            if (result == null && requestLoader.cancelRequest(requestId)) {
+            if (result == null) {
+                requestLoader.cancelRequest(requestId)
                 applyTimeout(page)
-            } else if (result != null && !result.stale) {
+            } else if (!result.stale) {
                 applyResult(page, result.absXml)
             }
         }
