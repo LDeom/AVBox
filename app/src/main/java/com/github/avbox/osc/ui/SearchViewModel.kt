@@ -327,7 +327,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         val myToken = token
         if (data.searchToken != myToken.toString()) return
         val sourceKey = data.sourceKey ?: return
-        if (_results.value.none { it.sourceKey == sourceKey }) return
+        val currentResult = _results.value.firstOrNull { it.sourceKey == sourceKey } ?: return
+        if (currentResult.state != ResultState.Pending) return
         pendingSources.remove(sourceKey)?.complete(Unit)
         val videos = data.movie?.videoList.orEmpty()
             .filter { !_exactMatch.value || SearchSettings.isExactMatch(it.name, _searchedTitle.value) }
