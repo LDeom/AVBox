@@ -575,6 +575,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
         fun release() {
             released = true
+            svm.cancelList()
             pending?.invoke(LoaderResult(stale = true, absXml = null))
             pending = null
             busy = false
