@@ -139,6 +139,12 @@ class EngineTextureRenderView(
     }
 
     override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture, width: Int, height: Int) {
+        AppLog.i(
+            "echo-texture: available id=" + System.identityHashCode(surfaceTexture)
+                + " size=" + width + "x" + height
+                + " player=" + (mediaPlayer != null)
+                + " retained=" + (texture != null),
+        )
         val existing = texture
         if (existing != null) {
             setSurfaceTexture(existing)
@@ -159,9 +165,22 @@ class EngineTextureRenderView(
         surfaceReadyListener?.run()
     }
 
-    override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) = Unit
+    override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+        AppLog.i(
+            "echo-texture: size-changed id=" + System.identityHashCode(surface)
+                + " size=" + width + "x" + height,
+        )
+    }
 
-    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean = false
+    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+        AppLog.i(
+            "echo-texture: destroyed id=" + System.identityHashCode(surface)
+                + " retained=" + (texture === surface)
+                + " player=" + (mediaPlayer != null)
+                + " return=false",
+        )
+        return false
+    }
 
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
 }
