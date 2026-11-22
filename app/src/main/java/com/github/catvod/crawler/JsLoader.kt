@@ -153,8 +153,11 @@ class JsLoader {
             }
             val downloaded = FileUtils.readSimple(temp)
                     ?: throw IllegalStateException("Cannot read downloaded JS API Jar")
-            if (!FileUtils.writeSimple(downloaded, cache)) {
-                throw IllegalStateException("Cannot safely replace JS API Jar cache")
+            val cacheWritten = synchronized(lifecycleLock) {
+                generation == clearGeneration.get() && FileUtils.writeSimple(downloaded, cache)
+            }
+            if (!cacheWritten) {
+                throw IllegalStateException("Cannot safely replace stale or invalid JS API Jar cache")
             }
             temp.delete()
             loadClassLoader(cache.absolutePath, key, generation)
@@ -175,12 +178,12 @@ class JsLoader {
 
     fun getSpider(key: String?, api: String?, ext: String?, jar: String?): Spider {
         val siteKey = requireNotNull(key) { "site key is null" }
-        val generation: Long
-        val cachedSpider = synchronized(lifecycleLock) {
+        val snapshot = synchronized(lifecycleLock) {
             recentKey = siteKey
-            generation = clearGeneration.get()
-            spiders[siteKey]
+            clearGeneration.get() to spiders[siteKey]
         }
+        val generation = snapshot.first
+        val cachedSpider = snapshot.second
         cachedSpider?.let {
             Log.i("JSLoader", "echo-getSpider cached " + siteKey)
             return it
