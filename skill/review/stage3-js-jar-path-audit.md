@@ -249,3 +249,12 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - copyAsset 读取循环增加线程中断检查，避免切源/取消后仍持续复制较大的内置 Jar。
 - 新增测试覆盖两种前缀、嵌套 assets 目录、空路径、非法前缀及父目录回退。
 - 仍未运行 Gradle；AssetManager 实际路径、Jar 解包/类加载和中断行为需设备验证。
+
+
+## 第二十八轮 JarLoader 清理代际与初始化监视收尾（2026-11-22）
+- 复核 JarLoader 后发现 parseJar 的 aliases 写入、loadLiveJar 的 liveJars/recent 更新，以及 getSpider 的 recent/siteJarKeys 更新分散在生命周期锁之外；clear() 期间可能发生旧任务重新写入状态或把旧代际请求带入新代际。
+- loadLiveJar 现在捕获 clearGeneration，并在 lifecycleLock 下登记 live key；解析和最终 recent 更新均使用同一代际，clear 后的旧任务不再继续注册。
+- parseJar 增加内部代际参数重载，公开入口在调用时捕获当前代际；aliases 写入在 lifecycleLock 下再次校验代际。getSpider 原子取得 generation 与缓存快照，并将 Jar 解析绑定到该 generation。
+- 主 Jar load 的 recent 更新也绑定加载代际；setRecentJarKey 的 recent/loader 快照在生命周期锁内取得。
+- Jar Spider 初始化监视器改为 try/finally，初始化异常时也会结束监视，避免监视状态残留。
+- 上述均为静态并发审查及代码修复；尚无并发单元测试覆盖真实 DexClassLoader/Jar加载清理竞态，未运行 Gradle/native/真机测试。
