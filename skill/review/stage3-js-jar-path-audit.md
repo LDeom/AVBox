@@ -114,3 +114,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - getSpider() 创建完成后的 Spider 注册同样在 lifecycleLock 内完成代际校验，清理与注册不能交错产生清理后残留的旧 Spider。
 - loadClassLoader/loadJarInternal 显式携带创建代际；清理后开始或完成的旧代际加载不再注册 Class 缓存。
 - 未运行 Gradle、Android 设备或 JS API Jar 动态集成测试。
+
+## 第十四轮 QuickJS 定时回调资源释放（2026-11-22）
+- Global.setTimeout() 原先对 JSFunction 执行 hold()，但 Spider 销毁时 Timer.cancel() 会直接丢弃尚未触发的 TimerTask，未触发任务持有的 JSFunction 无法 release，存在 native 引用泄漏。
+- 新增待执行 Timer entry 集合和 timerLock；每次 setTimeout 创建独立 entry，支持同一 JSFunction 被重复调度时分别平衡 hold/release。
+- Global.destroy() 幂等关闭定时器，并在锁内取消/释放全部尚未提交的回调。
+- TimerTask 从待执行集合移除并提交至 JS 单线程 Executor 的过程与 destroy 同步，保证已提交回调排在 JsSpider 后续 Context 销毁任务之前；销毁后回调不会再执行 JS。
+- 处理 delay 缺失、负数、Timer.schedule 异常及 Executor 拒绝提交时的引用释放。
+- 未运行 Gradle、QuickJS native 测试或设备验证。
