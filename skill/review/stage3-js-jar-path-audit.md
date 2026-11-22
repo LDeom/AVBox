@@ -42,3 +42,8 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - `FileUtils.writeSimple` 改为同目录临时文件完整写入后再替换目标；原目标先移至备份，替换失败尝试恢复；异常时清理临时文件并恢复旧文件。
 - 新增 `FileUtilsAtomicWriteTest`：验证首次写入、既有文件替换及临时/备份文件清理。
 - 当前仅代码静态核对与提交；未执行 Gradle 测试，故替换行为、平台rename语义及故障恢复仍需构建/测试验证。
+
+
+## 模块缺失容错策略核对（2026-11-22）
+- `JsSpider`模块加载器在内容为空、404/Not Found、错误JSON、Base64 bytecode解码失败或编译异常时回退至空模块bytecode；该策略避免QuickJS加载直接崩溃，但会使依赖模块缺失在运行期表现为功能缺失而非明确模块错误。
+- 已有空模块日志包含模块名称，可作为定位线索。改变回退策略会影响旧站点兼容，需先建立站点模块加载集成测试，当前不贸然抛出异常。
