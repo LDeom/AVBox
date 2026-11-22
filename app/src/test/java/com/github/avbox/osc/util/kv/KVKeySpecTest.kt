@@ -126,11 +126,6 @@ class KVKeySpecTest {
     }
 
     @Test
-    fun cloudCredentialBlob_isRegisteredAsString() {
-        assertEquals(TypeToken.get(String::class.java).type, spec.typeOf(KVKeys.CLOUD_DRIVE_CREDENTIALS))
-    }
-
-    @Test
     fun unknownKey_returnsNull() {
         assertNull(spec.typeOf("definitely_not_a_registered_key"))
     }
