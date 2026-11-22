@@ -637,4 +637,5 @@
     <string name="osd_tunnel">Tunnel</string>
     <string name="osd_preload">Preload</string>
     <string name="osd_cache">Cache</string>
+    <string name="settings_group_runtime_log">Runtime Logs</string><string name="settings_runtime_log_enabled">Enable Runtime Logging</string><string name="settings_runtime_log_enabled_subtitle">Record diagnostic information when enabled; stop writing log files when disabled</string><string name="settings_runtime_log_export">Export Runtime Logs</string><string name="settings_runtime_log_export_subtitle">Save a log file to help diagnose playback or configuration issues</string><string name="toast_runtime_log_exported">Runtime logs exported</string><string name="toast_runtime_log_export_failed">Failed to export runtime logs</string>
 </resources>
