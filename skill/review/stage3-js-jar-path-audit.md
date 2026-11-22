@@ -200,3 +200,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 
 ## 初始化等待线程中断处理补充
 - 补充处理 initializeJS() 等待 Future 时的 InterruptedException：取消初始化任务、恢复当前线程中断标记并向构造方传播异常；构造失败清理继续通过 QuickJS 单线程 Executor 排队执行。
+
+
+## JS Spider 根模块初始化失败检测补充
+- 发现根 API 模块缺失/内容无效、模块执行异常或未创建预期 Spider 对象时，初始化任务此前会正常返回 null，导致构造函数认为初始化成功，JsLoader 可能缓存一个不可用 Spider。
+- 现将根 API 模块缺失、bytecode/模块执行异常及 Spider 对象缺失提升为初始化异常；与上一轮超时修复配合，统一走构造失败路径和 QuickJS 单线程清理，避免无效实例进入缓存。
+- 依赖模块的空模块回退策略暂时保留，避免未经集成测试破坏旧站点兼容；根模块与依赖模块区分处理。
+- 尚未运行 Gradle 或真实配置集成测试；需用正常 JS API、无效 API、语法错误 API 和缺少导出对象的 API 做回归。
