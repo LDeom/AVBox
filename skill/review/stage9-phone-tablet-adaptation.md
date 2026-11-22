@@ -104,3 +104,21 @@
 - 已回读 Manifest、BaseActivity、MainScreen、WindowSize、首页/栏目网格及弹层实现，确认方向策略继续使用 smallestScreenWidthDp、布局继续使用当前窗口宽度。
 - 已静态核对对话框动态宽度上下界：最小宽度不会大于扣除水平边距后的最大可用宽度。
 - 尚未运行 Gradle 编译、单元测试或折叠屏/分屏真机测试；未构建 APK、未发布 Release。
+
+
+## 第五轮：平板方向切换与分屏网格
+
+### 发现
+- MainActivity 已处理方向、屏幕尺寸和 smallestScreenSize 变化，但栏目二级页 PartitionListActivity 未声明 Activity 级 configChanges。平板旋转/折叠或窗口尺寸变化可能销毁 Activity，并在重建时再次执行 openFromIntent，造成列表重新加载。
+- 首页与栏目网格固定传入 minColumns=3。小于约 360dp 的分屏窗口仍强制三列，海报卡片会明显变窄；虽然计算已基于当前容器宽度，但最低列数没有随窄窗口调整。
+
+### 调整
+- PartitionListActivity 增加与 MainActivity 一致的 orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize 配置变更声明，沿用 BaseActivity.onConfigurationChanged() 方向策略。
+- WindowSize 新增 gridMinColumns：可用网格宽度 <252dp 最低 1 列，252–327dp 最低 2 列，≥328dp 最低 3 列；原 gridColumns 的 130dp 目标卡宽和 12dp 间距计算不变。
+- HomeGridLayout 与 PartitionListActivity.VideoGrid 统一按 BoxWithConstraints 当前可用宽度计算最低列数；360dp 手机仍为三列，窄分屏可降为两列或一列，宽窗口仍自动增加列数。
+- WindowSizeTest 新增分屏列数阈值及卡片宽度断言；既有手机三列与平板扩列测试保留。
+
+### 验证与限制
+- 静态核对 Manifest、WindowSize、首页网格、栏目网格和单元测试源文件；核对 288dp 可用宽度为 2 列/138dp 卡宽、252dp 为 2 列/120dp、328dp 保持 3 列/101dp。
+- 既有方向规则单测仍锁定 smallestScreenWidthDp <600dp 手机竖屏、≥600dp 大屏不锁方向。
+- 尚未运行 Gradle 编译或单元测试；未在平板/折叠屏/自由窗口设备实测；未构建 APK、未发布 Release。
