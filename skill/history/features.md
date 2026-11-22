@@ -616,3 +616,10 @@
 - 修正 Android device-transfer 排除规则，确保 cloud_credentials/ 目录不会随设备迁移复制。
 - 新增 CloudCookieInjectorTest，覆盖同名覆盖、Cookie 属性过滤与空 Cookie 输入。
 - 当前仅完成源码与文档更新；未运行 Gradle、单元测试、门禁、真机网盘联调或 APK 构建。各驱动真实认证兼容性仍需按实际请求验证，Token-only 驱动不会因 Cookie 保存而自动登录。
+
+
+## 2026-11-22 APK 构建失败修复：重复字符串资源
+- 根据 GitHub Actions run 45028275802 的 Gradle 日志，资源合并阶段因简体中文与英语资源文件重复声明 `live_now_playing` 而失败。
+- 删除两份资源文件中后置的重复项，保留各自原有的首个定义；检查繁体中文（台湾、香港）资源未发现重复 key。
+- 本次修复只调整资源表，不改变直播播放逻辑或界面行为。
+- 修复后尚未重新运行 Gradle 编译、单元测试或 APK 构建；需由下一次构建确认资源合并通过，并继续暴露后续编译问题。
