@@ -50,7 +50,6 @@ fun PlayerOverlay(
     gestureSession: (width: Int, height: Int, screenWidth: Int, downY: Float) -> VideoGestureSession,
     onTapPending: () -> Unit,
 ) {
-    val screenWidthPx = LocalContext.current.resources.displayMetrics.widthPixels
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -62,7 +61,7 @@ fun PlayerOverlay(
                     if (state.overlayPanelOpen || sizeW <= 0 || sizeH <= 0) {
                         null
                     } else {
-                        gestureSession(sizeW, sizeH, screenWidthPx, downY)
+                        gestureSession(sizeW, sizeH, sizeW, downY)
                     }
                 },
                 onTapPending = onTapPending,
