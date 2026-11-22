@@ -727,3 +727,8 @@
 ## 2026-11-22 网盘内置浏览器日志接入运行日志\n- WebView 登录页的启动、页面加载起止主机、25% 阶梯进度、主框架网络错误代码、HTTP 错误状态、非 HTTP(S) 导航拦截、Cookie 保存成功/失败/空值与 Activity 销毁事件接入 AppLog。\n- 日志使用统一 `echo-webview-login` 前缀并纳入现有用户运行日志开关、轮转和导出；不记录完整 URL、Cookie 内容、页面标题或异常明文。\n- 仅在用户开启文件日志时写入文件；Debug Logcat 行为遵循 AppLog 既有逻辑。尚未运行编译、单元测试或设备验证，未构建 APK。\n
 
 ## 2026-11-22 第三阶段：点播播放器旋转生命周期稳定性\n- DetailActivity 增加方向、尺寸、键盘隐藏、屏幕布局及最小屏宽变化的 configChanges 处理，避免旋转期间 Activity 销毁重建导致 PlayContainer hostDestroy/detach 链路中断播放会话。\n- Configuration change 直接回调 Activity，记录 PID、方向、尺寸、fullscreen/rotating 状态并在变更后补同步 hostResume，观察窗口/Surface 适配时不重建播放会话。\n- 增加 detail create/resume/pause/destroy 生命周期日志，记录 configuration change 与 finishing 状态，用运行日志确认旋转时 Activity/PID 和播放内核是否保持。\n- 未构建 APK、未运行测试、未真机验证；此项为代码级防止配置变化触发 Activity 重建的修复，设备验证仍需待整套优化完成。\n
+
+## 2026-11-22 点播旋转机制静态收敛
+- DetailActivity Manifest 配置变化范围扩展至 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize、density、uiMode、colorMode，降低配置变化引发 Activity 重建的风险。
+- 方向状态继续由 DetailViewModel 全屏状态与 DetailActivity 的视频尺寸回调统一驱动；不增加额外方向锁或重复 hostResume。
+- 本次为源码调整和静态审查；跳过真机验证及 APK 构建。

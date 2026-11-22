@@ -903,3 +903,8 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 ## 4.19 内置浏览器诊断日志\n- 网盘 WebView 登录诊断统一使用 AppLog 前缀 `echo-webview-login`，由 4.17 用户运行日志开关控制文件日志记录。\n- 日志覆盖页面起止 host、加载进度阶梯、主框架错误代码/HTTP 状态、被拦截的外部 scheme、Cookie 保存状态与页面销毁。不得记录 Cookie 值、完整 URL/query、页面标题或异常明文。\n- 用户可在设置页开启运行日志后复现网页登录问题，再从运行日志导出诊断信息。\n
 
 ## 6.14 点播页旋转生命周期保护\n- DetailActivity 对 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize 变化使用 `onConfigurationChanged`，保留 Activity/PlayContainer 与 PlaybackService 共享播放会话，避免旋转触发 `onDestroy` 中 hostDestroy/detach/stopPlaybackKeepPlayer。\n- 配置变化时记录尺寸与方向诊断，执行全屏旋转状态收敛和播放器宿主 resume 同步。\n- 该保护旨在降低 Activity recreate 引起的播放器重启/启动页闪回风险；Surface/窗口与厂商 ROM 行为仍需真机验证，日志用于确认 PID、生命周期和状态变化。\n
+
+## 6.15 点播详情方向变化处理扩展
+- DetailActivity 的方向/屏幕尺寸配置变化处理覆盖 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize、density、uiMode、colorMode，避免平板窗口/显示配置变化时不必要地重建详情宿主。
+- 该声明用于保留播放器宿主和播放会话；Activity 仍需自行更新布局、窗口与方向状态，不能将 configChanges 视为自动适配。
+- 未进行真机验证，厂商系统旋转与 Surface 生命周期仍需设备日志确认。
