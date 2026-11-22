@@ -1,11 +1,19 @@
 package com.github.avbox.osc.util
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 
 import com.github.avbox.osc.BuildConfig
 
+import java.io.BufferedReader
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileWriter
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -16,7 +24,8 @@ object AppLog {
     private var TAG = "TVBox-runtime"
     private const val MAX_LOG_LENGTH = 3000
 
-    private val FILE_LOG = BuildConfig.DEBUG
+    @Volatile
+    private var fileLogEnabled = false
     private val FILE_LOG_PREFIXES = arrayOf("echo-preload", "echo-setDataSource", "echo-play-cache", "echo-kv", "echo-progress", "echo-bar-draw", "echo-exo", "echo-music", "echo-lyric", "echo-sub", "echo-danmu", "echo-p2", "echo-p3", "echo-p4", "echo-p5", "clearCache", "echo--jar", "echo-local-src", "echo-setTrack", "echo-autoRetry", "echo-player", "echo-switch", "echo-goPlayUrl", "echo-history", "echo-iso", "echo-render", "echo-surface", "echo-output-size", "echo-picture", "echo-anime4k", "echo--list", "echo--getList", "echo--parse", "echo--getSort", "echo--sort", "echo-detail", "echo-thunder", "echo-proxy", "echo-home-backdrop", "echo-cast", "echo-resolvePlayUrl", "echo-playM3u8", "echo-tmdb", "echo-live", "echo-load", "echo-zero-start", "echo-storage", "echo-config-refresh", "echo-boot")
     private const val FILE_LOG_NAME = "preload_debug.log"
     private const val FILE_LOG_BACKUP = ".1"
@@ -25,8 +34,44 @@ object AppLog {
 
     internal fun shouldRotateLog(sizeBytes: Long): Boolean = sizeBytes >= FILE_LOG_MAX_BYTES
 
+    internal fun sanitizeLogLine(line: String): String =
+        line.replace(
+            Regex("(?i)(authorization|cookie|set-cookie|token|access[_-]?token|refresh[_-]?token|api[_-]?key|password|passwd|secret|imei|mac)(\\s*[=:]\\s*)([^\\s&,;]+)"),
+            "$1$2[REDACTED]",
+        )
+
+    fun setFileLoggingEnabled(enabled: Boolean) {
+        fileLogEnabled = enabled
+    }
+
+    fun exportTo(context: Context, uri: Uri) {
+        val executor = synchronized(AppLog::class.java) { fileLogExecutor }
+        executor?.submit {}?.get(10, TimeUnit.SECONDS)
+        val files = listOf(
+            File(context.filesDir, FILE_LOG_NAME + FILE_LOG_BACKUP),
+            File(context.filesDir, FILE_LOG_NAME),
+        ).filter { it.isFile && it.length() > 0L }
+        val output = context.contentResolver.openOutputStream(uri, "w")
+            ?: throw IllegalStateException("Unable to open log export destination")
+        OutputStreamWriter(output, StandardCharsets.UTF_8).buffered().use { writer ->
+            if (files.isEmpty()) {
+                writer.write("No runtime log entries have been recorded.\n")
+            } else {
+                files.forEach { file ->
+                    BufferedReader(InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)).use { reader ->
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            writer.write(sanitizeLogLine(line))
+                            writer.newLine()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun fileLog(level: String, msg: String?) {
-        if (!FILE_LOG || msg == null) return
+        if (!fileLogEnabled || msg == null) return
         var match = false
         for (prefix in FILE_LOG_PREFIXES) {
             if (msg.startsWith(prefix)) {
