@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.webkit.CookieManager
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -135,6 +138,29 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     onClick = { CloudDriveLoginActivity.start(context, provider.id) },
                                 ) {
                                     Text(stringResource(if (configured[provider.id] == true) R.string.cloud_drive_login_again else R.string.cloud_drive_browser_login))
+                                }
+                                TextButton(
+                                    enabled = configured[provider.id] == true,
+                                    onClick = {
+                                        scope.launch {
+                                            val result = withContext(Dispatchers.IO) {
+                                                CookieManager.getInstance().apply { flush() }.let { manager ->
+                                                    provider.cookieHosts.mapNotNull { host ->
+                                                        manager.getCookie("https://$host/").orEmpty().takeIf { it.isNotBlank() }?.let { "$host\n$it" }
+                                                    }.joinToString("\n\n")
+                                                }
+                                            }
+                                            if (result.isBlank()) {
+                                                message = context.getString(R.string.cloud_drive_login_cookie_missing)
+                                            } else {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                clipboard.setPrimaryClip(ClipData.newPlainText(provider.id, result))
+                                                message = context.getString(R.string.cloud_drive_cookie_copied)
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.cloud_drive_cookie_copy))
                                 }
                                 TextButton(
                                     enabled = busy[provider.id] != true && configured[provider.id] == true,
