@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -41,6 +43,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.WindowSize
 import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.ui.ConfigManageActivity
@@ -165,7 +168,10 @@ fun SettingsPage(
     ) { topPad, _ ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.TopCenter)
+                .widthIn(max = WindowSize.CONTENT_MAX_WIDTH_DP.dp)
+                .fillMaxWidth()
+                .fillMaxHeight()
                 .verticalScroll(listState)
                 .padding(horizontal = 16.dp)
                 .padding(start = navStart, bottom = 8.dp + navBottom),
