@@ -53,3 +53,22 @@
 
 ### 验证
 本轮为静态调用链审查，没有修改运行时代码；未运行 Gradle、单元测试或设备测试。
+
+
+## 第三轮：本地目录持久授权失效处理
+### 发现
+`LocalSourceTree.remember()` 在 `takePersistableUriPermission()` 抛出异常后仍会把目录 URI 写入本地记录。这样会把未获得持久读取授权的 URI 当成长期可用目录；后续依赖文件读取只能失败，且旧记录没有在访问前清理。
+
+### 修复
+- 只有在系统的 `persistedUriPermissions` 中确认存在对应 URI 的读取授权后，才将目录 URI 写入持久记录。
+- 持久授权获取失败时返回 null，不再记录不可持续访问的目录。
+- `serves()` 和 `open()` 使用前复核持久读取授权；发现授权已撤销或旧记录无授权时，清理该 URI 记录并跳过。
+- 抽离精确 URI 匹配逻辑，新增 `LocalSourceTreePermissionTest` 覆盖已授权、无授权及不同目录 URI。
+
+### 提交
+- LocalSourceTree 修复：`333dd1fdf73bc0a9c3243c3a63e423742ceeca5d`
+- 授权匹配逻辑抽离：`ad441240cfdf977f7fe63ae2164c5fd5c3ce8636`
+- 单元测试：`2c4094fe9cc8db6f20eb8d17c3251ee456136110`
+
+### 验证
+已回读修改后的实现和测试源文件；尚未运行 Gradle、单元测试或 Android SAF 真机授权撤销测试。
