@@ -287,3 +287,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 两个方法现在以 nullable File 表示成功/失败，异常路径清理临时文件并返回 null；parseJar 仅在获得非空成功文件时调用 load。原有目标缓存不会因失败临时文件而被替代。
 - 该变更缩短了失败路径并防止把部分下载的 Jar 当作有效输入；仍需验证 HTTP中断、空响应、AssetManager异常、旧缓存保留等运行场景。
 - 未运行 Gradle、Android/DexClassLoader 测试或真机验证。
+
+
+## 第三十二轮 Jar Init 初始化失败传播修复（2026-11-22）
+- 复核发现 JarLoader.invokeInit() 将所有异常捕获后仅记录日志，load() 仍会继续注册 DexClassLoader；当 Jar 内存在 Init 类但 init(Context) 执行失败时，Jar 会被错误标记为加载成功，后续 Spider/代理功能才暴露异常。
+- 现仅将 Init 类本身不存在视为可选扩展并兼容跳过；若类存在但方法缺失、方法签名不兼容、依赖类缺失或 init 执行抛错，则异常向上传播到 load()，阻止该 Jar 注册为可用加载器。
+- 成功执行 Init 时记录明确诊断日志。
+- 该策略保留无 Init 类的旧 Jar 兼容性，同时避免吞掉真实初始化失败。仍需以包含/不包含 Init 的真实 Jar 验证行为；未运行 Gradle、DexClassLoader 或设备测试。
