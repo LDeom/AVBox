@@ -270,3 +270,9 @@
 - 为 JS ModuleLoader 的空模块回退增加明确原因日志，区分缺失/错误响应、DRPY/BB bytecode解码失败及 JS 编译失败；保持原有回退语义，避免未经源兼容回归直接改变配置行为。
 - 新增 JsModuleContent.invalidReason 分类测试。
 - 尚未运行 Gradle、QuickJS native 或真机测试。
+
+
+## 2026-11-22 第3阶段模板依赖与相对路径回归
+- preloadTemplate 增加模板内容预检与无效原因日志；模板缺失时不再继续执行空模块导入，保持非致命兼容策略。导入后检查 getMubans 属性是否存在并记录不完整模板诊断。
+- 增加相对模块路径测试：多层目录、父级回退、根路径、query/fragment及空引用处理。
+- 尚未运行 Gradle、QuickJS native 或真机测试；循环/重复导入需 native 集成测试验证。
