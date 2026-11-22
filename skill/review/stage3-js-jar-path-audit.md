@@ -280,3 +280,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 将 parseJar 的互斥锁改为基于去除 ;md5; 后缀后的源身份（jar-cache: + MD5(source)），避免相同物理缓存文件因不同 MD5 声明使用不同锁并发写同一 .tmp。
 - md5 远程校验结果需要回填，因此 checksum 局部变量保持可变；已回读确认所有下载/复制/替换调用均使用新签名。
 - 上述为静态源码回读，没有运行 Kotlin/Gradle 编译；最终编译仍待 CI/本地 Android SDK 验证。
+
+
+## 第三十一轮 Jar 下载失败回退路径修正（2026-11-22）
+- 交叉审查发现 JarLoader.download/copyAsset 在异常时返回临时文件对象；parseJar 随后仍将其交给 load/DexClassLoader。临时文件若留下非空但不完整内容，可能产生二次类加载错误，并模糊原始下载失败原因。
+- 两个方法现在以 nullable File 表示成功/失败，异常路径清理临时文件并返回 null；parseJar 仅在获得非空成功文件时调用 load。原有目标缓存不会因失败临时文件而被替代。
+- 该变更缩短了失败路径并防止把部分下载的 Jar 当作有效输入；仍需验证 HTTP中断、空响应、AssetManager异常、旧缓存保留等运行场景。
+- 未运行 Gradle、Android/DexClassLoader 测试或真机验证。
