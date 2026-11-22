@@ -189,7 +189,7 @@ class JarLoader {
             if (!TextUtils.isEmpty(md5) && exists(file) && MD5.fileMd5(file).equals(md5, ignoreCase = true)) {
                 load(key, file, generation)
             } else if (TextUtils.isEmpty(md5) && exists(file) && !FileUtils.isWeekAgo(file)) {
-                load(key, file)
+                load(key, file, generation)
             } else if (source.startsWith("http")) {
                 load(key, download(source, file), generation)
             } else if (source.startsWith("assets")) {
