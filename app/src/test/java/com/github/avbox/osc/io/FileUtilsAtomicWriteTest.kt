@@ -44,6 +44,13 @@ class FileUtilsAtomicWriteTest {
     }
 
     @Test
+    fun cacheExpiryUsesInclusiveBoundary() {
+        assertTrue(FileUtils.isCacheExpired(100L, 100L))
+        assertTrue(FileUtils.isCacheExpired(99L, 100L))
+        assertTrue(!FileUtils.isCacheExpired(101L, 100L))
+    }
+
+    @Test
     fun readSimpleReturnsCompleteFileContent() {
         val target = File(folder.root, "module.js")
         val expected = ByteArray(128 * 1024) { (it % 251).toByte() }
