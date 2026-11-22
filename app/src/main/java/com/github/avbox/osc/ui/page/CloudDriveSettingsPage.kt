@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,12 +26,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
+import com.github.avbox.osc.net.CloudDriveProviderCatalog
+import com.github.avbox.osc.ui.CloudDriveLoginActivity
 import com.github.avbox.osc.ui.WindowSize
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
 import com.github.avbox.osc.ui.components.SettingsCard
@@ -44,43 +45,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private data class CloudCookieProvider(val id: String, val title: Int)
-
-private val cloudCookieProviders = listOf(
-    CloudCookieProvider("quark", R.string.cloud_drive_quark),
-    CloudCookieProvider("uc", R.string.cloud_drive_uc),
-    CloudCookieProvider("baidu", R.string.cloud_drive_baidu),
-    CloudCookieProvider("xunlei", R.string.cloud_drive_xunlei),
-    CloudCookieProvider("aliyun", R.string.cloud_drive_aliyun),
-    CloudCookieProvider("guangya", R.string.cloud_drive_guangya),
-    CloudCookieProvider("tianyi", R.string.cloud_drive_tianyi),
-    CloudCookieProvider("pan123", R.string.cloud_drive_123),
-)
-
 @Composable
 fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val values = remember { mutableStateMapOf<String, String>() }
     val configured = remember { mutableStateMapOf<String, Boolean>() }
     val busy = remember { mutableStateMapOf<String, Boolean>() }
     var message by rememberSaveable { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    suspend fun refreshStatus() {
         val results = withContext(Dispatchers.IO) {
-            cloudCookieProviders.associate { provider ->
-                provider.id to runCatching { !CloudCredentialVault.read(provider.id).isNullOrBlank() }
+            CloudDriveProviderCatalog.providers.associate { provider ->
+                provider.id to runCatching { !CloudCredentialVault.read(provider.id).isNullOrBlank() }.getOrDefault(false)
             }
         }
-        results.forEach { (providerId, result) ->
-            result.onSuccess {
-                configured[providerId] = it
-            }.onFailure {
-                configured[providerId] = false
-                message = it.message ?: context.getString(R.string.cloud_drive_cookie_save_failed)
-            }
-        }
+        results.forEach { (id, value) -> configured[id] = value }
     }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) scope.launch { refreshStatus() }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(Unit) { refreshStatus() }
 
     AppTopBarScaffold(
         titleContent = {
@@ -106,17 +96,17 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
-                text = stringResource(R.string.cloud_drive_cookie_notice),
+                text = stringResource(R.string.cloud_drive_login_notice),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             SettingsGroup(title = stringResource(R.string.cloud_drive_accounts)) {
-                cloudCookieProviders.forEachIndexed { index, provider ->
+                CloudDriveProviderCatalog.providers.forEachIndexed { index, provider ->
                     SettingsCard(
                         when {
-                            cloudCookieProviders.size == 1 -> SettingsCardPosition.SINGLE
+                            CloudDriveProviderCatalog.providers.size == 1 -> SettingsCardPosition.SINGLE
                             index == 0 -> SettingsCardPosition.FIRST
-                            index == cloudCookieProviders.lastIndex -> SettingsCardPosition.LAST
+                            index == CloudDriveProviderCatalog.providers.lastIndex -> SettingsCardPosition.LAST
                             else -> SettingsCardPosition.MIDDLE
                         },
                     ) {
@@ -138,61 +128,27 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            OutlinedTextField(
-                                value = values[provider.id].orEmpty(),
-                                onValueChange = { values[provider.id] = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text(stringResource(R.string.cloud_drive_cookie_input)) },
-                                placeholder = { Text(stringResource(R.string.cloud_drive_cookie_placeholder)) },
-                                minLines = 2,
-                                maxLines = 4,
-                                enabled = busy[provider.id] != true,
-                            )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(
-                                    enabled = busy[provider.id] != true && values[provider.id].orEmpty().isNotBlank(),
-                                    onClick = {
-                                        val cookie = values[provider.id].orEmpty().trim()
-                                        scope.launch {
-                                            if (cookie.any { it == '\r' || it == '\n' }) {
-                                                message = context.getString(R.string.cloud_drive_cookie_invalid)
-                                                return@launch
-                                            }
-                                            busy[provider.id] = true
-                                            val result = runCatching {
-                                                withContext(Dispatchers.IO) {
-                                                    CloudCredentialVault.write(provider.id, cookie)
-                                                }
-                                            }
-                                            result.onSuccess {
-                                                configured[provider.id] = true
-                                                values[provider.id] = ""
-                                                message = context.getString(R.string.cloud_drive_cookie_saved)
-                                            }.onFailure {
-                                                message = it.message ?: context.getString(R.string.cloud_drive_cookie_save_failed)
-                                            }
-                                            busy[provider.id] = false
-                                        }
-                                    },
+                                    modifier = Modifier.weight(1f),
+                                    enabled = busy[provider.id] != true,
+                                    onClick = { CloudDriveLoginActivity.start(context, provider.id) },
                                 ) {
-                                    Text(stringResource(R.string.common_save))
+                                    Text(stringResource(if (configured[provider.id] == true) R.string.cloud_drive_login_again else R.string.cloud_drive_browser_login))
                                 }
                                 TextButton(
-                                    enabled = busy[provider.id] != true,
+                                    enabled = busy[provider.id] != true && configured[provider.id] == true,
                                     onClick = {
                                         scope.launch {
                                             busy[provider.id] = true
                                             val result = runCatching {
-                                                withContext(Dispatchers.IO) {
-                                                    CloudCredentialVault.remove(provider.id)
-                                                }
+                                                withContext(Dispatchers.IO) { CloudCredentialVault.remove(provider.id) }
                                             }
                                             result.onSuccess {
                                                 configured[provider.id] = false
-                                                values[provider.id] = ""
                                                 message = context.getString(R.string.cloud_drive_cookie_cleared)
                                             }.onFailure {
-                                                message = it.message ?: context.getString(R.string.cloud_drive_cookie_save_failed)
+                                                message = context.getString(R.string.cloud_drive_cookie_save_failed)
                                             }
                                             busy[provider.id] = false
                                         }
@@ -206,11 +162,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                 }
             }
             if (message.isNotBlank()) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
