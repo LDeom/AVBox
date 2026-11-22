@@ -50,6 +50,8 @@ private data class ApiEnvelope<T>(
 private data class CaptchaData(
     @SerializedName("captcha_token") val captchaToken: String = "",
     val url: String = "",
+    val error: String = "",
+    @SerializedName("error_description") val errorDescription: String = "",
 )
 
 private data class VerificationData(
@@ -112,6 +114,9 @@ object GuangYaPanClient {
         )
         if (captcha.url.isNotBlank()) {
             throw IOException("光鸭要求完成官方人机验证，请先在光鸭官方客户端完成验证后重试")
+        }
+        if (captcha.error.isNotBlank()) {
+            throw IOException(captcha.errorDescription.ifBlank { captcha.error })
         }
         val captchaToken = captcha.captchaToken
         val verification = postAccount<VerificationData>(
@@ -216,8 +221,8 @@ object GuangYaPanClient {
                 credential,
             )
         }
-        if (response.code != 0 && response.code != 200) {
-            throw IOException(response.msg.ifBlank { "读取光鸭文件列表失败" })
+        if (response.msg.isNotBlank() && !response.msg.equals("success", ignoreCase = true)) {
+            throw IOException(response.msg)
         }
         return response.data?.list.orEmpty()
     }
