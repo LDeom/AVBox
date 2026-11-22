@@ -655,3 +655,12 @@
 - 最新 Actions run 45029397617 已通过资源合并并进入 Kotlin 编译；日志报告 `ConfigRepository.kt:88` 出现多余顶层右括号。
 - 回查该文件历史提交后确认，之前补齐 object 结束括号时多追加了一枚，现已将文件括号数量校正为 9 对 9：switchLiveSource 的 synchronized 闭合与 ConfigRepository object 闭合各保留一处。
 - 修复提交：0144f797eed92b77d739869fe69aeff88e716880。新 push 构建将验证该修正及前一轮 Kotlin 编译错误修复。
+
+
+## 2026-11-22 网盘 Cookie 保存失败修复：Android Keystore 随机 IV
+
+- 根据用户真机截图底部的 `Caller-provided IV not permitted` 定位到 AES-GCM 加密入口：凭据密钥启用了 `setRandomizedEncryptionRequired(true)`，但封装层仍自行生成 IV 并通过 `GCMParameterSpec` 传入加密初始化，Android Keystore 会拒绝该操作，导致保存失败。
+- 修正为由加密提供方生成随机 IV：先以 `Cipher.init(ENCRYPT_MODE, key)` 初始化，再读取 `cipher.iv` 写入现有版本化密文封装；解密仍使用封装内 IV，文件格式不变。
+- 新增单测锁定封装记录 12-byte IV；原有往返、随机密文与篡改认证测试继续覆盖。
+- 本次仅修复安全存储写入失败，不代表配置中心 JAR 的登录态已自动同步，也不代表 JSON token 能直接作为 Cookie 注入；后续仍需逐类核对登录凭据格式与请求认证方式。
+- 尚未运行 Gradle、单元测试或真机验证；未构建 APK。

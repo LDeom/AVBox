@@ -15,10 +15,10 @@ object AesGcmEnvelope {
 
     @JvmStatic
     fun encrypt(plainText: ByteArray, key: SecretKey): ByteArray {
-        val iv = ByteArray(IV_SIZE)
-        SecureRandom().nextBytes(iv)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_SIZE_BITS, iv))
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        val iv = requireNotNull(cipher.iv) { "AES-GCM IV is unavailable" }
+        require(iv.size == IV_SIZE) { "Unexpected AES-GCM IV size" }
         val encrypted = cipher.doFinal(plainText)
         return ByteBuffer.allocate(HEADER_SIZE + iv.size + encrypted.size)
             .put(VERSION.toByte())

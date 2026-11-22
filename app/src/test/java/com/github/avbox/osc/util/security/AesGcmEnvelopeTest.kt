@@ -20,6 +20,12 @@ class AesGcmEnvelopeTest {
     }
 
     @Test
+    fun envelopeStoresGeneratedTwelveByteIv() {
+        val encrypted = AesGcmEnvelope.encrypt("secret".toByteArray(), key())
+        assertTrue(encrypted[1].toInt() and 0xff == 12)
+    }
+
+    @Test
     fun encryptedPayloadChangesForSamePlainText() {
         val key = key()
         val plain = "same-secret".toByteArray()
