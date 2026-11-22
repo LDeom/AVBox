@@ -47,8 +47,8 @@ class JsDanmuPluginRuntime(
         """.trimIndent().replace("__SOURCE_LITERAL__", JSONObject.quote(source))
         val result = js.evaluate(bootstrap)?.toString().orEmpty()
         val meta = JSONObject(result)
-        require(meta.optBoolean("hasSearch") || meta.optBoolean("hasLoad")) {
-            "插件至少需要导出 search 或 load 函数"
+        require(meta.optBoolean("hasSearch") && meta.optBoolean("hasLoad")) {
+            "播放器插件必须同时导出 search(query) 和 load(candidate)"
         }
         initialized = true
         meta

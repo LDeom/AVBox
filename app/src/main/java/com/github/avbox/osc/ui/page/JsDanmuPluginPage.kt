@@ -34,7 +34,7 @@ fun JsDanmuPluginScreen(onNavigateBack: () -> Unit) {
             plugins = JsDanmuPluginStore.list(context)
             importing = false
             result.exceptionOrNull()?.let { Toast.makeText(context, it.message ?: "导入失败", Toast.LENGTH_LONG).show() }
-                ?: Toast.makeText(context, "插件已导入；请使用“运行检查”验证 CommonJS 加载，播放器接入仍在开发中。", Toast.LENGTH_LONG).show()
+                ?: Toast.makeText(context, "插件已导入；播放器会在常规弹幕源无结果时尝试调用已启用插件。请先运行检查。", Toast.LENGTH_LONG).show()
         }
     }
     AppTopBarScaffold(
@@ -43,7 +43,7 @@ fun JsDanmuPluginScreen(onNavigateBack: () -> Unit) {
     ) { topPad, _ ->
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(topPad + 8.dp))
-            Text("导入 Node.js 风格的 .js 弹幕插件。文件保存在应用私有目录；单个文件最大 2 MB。导入不代表插件已兼容或可运行。",
+            Text("导入 QuickJS 可执行的 CommonJS 风格 .js 弹幕插件。播放器要求导出 search(query) 和 load(candidate)。文件保存在应用私有目录；单个文件最大 2 MB。完整 Node.js 原生模块、require 依赖树及 Promise 目前尚不支持。",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 12.dp))
             Button(onClick = { launcher.launch(arrayOf("application/javascript", "text/javascript", "text/plain", "application/octet-stream")) }, enabled = !importing) {
