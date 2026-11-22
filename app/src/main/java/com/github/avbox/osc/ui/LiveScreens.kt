@@ -799,54 +799,88 @@ private fun LandscapeChannelListSection(
         }
         if (target >= 0) listState.animateScrollToItem(target)
     }
-    Row(modifier = modifier) {
-        LazyColumn(
-            modifier = Modifier.weight(0.38f).fillMaxHeight(),
-            contentPadding = PaddingValues(bottom = 20.dp),
+    Row(modifier = modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Column(
+            modifier = Modifier.weight(0.40f).fillMaxHeight().padding(end = 10.dp),
         ) {
-            itemsIndexed(groups, key = { _, group -> "main_" + group.groupIndex }) { _, group ->
-                val selected = group.groupIndex == selectedGroupIndex
-                val locked = channelList.lockedGroups.contains(group.groupIndex)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            if (selected) Color.White.copy(alpha = 0.14f) else Color.Transparent,
-                            RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.live_main_categories),
+                    color = Color.White.copy(alpha = 0.72f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = groups.size.toString(),
+                    color = Color.White.copy(alpha = 0.55f),
+                    fontSize = 11.sp,
+                )
+            }
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                contentPadding = PaddingValues(bottom = 12.dp),
+            ) {
+                itemsIndexed(groups, key = { _, group -> "main_" + group.groupIndex }) { _, group ->
+                    val selected = group.groupIndex == selectedGroupIndex
+                    val locked = channelList.lockedGroups.contains(group.groupIndex)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                                else Color.White.copy(alpha = 0.045f),
+                            )
+                            .clickable { onSelectGroup(group.groupIndex) }
+                            .padding(horizontal = 10.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .height(30.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else Color.Transparent,
+                                ),
                         )
-                        .clickable { onSelectGroup(group.groupIndex) }
-                        .padding(horizontal = 14.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        OutlinedListText(
-                            text = group.groupName.orEmpty(),
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                            text = (group.liveChannels?.size ?: 0).toString(),
-                            color = Color.White.copy(alpha = 0.62f),
-                            fontSize = 11.sp,
-                        )
-                    }
-                    if (locked) {
-                        Icon(
-                            imageVector = Icons.Filled.Lock,
-                            contentDescription = stringResource(R.string.live_need_password),
-                            tint = Color.White.copy(alpha = 0.82f),
-                            modifier = Modifier.size(15.dp),
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = if (selected) 1f else 0.48f),
-                            modifier = Modifier.size(18.dp),
-                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            OutlinedListText(
+                                text = group.groupName.orEmpty(),
+                                style = TextStyle(
+                                    fontSize = 13.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Text(
+                                text = (group.liveChannels?.size ?: 0).toString(),
+                                color = Color.White.copy(alpha = 0.58f),
+                                fontSize = 10.sp,
+                            )
+                        }
+                        if (locked) {
+                            Icon(
+                                imageVector = Icons.Filled.Lock,
+                                contentDescription = stringResource(R.string.live_need_password),
+                                tint = Color.White.copy(alpha = 0.78f),
+                                modifier = Modifier.size(14.dp),
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.ChevronRight,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = if (selected) 0.95f else 0.42f),
+                                modifier = Modifier.size(17.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -855,39 +889,134 @@ private fun LandscapeChannelListSection(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(1.dp)
-                .background(Color.White.copy(alpha = 0.16f)),
+                .background(Color.White.copy(alpha = 0.12f)),
         )
-        if (selectedGroup == null) {
-            Box(modifier = Modifier.weight(0.62f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.live_empty_channels),
-                    color = Color.White.copy(alpha = 0.72f),
-                    fontSize = 13.sp,
-                )
-            }
-        } else if (channelList.lockedGroups.contains(selectedGroupIndex)) {
-            Box(modifier = Modifier.weight(0.62f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.live_need_password),
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(0.62f).fillMaxHeight(),
-                contentPadding = PaddingValues(bottom = 20.dp),
+        Column(
+            modifier = Modifier.weight(0.60f).fillMaxHeight().padding(start = 10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                itemsIndexed(channels, key = { _, row -> row.key }) { _, row ->
-                    val channel = row.channel ?: return@itemsIndexed
-                    ChannelRow(
-                        row = row,
-                        selected = selectedGroupIndex == channelList.playingGroupIndex &&
-                            channel.channelIndex == channelList.playingChannelIndex,
-                        onSelect = { onSelectChannel(selectedGroupIndex, row.channelPos) },
+                Text(
+                    text = selectedGroup?.groupName.orEmpty(),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White.copy(alpha = 0.10f),
+                ) {
+                    Text(
+                        text = channels.size.toString(),
+                        color = Color.White.copy(alpha = 0.76f),
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     )
+                }
+            }
+            when {
+                selectedGroup == null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.live_empty_channels),
+                        color = Color.White.copy(alpha = 0.68f),
+                        fontSize = 13.sp,
+                    )
+                }
+                channelList.lockedGroups.contains(selectedGroupIndex) -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Filled.Lock,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.72f),
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.live_need_password),
+                            color = Color.White.copy(alpha = 0.78f),
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+                else -> LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(bottom = 12.dp),
+                ) {
+                    itemsIndexed(channels, key = { _, row -> row.key }) { _, row ->
+                        val channel = row.channel ?: return@itemsIndexed
+                        val selected = selectedGroupIndex == channelList.playingGroupIndex &&
+                            channel.channelIndex == channelList.playingChannelIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                                    else Color.White.copy(alpha = 0.035f),
+                                )
+                                .clickable { onSelectChannel(selectedGroupIndex, row.channelPos) }
+                                .padding(horizontal = 11.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(30.dp)
+                                    .height(26.dp)
+                                    .clip(RoundedCornerShape(7.dp))
+                                    .background(
+                                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
+                                        else Color.White.copy(alpha = 0.08f),
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (selected) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(17.dp),
+                                    )
+                                } else {
+                                    Text(
+                                        text = channel.channelNum.toString(),
+                                        color = Color.White.copy(alpha = 0.72f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            OutlinedListText(
+                                text = channel.channelName.orEmpty(),
+                                style = TextStyle(
+                                    fontSize = 13.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                ),
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (selected) {
+                                Text(
+                                    text = stringResource(R.string.live_now_playing),
+                                    color = Color.White.copy(alpha = 0.82f),
+                                    fontSize = 10.sp,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
