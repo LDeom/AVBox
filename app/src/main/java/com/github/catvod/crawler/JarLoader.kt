@@ -219,9 +219,9 @@ class JarLoader {
             } else if (TextUtils.isEmpty(md5) && exists(file) && !FileUtils.isWeekAgo(file)) {
                 load(key, file, generation)
             } else if (source.startsWith("http")) {
-                load(key, download(source, file), generation)
+                load(key, download(source, file, generation), generation)
             } else if (source.startsWith("assets")) {
-                load(key, copyAsset(source, file), generation)
+                load(key, copyAsset(source, file, generation), generation)
             } else if (source.startsWith("file")) {
                 load(key, local(source), generation)
             } else if (source.startsWith("clan://")) {
@@ -410,13 +410,14 @@ class JarLoader {
         throw ClassNotFoundException(name)
     }
 
-    private fun download(url: String, file: File): File {
+    private fun download(url: String, file: File, generation: Long): File {
         val temp = File(file.absolutePath + ".tmp")
         try {
             val parent = file.parentFile
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
                 throw IllegalStateException("Cannot create Jar cache directory")
             }
+            if (generation != clearGeneration.get()) throw InterruptedException("Jar download generation expired")
             if (temp.exists()) temp.delete()
             Http.getSync(url).use { response ->
                 if (!response.isSuccessful) throw IllegalStateException("Jar HTTP " + response.code)
@@ -425,7 +426,9 @@ class JarLoader {
                     FileOutputStream(temp).use { output ->
                         val buffer = ByteArray(16384)
                         while (true) {
-                            if (Thread.currentThread().isInterrupted) throw InterruptedException("Jar download interrupted")
+                            if (Thread.currentThread().isInterrupted || generation != clearGeneration.get()) {
+                                throw InterruptedException("Jar download interrupted or expired")
+                            }
                             val length = input.read(buffer)
                             if (length < 0) break
                             output.write(buffer, 0, length)
@@ -437,7 +440,7 @@ class JarLoader {
             if (!temp.exists() || temp.length() <= 0L) {
                 throw IllegalStateException("Downloaded Jar is empty")
             }
-            if (!replaceCacheFile(temp, file)) {
+            if (!replaceCacheFile(temp, file, generation)) {
                 throw IllegalStateException("Cannot replace Jar cache")
             }
             return file
@@ -448,9 +451,10 @@ class JarLoader {
         return temp
     }
 
-    private fun copyAsset(url: String, file: File): File {
+    private fun copyAsset(url: String, file: File, generation: Long): File {
         val temp = File(file.absolutePath + ".tmp")
         try {
+            if (generation != clearGeneration.get()) throw InterruptedException("Asset Jar generation expired")
             val path = assetJarPath(url)
                     ?: throw IllegalArgumentException("Invalid asset Jar path")
             val input = requireNotNull(AppContextHolder.context()) { "app context not ready" }.assets.open(path)
@@ -458,8 +462,8 @@ class JarLoader {
                 FileOutputStream(temp).use { output ->
                     val buffer = ByteArray(16384)
                     while (true) {
-                        if (Thread.currentThread().isInterrupted) {
-                            throw InterruptedException("Asset Jar copy interrupted")
+                        if (Thread.currentThread().isInterrupted || generation != clearGeneration.get()) {
+                            throw InterruptedException("Asset Jar copy interrupted or expired")
                         }
                         val length = source.read(buffer)
                         if (length < 0) break
@@ -471,7 +475,7 @@ class JarLoader {
             if (!temp.exists() || temp.length() <= 0L) {
                 throw IllegalStateException("Asset Jar is empty")
             }
-            if (!replaceCacheFile(temp, file)) {
+            if (!replaceCacheFile(temp, file, generation)) {
                 throw IllegalStateException("Cannot replace asset Jar cache")
             }
             return file
@@ -482,16 +486,19 @@ class JarLoader {
         return temp
     }
 
-    private fun replaceCacheFile(temp: File, target: File): Boolean {
-        val backup = File(target.absolutePath + ".bak")
-        if (backup.exists() && !backup.delete()) return false
-        if (target.exists() && !target.renameTo(backup)) return false
-        if (!temp.renameTo(target)) {
-            if (backup.exists()) backup.renameTo(target)
-            return false
+    private fun replaceCacheFile(temp: File, target: File, generation: Long): Boolean {
+        return synchronized(lifecycleLock) {
+            if (generation != clearGeneration.get()) return@synchronized false
+            val backup = File(target.absolutePath + ".bak")
+            if (backup.exists() && !backup.delete()) return@synchronized false
+            if (target.exists() && !target.renameTo(backup)) return@synchronized false
+            if (!temp.renameTo(target)) {
+                if (backup.exists()) backup.renameTo(target)
+                return@synchronized false
+            }
+            if (backup.exists()) backup.delete()
+            true
         }
-        if (backup.exists()) backup.delete()
-        return true
     }
 
     private fun local(path: String): File {
