@@ -26,6 +26,8 @@ class CloudDrivePlaybackActivity : BaseActivity(), PageHost {
 
     private var player: PlayContainer? = null
     private var session: PlaybackSession? = null
+    private var resumed = false
+    private var sessionStarted = false
 
     private val subtitlePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) player?.onLocalSubtitlePicked(uri)
@@ -83,16 +85,19 @@ class CloudDrivePlaybackActivity : BaseActivity(), PageHost {
                 PlayContainer(this@CloudDrivePlaybackActivity).also { container ->
                     container.pageHostRef = this@CloudDrivePlaybackActivity
                     player = container
-                    container.post {
-                        if (isPageAlive()) {
-                            container.hostResume()
-                            session?.let { container.setData(it) }
-                        }
-                    }
+                    container.post { startPlaybackIfReady() }
                 }
             },
             update = {},
         )
+    }
+
+    private fun startPlaybackIfReady() {
+        if (!resumed || sessionStarted || !isPageAlive()) return
+        val container = player ?: return
+        sessionStarted = true
+        container.hostResume()
+        session?.let { container.setData(it) }
     }
 
     private fun createSession(fileId: String, fileName: String): PlaybackSession {
@@ -115,10 +120,12 @@ class CloudDrivePlaybackActivity : BaseActivity(), PageHost {
 
     override fun onResume() {
         super.onResume()
-        player?.hostResume()
+        resumed = true
+        if (sessionStarted) player?.hostResume() else startPlaybackIfReady()
     }
 
     override fun onPause() {
+        resumed = false
         player?.hostPause()
         super.onPause()
     }
