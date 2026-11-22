@@ -2,6 +2,7 @@ package com.github.catvod.crawler.js
 
 import android.util.Base64
 
+import com.github.avbox.osc.net.CloudCookieInjector
 import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.util.AppLog
 import com.google.common.net.HttpHeaders
@@ -43,6 +44,11 @@ class Connect {
 
         @JvmStatic
         fun to(url: String, req: Req, tag: Any?): Call {
+            return to(url, req, tag, null)
+        }
+
+        @JvmStatic
+        fun to(url: String, req: Req, tag: Any?, sourceKey: String?): Call {
             val session = req.getSessionId()?.let { JsSession.find(it) ?: throw IllegalStateException("session closed") }
             val base = when {
                 session != null -> session.client(req.isRedirect())
@@ -52,7 +58,8 @@ class Connect {
             }
             val okHttpClient = withTimeout(req, base)
             client = okHttpClient
-            return okHttpClient.newCall(getRequest(url, req, req.getHeader().toHeaders(), session?.tag ?: tag))
+            val headers = CloudCookieInjector.apply(sourceKey, null, url, req.getHeader()).toHeaders()
+            return okHttpClient.newCall(getRequest(url, req, headers, session?.tag ?: tag))
         }
 
         @JvmStatic
