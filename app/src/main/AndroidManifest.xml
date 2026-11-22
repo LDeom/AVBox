@@ -85,6 +85,7 @@
             android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".ui.PartitionListActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
             android:launchMode="singleTop" />
         <activity
             android:name=".ui.ThemeSettingsActivity" />
