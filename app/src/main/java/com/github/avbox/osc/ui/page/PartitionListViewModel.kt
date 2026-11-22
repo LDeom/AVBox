@@ -269,6 +269,12 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         val maxPage = abs.movie?.pagecount ?: 0
         _ui.value = when {
             videos.isEmpty() && page == FIRST_PAGE -> UiState(State.Empty, emptyList(), FIRST_PAGE, maxPage)
+            videos.isEmpty() -> current.copy(
+                nextPage = page,
+                maxPage = if (maxPage > 0) minOf(maxPage, page - 1) else page - 1,
+                loadingMore = false,
+                loadMoreError = false,
+            )
             else -> current.copy(
                 state = State.Ready,
                 videos = if (page == FIRST_PAGE) videos else current.videos + videos,
