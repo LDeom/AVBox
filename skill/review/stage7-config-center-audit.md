@@ -151,3 +151,5 @@
 - 保存按钮改为复用 `normalizedSubscribe(name, url)` 的实际规范化校验；只有经过同一套规则后仍有有效 URL 才允许提交。
 - 提交：`ec1ead18d2f24a44ad7773b97f27bb95ea00decf`。
 - 尚未运行 UI 测试或 Gradle 编译。
+
+- 复核 generation 保护改动时同步修正了 `onApiUrlChanged` 的耗时日志起点，确保统计覆盖配置失效操作本身。提交：`4c1fec8805e3600cec694e9a67ad88f714efd082`。
