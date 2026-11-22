@@ -703,3 +703,9 @@
 - 云盘设置页面增加按提供商复制 Cookie 的入口，读取各提供商允许域名的 WebView Cookie，使用域名分组文本写入剪贴板。
 - 复制操作仅在凭据状态为已设置时启用；Cookie 缺失时显示已有提示文案。
 - 本次尚未运行 Gradle 构建、单元测试或真机验证。
+
+
+## 2026-11-22 云盘 Cookie 注入覆盖宿主默认网络客户端
+- 将 CloudCookieNetworkInterceptor 加入 HttpClients.defaultClient 的构建入口，覆盖使用宿主默认 OkHttpClient 的通用请求链。
+- 该拦截器仍仅对 HTTPS 且精确匹配 provider allowlist host 的请求生效；不会向其他域名发送凭据。
+- 本次仅源码与文档更新，未运行 Gradle、测试、门禁或 APK 构建。

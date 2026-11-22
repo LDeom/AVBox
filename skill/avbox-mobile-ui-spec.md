@@ -890,6 +890,7 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 
 
 ## 4.18 网盘浏览器登录与认证同步（2026-11-22）
+- 默认宿主 OkHttpClient 通过 CloudCookieNetworkInterceptor 统一补充精确 host Cookie；此拦截器对非网盘域名无作用。
 - 设置页提供八家 provider 独立的内置 WebView 登录入口；登录完成后由用户点击保存，避免打开网页即误判登录成功。
 - WebView 仅允许 HTTPS 导航，禁用 file/content 访问；只从配置中列出的 provider Cookie host 读取 Cookie，不读取或记录其他站点 Cookie。
 - 登录 Cookie 按精确 host 序列化为 JSON，再通过 CloudCredentialVault 的 Android Keystore AES-GCM + AtomicFile 加密保存；旧版单行 Cookie 凭据仍可回退读取。

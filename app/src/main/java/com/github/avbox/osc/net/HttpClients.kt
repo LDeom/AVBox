@@ -372,6 +372,7 @@ object HttpClients {
         Probe.step("httpDohClient") { initDnsOverHttps() }
 
         val builder = OkHttpClient.Builder()
+            .addNetworkInterceptor(CloudCookieNetworkInterceptor)
 
         Probe.step("httpClients") {
             builder.dns(CustomDns())
