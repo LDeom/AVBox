@@ -151,7 +151,6 @@ class PlaybackFetch(private val controller: PlaybackController) {
                     if (view != null) controller.playUrl(playUrl + url, headers)
                 }
                 if (TextUtils.isEmpty(danmaku)) {
-                    checkDanmu("", null)
                     searchDanmu("")
                 } else {
                     checkDanmu(danmaku) {
@@ -200,8 +199,12 @@ class PlaybackFetch(private val controller: PlaybackController) {
     }
 
     private fun searchDanmu(danmaku: String) {
-        if (!TextUtils.isEmpty(danmaku) || !DanmakuApi.canSearch(controller.sourceBean())) return
+        if (!TextUtils.isEmpty(danmaku)) return
         val vod = controller.vod() ?: return
+        if (!DanmakuApi.canSearch(controller.sourceBean())) {
+            checkDanmu("", null)
+            return
+        }
         val series = controller.currentSeries(vod.playFlag, vod.playIndex)
         val key = controller.progressKey()
         danmuJob?.cancel()
