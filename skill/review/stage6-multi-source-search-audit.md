@@ -41,3 +41,11 @@
 - 已回读确认 SearchViewModel 修改内容。
 - 尚未运行 Gradle 编译、单元测试或设备压力测试；未构建 APK。
 - 本轮仅修复已能从代码确认的超时收尾和任务取消问题，不宣称整体多源搜索已验收。
+
+
+## 第二轮审查：JS 爬虫取消范围
+- `SearchViewModel.search()` 在每次新搜索前调用静态 `JsLoader.stopAll()`。
+- `JsLoader.stopAll()` 遍历全局缓存的所有 JS Spider 并调用 `cancelByTag()`；`JsSpider.cancelByTag()` 会取消 QuickJS 的 pending 工作并调用 `Connect.cancelByTag()`。
+- 因此取消范围并不天然局限于当前搜索批次：同一时刻其他页面若正在使用 JS 源（例如首页分类、详情或播放解析），也可能受到影响。该风险来自现有全局取消 API，不是本轮新引入。
+- 暂不简单删除 `stopAll()`：`SearchLoader.searchFromSpider()` 的爬虫调用在 IO 上执行同步方法，单靠协程 Job 取消不一定能中断底层 JS/网络工作；删除后可能造成旧搜索仍占用 Spider 或与新搜索竞争。
+- 正确收敛需要把 Spider 的取消粒度从“全局 / 单 Spider”进一步收敛到“单次搜索请求”，并验证 Connect/QuickJS 的 tag 生命周期；本轮列为第六阶段后续重点，不做未经验证的替换。
