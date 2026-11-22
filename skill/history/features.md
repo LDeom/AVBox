@@ -230,3 +230,10 @@
 - 兼容 file:///path 与 file://path，拒绝空路径及非 file:// 地址；本地代理地址拼接规则保持不变。
 - 扩展 FileUtilsModulePathTest 覆盖有效及无效 URI。
 - 尚未运行 Gradle 测试或真机验证。
+
+
+## 2026-11-22 第3阶段 assets 与 js/lib 路径兼容
+- 增加 assetsModulePath 对 assets:// 空路径及 scheme 的校验，保留路径原文，不做未经验证的 URL 解码。
+- 修复 loadModule 对已带 js/lib/ 前缀路径重复拼接目录的问题；统一通过 jsLibAssetPath 处理路径。
+- 新增单元测试覆盖中文资源路径、嵌套路径及无效路径。
+- 尚未运行 Gradle 或真机测试。
