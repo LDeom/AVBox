@@ -231,3 +231,13 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 新增测试验证回退原因分类，并覆盖空白 JSON 404、设备 Locale 与有效 JS/JSON不误判。
 - 仍需真实源集成验证：确认哪些依赖是可选、哪些缺失必须让根模块失败；后续再决定对模板依赖和必需模块采用严格还是兼容策略。
 - 未运行 Gradle、QuickJS native 或真机测试。
+
+
+## 第二十六轮 模板模块预检与相对路径回归用例（2026-11-22）
+- preloadTemplate() 之前直接 evaluate import 模板.js，加载失败时只记异常；模块加载器又可能以空模块回退，造成模板缺失未被清晰归因。
+- 现增加模板资源预检：FileUtils.loadModule("模板.js") 返回空/HTML/404等无效内容时，记录 echo-preloadTemplate-unavailable 及分类原因，并跳过模板赋值；不将模板缺失升级为根 Spider 初始化失败，保持旧源兼容。
+- 模板导入执行后检查 globalThis.getMubans 是否存在；缺失时记录 incomplete 诊断。该检查仅判断属性存在，不假设所有历史模板导出结构完全一致。
+- 扩充 FileUtilsModulePathTest，覆盖多层相对路径、父级回退、根相对路径、query/fragment、空引用保留query并去掉fragment。
+- 模板预检会额外读取一次模板资源；常见 assets 路径读取成本低，但真实资源加载与 QuickJS 导入仍需设备验证。
+- QuickJS 的循环导入/重复导入缓存由底层模块引擎管理，本仓库没有 native 可执行测试入口；本轮仅覆盖 URI 规范化，不宣称循环导入验证通过。
+- 未运行 Gradle、QuickJS native 或真机测试。
