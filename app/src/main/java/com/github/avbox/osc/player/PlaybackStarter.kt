@@ -273,6 +273,11 @@ class PlaybackStarter(private val host: Host) {
         return bridge.playState() == PlayState.IDLE
     }
 
+    fun cancelPendingCloudResolve() {
+        cloudResolveJob?.cancel()
+        cloudResolveJob = null
+    }
+
     fun isCrossContentReuseAllowed(): Boolean {
         val bridge = host.view() ?: return false
         if (bridge.mediaPlayer() == null) return false
