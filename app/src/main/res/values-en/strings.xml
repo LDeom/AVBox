@@ -29,6 +29,7 @@
     <string name="live_epg_of">TV Guide · %1$s</string>
     <string name="live_epg_empty">No guide data</string>
     <string name="live_settings">Live Settings</string>
+    <string name="live_channel_list">Channel list</string>
     <string name="live_need_password">Password required</string>
     <string name="live_replaying">Replaying</string>
     <string name="live_on_air">On Air</string>
