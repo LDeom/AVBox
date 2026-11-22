@@ -637,4 +637,5 @@
     <string name="osd_tunnel">隧道</string>
     <string name="osd_preload">预载</string>
     <string name="osd_cache">缓存</string>
+    <string name="settings_group_runtime_log">运行日志</string><string name="settings_runtime_log_enabled">启用运行日志</string><string name="settings_runtime_log_enabled_subtitle">开启后记录应用诊断信息，关闭后停止写入日志文件</string><string name="settings_runtime_log_export">导出运行日志</string><string name="settings_runtime_log_export_subtitle">保存日志文件，便于排查播放或配置问题</string><string name="toast_runtime_log_exported">运行日志已导出</string><string name="toast_runtime_log_export_failed">运行日志导出失败</string>
 </resources>
