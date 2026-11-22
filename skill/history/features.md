@@ -294,3 +294,9 @@
 - 修复 JarLoader.getSpider 中 generation 校验与 Spider 缓存写入不原子的窗口；注册和代际校验现由 lifecycleLock 一次完成，旧代际实例不会在 clear 后重新进入缓存。
 - 二次缓存命中校验加入 generation 检查；空 live Jar 不再登记。
 - 尚未运行 Gradle 或设备压力测试。
+
+
+## 2026-11-22 第3阶段 Jar 缓存代际与并发写保护
+- Jar 下载、clan 下载及 Asset 复制统一携带 clearGeneration，在读取循环和最终缓存替换前检查代际；缓存替换受 lifecycleLock 保护，旧任务不能在 clear 后写入缓存。
+- Jar 缓存锁按规范化源 URL 而非带 MD5 后缀的 loader key 计算，避免同一缓存文件的不同 MD5 声明并发覆盖同一个临时文件。
+- 尚未运行 Gradle、并发下载测试或 Android 真机测试。
