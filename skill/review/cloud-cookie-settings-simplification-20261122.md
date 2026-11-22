@@ -100,3 +100,13 @@
 - 完成源码静态审查与修改。
 - 未运行 Gradle 编译、单元测试、静态门禁或真机验证。
 - 未构建 APK，未发布 Release。
+
+
+## 2026-11-23 运行日志凭据脱敏补强
+- 发现此前 AppLog.sanitizeLogLine 主要在导出时运行，原始运行日志文件仍可能存储完整请求 URL、Cookie 及认证参数；导出脱敏规则也无法可靠覆盖嵌套 URL 和 Cookie 多键值。
+- 调整为写入文件和 Android Log 前即执行脱敏；对包含查询参数的 HTTP(S) URL 整体隐藏 query，避免嵌套签名 URL、auth_key、token 和 URL 编码请求头泄漏。
+- Cookie/Set-Cookie 整个字段按逗号边界整体隐藏，避免只隐藏第一个 Cookie 键值而留下同一 Header 后续 Cookie。
+- 对 authorization、token、access/refresh token、auth_key、sign/signature、api_key、password、secret 等字段增加覆盖。
+- 新增单元测试覆盖多 Cookie 键值与包含 URL 编码 Cookie Header 的签名请求 URL。
+- 注意：此前已经写入磁盘的旧日志不会被自动改写；导出时仍会经过新脱敏逻辑。新日志从本次代码运行后才会在写入前脱敏。
+- 未运行编译或测试；未构建 APK、未发布 Release。

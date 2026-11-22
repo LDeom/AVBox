@@ -36,10 +36,19 @@ object AppLog {
 
     internal fun sanitizeLogLine(line: String): String =
         line.replace(
-            Regex("(?i)(authorization\\s*[=:]\\s*)(?:bearer\\s+)?([^\\s,;]+)"),
+            Regex("""(?i)(https?://[^\s"'<>?]+)\?[^\s"'<>]*"""),
+            "$1?[REDACTED]",
+        ).replace(
+            Regex("""(?i)(["']?(?:cookie|set-cookie)["']?\s*[=:]\s*)[^,\r\n}]*"""),
             "$1[REDACTED]",
         ).replace(
-            Regex("(?i)(cookie|set-cookie|token|access[_-]?token|refresh[_-]?token|api[_-]?key|password|passwd|secret|imei|mac)(\\s*[=:]\\s*)([^\\s&,;]+)"),
+            Regex("""(?i)([?&](?:token|access[_-]?token|refresh[_-]?token|auth[_-]?key|sign(?:ature)?|api[_-]?key|password|passwd|secret|authorization)=)[^&#\s,}]*"""),
+            "$1[REDACTED]",
+        ).replace(
+            Regex("""(?i)(authorization\s*[=:]\s*)(?:bearer\s+)?([^\s,;]+)"""),
+            "$1[REDACTED]",
+        ).replace(
+            Regex("""(?i)(token|access[_-]?token|refresh[_-]?token|api[_-]?key|auth[_-]?key|password|passwd|secret|imei|mac)(\s*[=:]\s*)([^\s&,;]+)"""),
             "$1$2[REDACTED]",
         )
 
