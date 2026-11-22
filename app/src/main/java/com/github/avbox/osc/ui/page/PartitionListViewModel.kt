@@ -222,17 +222,23 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
 
     private fun request(page: Int) {
         val data = sort ?: return
+        val requestLoader = loader
+        val requestLevel = _level.value
+        val requestSourceKey = sourceKey
         if (page > FIRST_PAGE) {
             _ui.value = _ui.value.copy(loadingMore = true, loadMoreError = false)
         }
         scope.launch {
             val result = withTimeoutOrNull(20_000) {
                 suspendCancellableCoroutine<LoaderResult> { cont ->
-                    loader.request(page, data, sourceKey) { r -> if (cont.isActive) cont.resume(r) }
+                    requestLoader.request(page, data, requestSourceKey) { r ->
+                        if (cont.isActive) cont.resume(r)
+                    }
                 }
             }
+            if (requestLevel != _level.value || requestLoader !== loader) return@launch
             if (result == null) {
-                loader.cancelRequest()
+                requestLoader.cancelRequest()
                 applyTimeout(page)
             } else if (!result.stale) {
                 applyResult(page, result.absXml)
