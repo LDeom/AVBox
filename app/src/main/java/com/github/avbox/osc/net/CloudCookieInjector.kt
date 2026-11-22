@@ -12,14 +12,14 @@ object CloudCookieInjector {
     )
 
     private val providers = listOf(
-        Provider("quark", setOf("csp_PanQuark", "夸克网盘", "夸克"), setOf("quark.cn")),
-        Provider("uc", setOf("csp_PanUC", "UC网盘", "UC"), setOf("uc.cn")),
-        Provider("baidu", setOf("csp_PanBaidu", "百度网盘", "百度"), setOf("baidu.com")),
-        Provider("xunlei", setOf("csp_PanXunlei", "迅雷云盘", "迅雷"), setOf("xunlei.com")),
-        Provider("aliyun", setOf("csp_PanAli", "阿里云盘", "阿里"), setOf("alipan.com", "aliyundrive.com")),
-        Provider("guangya", setOf("csp_PanGuangya", "光鸭网盘", "光鸭"), setOf("guangyapan.com")),
-        Provider("tianyi", setOf("csp_PanTianyi", "天翼云盘", "天翼"), setOf("189.cn")),
-        Provider("pan123", setOf("csp_Pan123", "123云盘", "123"), setOf("123pan.com", "123pan.cn")),
+        Provider("quark", setOf("csp_PanQuark", "夸克网盘", "夸克"), setOf("pan.quark.cn", "drive.quark.cn", "api.quark.cn")),
+        Provider("uc", setOf("csp_PanUC", "UC网盘", "UC"), setOf("drive.uc.cn", "pc-api.uc.cn", "api.open.uc.cn")),
+        Provider("baidu", setOf("csp_PanBaidu", "百度网盘", "百度"), setOf("pan.baidu.com", "yun.baidu.com", "d.pcs.baidu.com")),
+        Provider("xunlei", setOf("csp_PanXunlei", "迅雷云盘", "迅雷"), setOf("pan.xunlei.com", "api-pan.xunlei.com", "xluser-ssl.xunlei.com")),
+        Provider("aliyun", setOf("csp_PanAli", "阿里云盘", "阿里"), setOf("www.alipan.com", "openapi.alipan.com", "api.aliyundrive.com", "auth.alipan.com")),
+        Provider("guangya", setOf("csp_PanGuangya", "光鸭网盘", "光鸭"), setOf("api.guangyapan.com", "account.guangyapan.com")),
+        Provider("tianyi", setOf("csp_PanTianyi", "天翼云盘", "天翼"), setOf("cloud.189.cn", "api.cloud.189.cn", "web.cloud.189.cn")),
+        Provider("pan123", setOf("csp_Pan123", "123云盘", "123"), setOf("www.123pan.com", "api.123pan.com", "open-api.123pan.com", "yun.123pan.cn")),
     )
 
     fun apply(
