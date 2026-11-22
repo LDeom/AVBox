@@ -2,6 +2,7 @@ package com.github.avbox.osc.io
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import com.whl.quickjs.wrapper.UriUtil
 import org.junit.Test
 
 class FileUtilsModulePathTest {
@@ -57,6 +58,54 @@ class FileUtilsModulePathTest {
         assertEquals("js/lib/helper.js", FileUtils.jsLibAssetPath("helper.js"))
         assertNull(FileUtils.jsLibAssetPath(""))
         assertNull(FileUtils.jsLibAssetPath("js/lib/"))
+    }
+
+    @Test
+    fun resolvesNestedRelativeModulePaths() {
+        assertEquals(
+            "https://example.com/js/lib/helper.js",
+            UriUtil.resolve("https://example.com/js/api/main.js", "../lib/helper.js")
+        )
+        assertEquals(
+            "https://example.com/js/api/sub/child.js",
+            UriUtil.resolve("https://example.com/js/api/main.js", "./sub/child.js")
+        )
+    }
+
+    @Test
+    fun resolvesParentSegmentsAcrossMultipleLevels() {
+        assertEquals(
+            "https://example.com/shared/util.js",
+            UriUtil.resolve("https://example.com/js/api/deep/main.js", "../../../shared/util.js")
+        )
+    }
+
+    @Test
+    fun resolvesRootRelativeAndQueryOrFragmentReferences() {
+        assertEquals(
+            "https://example.com/shared.js",
+            UriUtil.resolve("https://example.com/js/api/main.js", "/shared.js")
+        )
+        assertEquals(
+            "https://example.com/js/api/main.js?v=2",
+            UriUtil.resolve("https://example.com/js/api/main.js?old=1", "?v=2")
+        )
+        assertEquals(
+            "https://example.com/js/api/main.js#section",
+            UriUtil.resolve("https://example.com/js/api/main.js?old=1#old", "#section")
+        )
+    }
+
+    @Test
+    fun emptyReferenceKeepsQueryAndDropsFragment() {
+        assertEquals(
+            "https://example.com/js/api/main.js?token=1",
+            UriUtil.resolve("https://example.com/js/api/main.js?token=1#section", "")
+        )
+        assertEquals(
+            "https://example.com/js/api/main.js?token=1",
+            UriUtil.resolve("https://example.com/js/api/main.js?token=1#section", null)
+        )
     }
 
 }
