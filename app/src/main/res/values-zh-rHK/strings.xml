@@ -122,4 +122,5 @@
     <string name="cloud_drive_folder_depth">目錄層級：%1$d</string>
     <string name="cloud_drive_parent">上層</string>
     <string name="cloud_drive_empty">此目錄目前沒有檔案</string>
+    <string name="cloud_drive_cast_disabled">個人網盤檔案僅支援在 AVBox 應用內播放</string>
 </resources>
