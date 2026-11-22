@@ -102,7 +102,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
 
     private var token = 0
     private var arriveSeq = 0
-    private var semaphorePermits = SearchSettingsState.config.searchThreads
+    private var semaphorePermits = SearchSettings.normalizeSearchThreads(SearchSettingsState.config.searchThreads)
     private var semaphore = Semaphore(semaphorePermits)
     private val pendingSources = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.CompletableDeferred<Unit>>()
     private val scope = viewModelScope
@@ -231,7 +231,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
     fun search(title: String) {
         val t = title.trim()
         if (t.isEmpty()) return
-        val configured = SearchSettingsState.config.searchThreads
+        val configured = SearchSettings.normalizeSearchThreads(SearchSettingsState.config.searchThreads)
         if (configured != semaphorePermits) {
             semaphorePermits = configured
             semaphore = Semaphore(configured)
