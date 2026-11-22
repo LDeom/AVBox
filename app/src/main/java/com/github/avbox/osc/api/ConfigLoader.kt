@@ -26,6 +26,7 @@ import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.util.ArrayList
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.function.Supplier
@@ -36,6 +37,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 class ConfigLoader(private val owner: ApiConfig) {
     private val configLoadExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val activeFetches = ConcurrentHashMap<String, okhttp3.Call>()
+    private val liveLoadGeneration = AtomicLong(0)
 
     suspend fun loadConfig(useCache: Boolean): String? = suspendCancellableCoroutine { cont ->
         cont.invokeOnCancellation { cancelFetch(KIND_VOD) }
@@ -273,23 +275,39 @@ class ConfigLoader(private val owner: ApiConfig) {
         FileUtils.saveCache(File(app.getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl)), body)
     }
 
-    suspend fun loadLiveConfig(useCache: Boolean): String? = suspendCancellableCoroutine { cont ->
-        cont.invokeOnCancellation { cancelFetch(KIND_LIVE) }
-        configLoadExecutor.execute(Runnable {
-            if (!cont.isActive) return@Runnable
-            runLoadLiveConfig(useCache, object : ApiConfig.LoadConfigCallback {
-                override fun success() {
-                    if (cont.isActive) cont.resume(null)
+    suspend fun loadLiveConfig(useCache: Boolean): String? {
+        val requestId = liveLoadGeneration.incrementAndGet()
+        cancelFetch(KIND_LIVE)
+        return suspendCancellableCoroutine { cont ->
+            cont.invokeOnCancellation {
+                if (liveLoadGeneration.get() == requestId) {
+                    liveLoadGeneration.compareAndSet(requestId, requestId + 1)
+                    cancelFetch(KIND_LIVE)
                 }
+            }
+            configLoadExecutor.execute(Runnable {
+                if (!cont.isActive || liveLoadGeneration.get() != requestId) return@Runnable
+                runLoadLiveConfig(useCache, requestId, object : ApiConfig.LoadConfigCallback {
+                    override fun success() {
+                        if (cont.isActive) cont.resume(null)
+                    }
 
-                override fun error(msg: String?) {
-                    if (cont.isActive) cont.resume(msg)
-                }
+                    override fun error(msg: String?) {
+                        if (cont.isActive) cont.resume(msg)
+                    }
+                })
             })
-        })
+        }
     }
 
-    private fun runLoadLiveConfig(useCache: Boolean, callback: ApiConfig.LoadConfigCallback) {
+    private fun isCurrentLiveLoad(requestId: Long, apiUrl: String): Boolean =
+        liveLoadGeneration.get() == requestId && apiUrl == ApiConfig.effectiveLiveUrl()
+
+    private fun runLoadLiveConfig(
+        useCache: Boolean,
+        requestId: Long,
+        callback: ApiConfig.LoadConfigCallback,
+    ) {
         val apiUrl = guarded(callback, R.string.toast_live_config_parse_failed) { ApiConfig.effectiveLiveUrl() } ?: return
         if (apiUrl.isEmpty()) {
             AppLog.e("echo-live-config-fail url=empty")
@@ -308,9 +326,13 @@ class ConfigLoader(private val owner: ApiConfig) {
         AppLog.i("echo-load live config " + liveApiUrl)
         if (useCache && live_cache.exists() && isRemoteSource(liveApiUrl)) {
             try {
+                if (!isCurrentLiveLoad(requestId, liveApiUrl)) {
+                    callback.error("stale")
+                    return
+                }
                 val json = readConfigFile(live_cache)
                 if (switchLiveApiCollectionIfNeeded(liveApiUrl, json)) {
-                    runLoadLiveConfig(false, callback)
+                    runLoadLiveConfig(false, requestId, callback)
                     return
                 }
                 clearLiveApiLinesIfUnmatched(liveApiUrl)
@@ -327,9 +349,13 @@ class ConfigLoader(private val owner: ApiConfig) {
         fetchConfigAsync(liveApiUrl, liveApiConfigUrl, liveConfigKey, KIND_LIVE, object : ConfigFetchCallback {
             override fun success(body: String) {
                 try {
+                    if (!isCurrentLiveLoad(requestId, liveApiUrl)) {
+                        callback.error("stale")
+                        return
+                    }
                     if (switchLiveApiCollectionIfNeeded(liveApiUrl, body)) {
                         FileUtils.saveCache(live_cache, body)
-                        runLoadLiveConfig(false, callback)
+                        runLoadLiveConfig(false, requestId, callback)
                         return
                     }
                     clearLiveApiLinesIfUnmatched(liveApiUrl)
@@ -349,6 +375,10 @@ class ConfigLoader(private val owner: ApiConfig) {
             }
 
             override fun error(error: String?) {
+                if (!isCurrentLiveLoad(requestId, liveApiUrl)) {
+                    callback.error("stale")
+                    return
+                }
                 if (isLocalSourceUnreadable(liveApiUrl)) {
                     callback.error(localSourceUnreadableMsg())
                     return
@@ -361,7 +391,7 @@ class ConfigLoader(private val owner: ApiConfig) {
                     try {
                         val json = readConfigFile(live_cache)
                         if (switchLiveApiCollectionIfNeeded(liveApiUrl, json)) {
-                            runLoadLiveConfig(false, callback)
+                            runLoadLiveConfig(false, requestId, callback)
                             return
                         }
                         clearLiveApiLinesIfUnmatched(liveApiUrl)
