@@ -506,7 +506,14 @@ object FileUtils {
                     rel = netStr
                 }
             } else if (name.startsWith("assets://")) {
-                rel = asOpen(name.substring(9))
+                val assetPath = assetsModulePath(name)
+                if (assetPath != null) {
+                    rel = asOpen(assetPath)
+                } else {
+                    AppLog.i("echo-loadModule invalid assets url " + name)
+                }
+            } else if (name.startsWith("js/lib/")) {
+                rel = asOpen(name)
             } else if (isAsFile(name, "js/lib")) {
                 rel = asOpen("js/lib/" + name)
             } else if (name.startsWith("file://")) {
@@ -530,6 +537,13 @@ object FileUtils {
             AppLog.e("FileUtils", e)
         }
         return rel
+    }
+
+    internal fun assetsModulePath(name: String): String? {
+        if (!name.startsWith("assets://")) return null
+        val path = name.removePrefix("assets://")
+        if (path.isEmpty()) return null
+        return path
     }
 
     internal fun fileModulePath(name: String): String? {
