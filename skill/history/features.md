@@ -178,3 +178,8 @@
 - JsLoader.clear() 与 Spider/Class 缓存写入统一使用 lifecycleLock；旧代际 JS API Jar 和 Spider 创建任务不能在清理后重新注册缓存。
 - generation 显式贯穿 JS API Jar 下载/类加载及 Spider 创建后的注册。
 - 尚未运行 Gradle 或真机验证。
+
+## 2026-11-22 第3阶段 QuickJS 定时回调引用释放
+- 修复 Global.setTimeout 中 JSFunction.hold() 与 Timer.cancel() 的资源不平衡：销毁时释放所有未触发回调。
+- 使用独立 Timer entry 跟踪，支持同一函数多次定时调度；锁定 timer 回调提交与 Context 销毁顺序，避免销毁后回调访问 QuickJS。
+- 未运行 Gradle/设备验证。
