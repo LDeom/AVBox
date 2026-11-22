@@ -222,3 +222,12 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 新增测试覆盖 JSON code=404 的空白格式及土耳其语系统 Locale，验证错误响应判断固定使用 Locale.ROOT。
 - 保留仅识别明确错误体的策略，避免把普通业务 JSON 中出现的数字 404 误判为下载失败。
 - 仍未运行 Gradle；以上测试已提交但尚未执行。
+
+
+## 第二十五轮 JS 依赖模块空模块回退诊断（2026-11-22）
+- 审查发现 ModuleLoader 对缺失依赖、HTML/404响应、DRPY/BB bytecode解码失败、普通JS语法编译失败均可能返回同一份空模块字节码。该兼容回退可能避免部分可选依赖导致整个源初始化失败，但也会掩盖缺失依赖和语法错误，表现为导入模块缺少导出成员。
+- 本轮不改变既有回退行为，避免未经真实 TVBox 源回归就改成严格失败。改为为每种回退记录明确 reason：empty、html-error-response、json-404-response、http-404-response、not-found-response、drpy-bytecode-decode-empty/failed、bb-bytecode-decode-failed、javascript-compile-failed。
+- 抽离 JsModuleContent.invalidReason，保留 isInvalid 作为兼容入口；使用 Locale.ROOT。
+- 新增测试验证回退原因分类，并覆盖空白 JSON 404、设备 Locale 与有效 JS/JSON不误判。
+- 仍需真实源集成验证：确认哪些依赖是可选、哪些缺失必须让根模块失败；后续再决定对模板依赖和必需模块采用严格还是兼容策略。
+- 未运行 Gradle、QuickJS native 或真机测试。
