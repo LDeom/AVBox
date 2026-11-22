@@ -194,3 +194,5 @@
 - JsLoader缓存读取、recentKey更新、Jar缓存替换均与clearGeneration/lifecycleLock协调，防止返回退役Spider、读取已清空类缓存或旧下载覆盖缓存。
 - Global迟到HTTP回调在销毁后不会再启动HttpGate排队请求。
 - 未运行 Gradle/设备验证。
+
+- 补全 stream HTTP 成功回调的 HttpGate.finish()，避免 in-flight 计数不释放导致后续请求队列停滞。
