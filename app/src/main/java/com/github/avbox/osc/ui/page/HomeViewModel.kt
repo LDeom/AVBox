@@ -265,6 +265,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     private fun onHomeLoadTimeout(generation: Int) {
         if (generation != loadGeneration || sortsLoaded.value) return
+        sortWatchdogJob = null
         sortViewModel.cancelSort()
         recViewModel.cancelSort()
         _sortLoadFailed.value = true
