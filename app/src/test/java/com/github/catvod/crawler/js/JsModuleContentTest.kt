@@ -1,5 +1,6 @@
 package com.github.catvod.crawler.js
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -43,6 +44,16 @@ class JsModuleContentTest {
         } finally {
             Locale.setDefault(previous)
         }
+    }
+
+    @Test
+    fun reportsSpecificFallbackReasons() {
+        assertEquals("empty", JsModuleContent.invalidReason(null))
+        assertEquals("html-error-response", JsModuleContent.invalidReason("<html>error</html>"))
+        assertEquals("json-404-response", JsModuleContent.invalidReason("""{ "code" : 404 }"""))
+        assertEquals("http-404-response", JsModuleContent.invalidReason("404 Not Found"))
+        assertEquals("not-found-response", JsModuleContent.invalidReason("Not Found"))
+        assertEquals(null, JsModuleContent.invalidReason("export default 1"))
     }
 
     @Test
