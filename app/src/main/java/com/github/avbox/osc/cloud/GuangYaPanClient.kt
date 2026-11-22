@@ -284,7 +284,8 @@ object GuangYaPanClient {
     }
 
     fun logout() {
-        CloudCredentialVault.clear()
+        CloudCredentialVault.remove(CREDENTIAL_ID)
+        CloudCredentialVault.remove("$CREDENTIAL_ID-pending")
     }
 
     private fun refreshCredential() = synchronized(refreshLock) {
