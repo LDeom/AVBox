@@ -638,4 +638,35 @@
     <string name="osd_preload">Preload</string>
     <string name="osd_cache">Cache</string>
     <string name="settings_group_runtime_log">Runtime Logs</string><string name="settings_runtime_log_enabled">Enable Runtime Logging</string><string name="settings_runtime_log_enabled_subtitle">Record diagnostic information when enabled; stop writing log files when disabled</string><string name="settings_runtime_log_export">Export Runtime Logs</string><string name="settings_runtime_log_export_subtitle">Save a log file to help diagnose playback or configuration issues</string><string name="toast_runtime_log_exported">Runtime logs exported</string><string name="toast_runtime_log_export_failed">Failed to export runtime logs</string>
+
+    <string name="settings_group_cloud_drive">Cloud Drives</string>
+    <string name="settings_cloud_drive">Cloud Drive Accounts</string>
+    <string name="settings_cloud_drive_subtitle">Manage personal cloud drive sign-ins and file access</string>
+    <string name="cloud_drive_accounts">Connected and planned providers</string>
+    <string name="cloud_drive_aliyun">Aliyun Drive</string>
+    <string name="cloud_drive_quark">Quark Drive</string>
+    <string name="cloud_drive_baidu">Baidu Netdisk</string>
+    <string name="cloud_drive_115">115 Drive</string>
+    <string name="cloud_drive_uc">UC Drive</string>
+    <string name="cloud_drive_guangya">GuangYaPan</string>
+    <string name="cloud_drive_provider_pending">Not integrated yet; authentication will be implemented separately</string>
+    <string name="cloud_drive_guangya_scope">Personal file browsing and in-app access only. No public sharing or external-link distribution.</string>
+    <string name="cloud_drive_phone">Phone number</string>
+    <string name="cloud_drive_sms_code">SMS verification code</string>
+    <string name="cloud_drive_send_code">Send code</string>
+    <string name="cloud_drive_login">Sign in</string>
+    <string name="cloud_drive_check_status">Check account</string>
+    <string name="cloud_drive_logout">Sign out</string>
+    <string name="cloud_drive_login_success">GuangYaPan sign-in succeeded</string>
+    <string name="cloud_drive_login_failed">GuangYaPan sign-in failed</string>
+    <string name="cloud_drive_request_failed">Request failed. Please try again.</string>
+    <string name="cloud_drive_account_valid">Account is valid: %1$s</string>
+    <string name="cloud_drive_account_invalid">Account validation failed</string>
+    <string name="cloud_drive_logged_out">Signed out of GuangYaPan</string>
+    <string name="cloud_drive_files">Personal files</string>
+    <string name="cloud_drive_file_count">Loaded %1$d items</string>
+    <string name="cloud_drive_root">Root</string>
+    <string name="cloud_drive_folder_depth">Folder depth: %1$d</string>
+    <string name="cloud_drive_parent">Parent</string>
+    <string name="cloud_drive_empty">This folder is empty</string>
 </resources>
