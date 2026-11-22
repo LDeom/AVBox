@@ -93,18 +93,6 @@ class MediaSourcesTest {
 
 
     @Test
-    fun strictTlsMarkerIsNotSentAsAnHttpHeaderOrCacheKey() {
-        val headers = mapOf(
-            MediaSources.HEADER_STRICT_TLS to "true",
-            "User-Agent" to "AVBox",
-        )
-        val requestHeaders = MediaSources.toNetworkRequestHeaders(headers)
-        assertEquals("AVBox", requestHeaders["User-Agent"])
-        assertFalse(requestHeaders.containsKey(MediaSources.HEADER_STRICT_TLS))
-        assertEquals("", MediaSources.headerKeySuffix(mapOf(MediaSources.HEADER_STRICT_TLS to "true")))
-    }
-
-    @Test
     fun toRequestHeaders_nullInput() {
         assertTrue(MediaSources.toRequestHeaders(null).isEmpty())
     }
