@@ -327,6 +327,7 @@ class JsSpider : Spider {
         synchronized(taskLock) {
             if (!destroyed.compareAndSet(false, true)) return
             try {
+                global?.stopAccepting()
                 executor.submit(Runnable {
                     try {
                         try {
