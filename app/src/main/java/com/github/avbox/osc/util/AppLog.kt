@@ -36,7 +36,10 @@ object AppLog {
 
     internal fun sanitizeLogLine(line: String): String =
         line.replace(
-            Regex("(?i)(authorization|cookie|set-cookie|token|access[_-]?token|refresh[_-]?token|api[_-]?key|password|passwd|secret|imei|mac)(\\s*[=:]\\s*)([^\\s&,;]+)"),
+            Regex("(?i)(authorization\\s*[=:]\\s*)(?:bearer\\s+)?([^\\s,;]+)"),
+            "$1[REDACTED]",
+        ).replace(
+            Regex("(?i)(cookie|set-cookie|token|access[_-]?token|refresh[_-]?token|api[_-]?key|password|passwd|secret|imei|mac)(\\s*[=:]\\s*)([^\\s&,;]+)"),
             "$1$2[REDACTED]",
         )
 
@@ -54,8 +57,9 @@ object AppLog {
         val output = context.contentResolver.openOutputStream(uri, "w")
             ?: throw IllegalStateException("Unable to open log export destination")
         OutputStreamWriter(output, StandardCharsets.UTF_8).buffered().use { writer ->
+            writer.write("AVBox runtime log export; sensitive values are redacted.\n")
             if (files.isEmpty()) {
-                writer.write("No runtime log entries have been recorded.\n")
+                writer.write("AVBox runtime log export; sensitive values are redacted.\nNo runtime log entries have been recorded.\n")
             } else {
                 files.forEach { file ->
                     BufferedReader(InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)).use { reader ->
