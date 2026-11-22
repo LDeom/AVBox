@@ -573,9 +573,8 @@ class JsSpider : Spider {
                     "globalThis.muban = tpl.muban;\n" +
                     "globalThis.getMubans = tpl.getMubans;"
             requireNotNull(ctx) { "js context not ready" }.evaluateModule(template, "tv_box_template.js")
-            val getMubansType = requireNotNull(ctx) { "js context not ready" }
-                    .evaluate("typeof globalThis.getMubans") as? String
-            if (getMubansType != "function") {
+            val getMubans = get(requireNotNull(ctx) { "js context not ready" }.globalObject, "getMubans")
+            if (getMubans == null) {
                 AppLog.i("echo-preloadTemplate-incomplete missing=getMubans")
             }
         } catch (th: Throwable) {
