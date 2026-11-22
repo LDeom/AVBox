@@ -806,10 +806,20 @@ class Global {
     private class StreamReply(private val resolve: JSFunction, private val reject: JSFunction) {
 
         private val settled = AtomicBoolean(false)
+        private val released = AtomicBoolean(false)
+        private var resolveHeld = false
+        private var rejectHeld = false
 
         fun hold() {
             resolve.hold()
-            reject.hold()
+            resolveHeld = true
+            try {
+                reject.hold()
+                rejectHeld = true
+            } catch (th: Throwable) {
+                release()
+                throw th
+            }
         }
 
         fun take(): Boolean = settled.compareAndSet(false, true)
@@ -823,15 +833,20 @@ class Global {
         }
 
         fun release() {
-            try {
-                resolve.release()
-            } catch (th: Throwable) {
-                AppLog.d("Global", "release stream resolve failed")
+            if (!released.compareAndSet(false, true)) return
+            if (resolveHeld) {
+                try {
+                    resolve.release()
+                } catch (th: Throwable) {
+                    AppLog.d("Global", "release stream resolve failed")
+                }
             }
-            try {
-                reject.release()
-            } catch (th: Throwable) {
-                AppLog.d("Global", "release stream reject failed")
+            if (rejectHeld) {
+                try {
+                    reject.release()
+                } catch (th: Throwable) {
+                    AppLog.d("Global", "release stream reject failed")
+                }
             }
         }
     }
