@@ -188,3 +188,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - jsLibAssetPath 统一处理已带前缀路径与 js/lib 根目录下的裸文件名；带其他目录的裸路径不误拼接。
 - 新增测试覆盖嵌套资源路径、中文路径、空路径和已带前缀的 js/lib 路径。
 - 代码已回读；尚未执行 Gradle 测试。实际 AssetManager 文件存在性及设备端 QuickJS 相对模块解析仍待集成验证。
+
+
+## 第二十三轮 JS 初始化超时与 Context 清理线程安全（2026-11-22）
+- 发现 initializeJS() 等待初始化 Future 超时后只 cancel 并记录日志，却不向构造方抛出失败；JsSpider 构造可能继续返回一个尚未初始化完成的实例，随后被 JsLoader 缓存。
+- 现将初始化超时作为构造失败向上传递，避免返回无效 Spider。
+- 构造失败时不再从调用方线程直接销毁 QuickJSContext；先停止 Global 接收新回调，再将 Global/Context 清理排入 JsSpider 单线程 Executor，随后关闭 Executor。这样若 native QuickJS 调用暂时不响应 interrupt，清理会排在其后，不与正在使用 Context 的线程并发销毁。
+- 若清理任务无法排队则记录并关闭 Executor；native 调用是否及时响应中断仍需真机/压力测试确认。
+- 本轮静态检查已完成，未运行 Gradle、QuickJS native 测试或设备验证。
