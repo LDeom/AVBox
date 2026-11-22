@@ -152,9 +152,10 @@ fun HomeGridLayout(
             val tabSort = tabPartition?.sort ?: sorts.firstOrNull { it.id == tabId }
             val tabGridState = gridStates.getOrPut(tabId) { LazyGridState() }
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val availableGridWidthDp = (maxWidth - 32.dp - navStart).value.toInt()
             val gridColumns = WindowSize.gridColumns(
-                availableWidthDp = (maxWidth - 32.dp - navStart).value.toInt(),
-                minColumns = 3,
+                availableWidthDp = availableGridWidthDp,
+                minColumns = WindowSize.gridMinColumns(availableGridWidthDp),
             )
             LazyVerticalGrid(
                 columns = GridCells.Fixed(gridColumns),
