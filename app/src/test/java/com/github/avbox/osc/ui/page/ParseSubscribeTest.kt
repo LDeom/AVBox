@@ -38,4 +38,23 @@ class ParseSubscribeTest {
         assertEquals("name", source.name)
         assertEquals("https://example.com/x.json", source.url)
     }
+    
+    @Test
+    fun normalizedSubscribeRemovesControlCharsFromBothFields() {
+        val source = normalizedSubscribe("我的\\t源\\u0007", "  https://example.com/\\nconfig.json\\t")
+        assertEquals("我的源", source?.name)
+        assertEquals("https://example.com/config.json", source?.url)
+    }
+
+    @Test
+    fun normalizedSubscribeUsesUrlWhenNameIsBlank() {
+        val source = normalizedSubscribe("\\u0007 ", " https://example.com/config.json ")
+        assertEquals("https://example.com/config.json", source?.name)
+        assertEquals("https://example.com/config.json", source?.url)
+    }
+
+    @Test
+    fun normalizedSubscribeRejectsEmptyUrlAfterSanitizing() {
+        assertEquals(null, normalizedSubscribe("source", " \\t\\n\\u0007 "))
+    }
 }
