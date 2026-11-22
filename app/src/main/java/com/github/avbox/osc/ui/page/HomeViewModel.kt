@@ -353,6 +353,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
                 return
             }
+            sortWatchdogJob?.cancel()
+            sortWatchdogJob = null
             AppLog.i("echo--sort-failed: src=$key")
             _sortLoadFailed.value = true
             _rec.value = Rec(PartitionState.Empty, emptyList())
@@ -395,6 +397,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 }
                 return
             }
+            sortWatchdogJob?.cancel()
+            sortWatchdogJob = null
             AppLog.i("echo--sort-empty-final: src=$key sortSize=${absXml.classes?.sortList?.size}")
             _sortLoadFailed.value = true
             _rec.value = Rec(PartitionState.Empty, emptyList())
