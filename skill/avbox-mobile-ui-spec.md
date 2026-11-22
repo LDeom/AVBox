@@ -901,3 +901,5 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 
 
 ## 4.19 内置浏览器诊断日志\n- 网盘 WebView 登录诊断统一使用 AppLog 前缀 `echo-webview-login`，由 4.17 用户运行日志开关控制文件日志记录。\n- 日志覆盖页面起止 host、加载进度阶梯、主框架错误代码/HTTP 状态、被拦截的外部 scheme、Cookie 保存状态与页面销毁。不得记录 Cookie 值、完整 URL/query、页面标题或异常明文。\n- 用户可在设置页开启运行日志后复现网页登录问题，再从运行日志导出诊断信息。\n
+
+## 6.14 点播页旋转生命周期保护\n- DetailActivity 对 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize 变化使用 `onConfigurationChanged`，保留 Activity/PlayContainer 与 PlaybackService 共享播放会话，避免旋转触发 `onDestroy` 中 hostDestroy/detach/stopPlaybackKeepPlayer。\n- 配置变化时记录尺寸与方向诊断，执行全屏旋转状态收敛和播放器宿主 resume 同步。\n- 该保护旨在降低 Activity recreate 引起的播放器重启/启动页闪回风险；Surface/窗口与厂商 ROM 行为仍需真机验证，日志用于确认 PID、生命周期和状态变化。\n
