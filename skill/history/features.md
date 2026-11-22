@@ -602,6 +602,7 @@
 - 新增应用内播放链：文件列表视频点击进入 CloudDrivePlaybackActivity，构造内部 guangya:// 播放项，PlaybackStarter 在 IO 线程换取短时 HTTPS 地址并复用既有 PlayContainer/PlaybackEngine；云盘会话禁用外部投屏，不生成公开分享链接。
 - 云盘播放使用独立 source key，不覆盖用户当前点播源；离开播放页时取消待完成的云盘地址解析任务。
 - 新增 PlaybackUrlLog，日志仅记录 URL 主机与脱敏占位符；新增单测覆盖查询参数、路径和 userinfo 脱敏。
-- 网盘请求使用独立标准 TLS 客户端，避免复用 HttpClients 中关闭证书校验的通用客户端，同时保留应用代理选择。
+- 网盘认证/API 请求使用独立标准 TLS 客户端，避免复用 HttpClients 中关闭证书校验的通用客户端，同时保留应用代理选择。
+- ExoPlayer 下载链路通过内部传输标记启用独立标准 TLS 客户端，标记在 HTTP 发出前移除，且不进入缓存键；云盘签名 URL 不经 trust-all TLS 客户端请求。
 - 尚未实现其他五家网盘；光鸭短信服务端可能要求官方人机验证或调整登录方式。
 - 尚未运行 Gradle 编译、单元测试、Android Keystore 真机登录、文件列表联调或播放验证；未构建 APK。
