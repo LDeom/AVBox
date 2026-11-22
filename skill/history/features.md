@@ -709,3 +709,10 @@
 - 将 CloudCookieNetworkInterceptor 加入 HttpClients.defaultClient 的构建入口，覆盖使用宿主默认 OkHttpClient 的通用请求链。
 - 该拦截器仍仅对 HTTPS 且精确匹配 provider allowlist host 的请求生效；不会向其他域名发送凭据。
 - 本次仅源码与文档更新，未运行 Gradle、测试、门禁或 APK 构建。
+
+
+## 2026-11-22 清除网盘凭据同步清理 provider WebView Cookie
+- 设置页清除动作在删除加密凭据后，按该 provider 的 Cookie host 列表逐 host 读取现存 Cookie 名称并写入 Max-Age=0 清除条目，再 flush CookieManager。
+- 清理范围仅限 provider allowlist host，不调用全局 removeAllCookies，避免误删其他网盘或网站会话。
+- CookieManager 的删除回调等待完成后再结束清理流程；尚未设备验证不同 WebView Cookie 路径/域属性是否均被删除。
+- 未运行 Gradle、测试或 APK 构建。

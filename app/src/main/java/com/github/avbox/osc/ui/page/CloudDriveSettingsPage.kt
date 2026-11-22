@@ -46,6 +46,8 @@ import com.github.avbox.osc.ui.components.TopBarActionBox
 import com.github.avbox.osc.util.security.CloudCredentialVault
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -169,6 +171,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                             busy[provider.id] = true
                                             val result = runCatching {
                                                 withContext(Dispatchers.IO) { CloudCredentialVault.remove(provider.id) }
+                                                clearProviderCookies(provider.cookieHosts)
                                             }
                                             result.onSuccess {
                                                 configured[provider.id] = false
@@ -192,4 +195,24 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
             }
         }
     }
+}
+
+private suspend fun clearProviderCookies(hosts: Set<String>) {
+    val manager = CookieManager.getInstance()
+    for (host in hosts) {
+        val url = "https://$host/"
+        val cookies = manager.getCookie(url).orEmpty()
+        val names = cookies.split(";").mapNotNull { part ->
+            val separator = part.indexOf('=')
+            if (separator <= 0) null else part.substring(0, separator).trim().takeIf { it.isNotEmpty() }
+        }.distinct()
+        for (name in names) {
+            suspendCancellableCoroutine<Unit> { continuation ->
+                manager.setCookie(url, "$name=; Max-Age=0; Path=/; Secure") {
+                    if (continuation.isActive) continuation.resume(Unit)
+                }
+            }
+        }
+    }
+    manager.flush()
 }
