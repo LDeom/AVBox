@@ -265,3 +265,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 现将 generation 校验与 Spider 缓存注册放入同一个 lifecycleLock 临界区；若注册时已跨代际，则通过 SpiderReaper.retire 回收新建实例并返回 SpiderNull。
 - 二次缓存检查也在 lifecycleLock 下同时验证 generation；空 live Jar 输入不再创建无意义 key 或登记 live 状态。
 - 该修复针对静态可确认的竞态；尚无可运行的 JarLoader 并发单元测试，仍需真实 Android/DexClassLoader 压力测试。
+
+
+## 第三十轮 Jar 下载代际提交与同源缓存串行化（2026-11-22）
+- 进一步检查发现 JarLoader 的网络下载/Asset 复制会先替换磁盘缓存，再调用 load() 校验 clearGeneration；若 clear() 在下载期间发生，旧任务仍可能在磁盘写入旧 Jar。
+- download/copyAsset/replaceCacheFile 现传递同一 generation；开始、读取循环及最终替换前均检查代际，最终备份替换在 lifecycleLock 内完成，过期任务不能在 clear 后提交缓存。
+- clan:// Jar 下载路径也统一传递 generation。
+- 另发现不同 ;md5; 后缀会生成不同 loader key，却指向同一 fileForJar(source) 缓存文件，原先按 loader key 加锁无法防止同一 .tmp 文件并发写入。parseJar 现按规范化 source 的缓存身份使用 jar-cache 前缀锁，同一物理缓存目标串行处理。
+- 尚未运行 Gradle、网络并发测试或真机测试；需覆盖下载中 clear、同 URL 不同 MD5 后缀、下载失败旧缓存保留及并发复制。
