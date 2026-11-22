@@ -59,21 +59,19 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     val folderStack = remember { mutableStateListOf<String>() }
     val currentParent = folderStack.lastOrNull().orEmpty()
 
-    fun loadFiles(parentId: String = currentParent) {
-        scope.launch {
-            busy = true
-            val result = runCatching {
-                withContext(Dispatchers.IO) { GuangYaPanClient.listFiles(parentId) }
-            }
-            files.clear()
-            result.onSuccess {
-                files.addAll(it)
-                message = context.getString(R.string.cloud_drive_file_count, it.size)
-            }.onFailure {
-                message = it.message ?: context.getString(R.string.cloud_drive_request_failed)
-            }
-            busy = false
+    suspend fun loadFiles(parentId: String = currentParent) {
+        busy = true
+        val result = runCatching {
+            withContext(Dispatchers.IO) { GuangYaPanClient.listFiles(parentId) }
         }
+        files.clear()
+        result.onSuccess {
+            files.addAll(it)
+            message = context.getString(R.string.cloud_drive_file_count, it.size)
+        }.onFailure {
+            message = it.message ?: context.getString(R.string.cloud_drive_request_failed)
+        }
+        busy = false
     }
 
 
@@ -101,7 +99,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(top = topPad + 8.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
             SettingsGroup(title = stringResource(R.string.cloud_drive_accounts)) {
                 SettingsCard(SettingsCardPosition.FIRST) {
@@ -258,10 +256,10 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     enabled = !busy && folderStack.isNotEmpty(),
                                     onClick = {
                                         if (folderStack.isNotEmpty()) folderStack.removeAt(folderStack.lastIndex)
-                                        loadFiles(folderStack.lastOrNull().orEmpty())
+                                        scope.launch { loadFiles(folderStack.lastOrNull().orEmpty()) }
                                     },
                                 ) { Text(stringResource(R.string.cloud_drive_parent)) }
-                                TextButton(enabled = !busy, onClick = { loadFiles() }) {
+                                TextButton(enabled = !busy, onClick = { scope.launch { loadFiles() } }) {
                                     Text(stringResource(R.string.common_refresh))
                                 }
                             }
@@ -275,7 +273,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                         .clickable(enabled = (file.isFolder || isPlayableCloudFile(file.fileName)) && !busy) {
                                             if (file.isFolder) {
                                                 folderStack.add(file.fileId)
-                                                loadFiles(file.fileId)
+                                                scope.launch { loadFiles(file.fileId) }
                                             } else {
                                                 CloudDrivePlaybackActivity.start(context, file.fileId, file.fileName)
                                             }
