@@ -41,16 +41,21 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal object JsModuleContent {
 
-    fun isInvalid(content: String?): Boolean {
-        if (content.isNullOrEmpty()) return true
+    fun invalidReason(content: String?): String? {
+        if (content.isNullOrEmpty()) return "empty"
         var normalized = content.trim { it <= ' ' }
         if (normalized.startsWith("\uFEFF")) normalized = normalized.substring(1).trim { it <= ' ' }
         val lower = normalized.lowercase(Locale.ROOT)
-        return lower.startsWith("<")
-                || Regex("""^\{\s*"code"\s*:\s*404(?:\s*[,}])""").containsMatchIn(lower)
-                || lower.startsWith("404")
-                || lower.startsWith("not found")
+        return when {
+            lower.startsWith("<") -> "html-error-response"
+            Regex("""^\{\s*"code"\s*:\s*404(?:\s*[,}])""").containsMatchIn(lower) -> "json-404-response"
+            lower.startsWith("404") -> "http-404-response"
+            lower.startsWith("not found") -> "not-found-response"
+            else -> null
+        }
     }
+
+    fun isInvalid(content: String?): Boolean = invalidReason(content) != null
 }
 
 class JsSpider : Spider {
@@ -458,17 +463,18 @@ class JsSpider : Spider {
 
             override fun getModuleBytecode(moduleName: String): ByteArray? {
                 val ss = FileUtils.loadModule(moduleName)
-                if (isInvalidModuleContent(ss)) {
-                    return compileEmptyModule(moduleName)
+                val invalidReason = JsModuleContent.invalidReason(ss)
+                if (invalidReason != null) {
+                    return compileEmptyModule(moduleName, invalidReason)
                 }
-                val text = ss ?: return compileEmptyModule(moduleName)
+                val text = ss ?: return compileEmptyModule(moduleName, "empty")
                 if (text.startsWith("//DRPY")) {
                     try {
                         val bytes = bytecode(Base64.decode(text.replace("//DRPY", ""), Base64.URL_SAFE))
-                        return bytes ?: compileEmptyModule(moduleName)
+                        return bytes ?: compileEmptyModule(moduleName, "drpy-bytecode-decode-empty")
                     } catch (th: Throwable) {
                         AppLog.i("echo-bytecode-module-error " + moduleName + ", msg=" + th.message)
-                        return compileEmptyModule(moduleName)
+                        return compileEmptyModule(moduleName, "drpy-bytecode-decode-failed")
                     }
                 } else if (text.startsWith("//bb")) {
                     try {
@@ -476,7 +482,7 @@ class JsSpider : Spider {
                         return byteFF(b)
                     } catch (th: Throwable) {
                         AppLog.i("echo-bytecode-module-error " + moduleName + ", msg=" + th.message)
-                        return compileEmptyModule(moduleName)
+                        return compileEmptyModule(moduleName, "bb-bytecode-decode-failed")
                     }
                 } else {
                     return compileModule(moduleName, text)
@@ -527,8 +533,8 @@ class JsSpider : Spider {
         preloadTemplate()
     }
 
-    private fun compileEmptyModule(moduleName: String?): ByteArray? {
-        AppLog.i("echo-getModuleBytecode empty :" + moduleName)
+    private fun compileEmptyModule(moduleName: String?, reason: String): ByteArray? {
+        AppLog.i("echo-getModuleBytecode fallback-empty module=" + moduleName + ", reason=" + reason)
         return emptyModuleBytecode
     }
 
@@ -546,7 +552,7 @@ class JsSpider : Spider {
             return requireNotNull(ctx) { "js context not ready" }.compileModule(content, moduleName)
         } catch (th: Throwable) {
             AppLog.i("echo-compileModule-error " + moduleName + ", msg=" + th.message)
-            return compileEmptyModule(moduleName)
+            return compileEmptyModule(moduleName, "javascript-compile-failed")
         }
     }
 
