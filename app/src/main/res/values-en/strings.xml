@@ -35,7 +35,6 @@
     <string name="live_need_password">Password required</string>
     <string name="live_replaying">Replaying</string>
     <string name="live_on_air">On Air</string>
-    <string name="live_now_playing">Now Playing</string>
     <string name="live_group_long_press_delete">%1$s (long-press to delete)</string>
     <string name="player_play_pause">Play/Pause</string>
 
