@@ -403,3 +403,5 @@
 - 扩展 `ParseSubscribeTest`：覆盖名称/地址控制字符、空名称回退、清理后空 URL 拒绝。
 - 代码提交：`c276690438ae2ccbfccdf66ca1f3bf55d269e859`；测试提交：`93bbad81561bc17629c36cb1bb93d91b6d3b37eb`；测试转义修正：`fdffd159f99be7ef73aaa57ff311523abaf2c806`。
 - 本轮尚未运行 Gradle 编译或单元测试，未构建 APK。
+
+- 第一轮补充：新增/编辑订阅的重复 URL 判断和活动源编辑后的切换判断统一使用规范化 URL，避免原始输入与实际保存值不一致。提交：`584052de9ce393617ef46fb4c4603ad03bcea42f`。
