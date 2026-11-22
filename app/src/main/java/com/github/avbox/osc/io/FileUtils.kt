@@ -621,7 +621,7 @@ object FileUtils {
                 recursiveDelete(file)
                 return ""
             }
-            return asJsonObject.get("data")?.takeIf { it.isJsonPrimitive && it.isJsonPrimitive.isString }
+            return asJsonObject.get("data")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }
                     ?.asString ?: ""
         } catch (e4: Exception) {
             return ""
