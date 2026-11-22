@@ -118,7 +118,7 @@ class VideoGestureHandler(
                 if (ady <= commitPx) return false
             }
             mode = decideMode(dx, dy, s)
-            AppLog.i("echo-gesture mode=" + mode + " dx=" + dx + " dy=" + dy + " half=" + if (downX >= s.screenWidth / 2f) "right" else "left" + " full=" + s.fullScreen + " enabled=" + s.gestureEnabled + " preview=" + s.previewMode + " disabled=" + s.verticalSlidingDisabled)
+            AppLog.i("echo-gesture mode=" + mode + " dx=" + dx + " dy=" + dy + " half=" + (if (downX >= s.screenWidth / 2f) "right" else "left") + " full=" + s.fullScreen + " enabled=" + s.gestureEnabled + " preview=" + s.previewMode + " disabled=" + s.verticalSlidingDisabled)
         }
         return when (mode) {
             Mode.SEEK -> {

@@ -12,12 +12,15 @@ class SystemEffectDispatcher(
     private val activity: () -> Activity?,
     private val audio: () -> AudioManager?,
 ) {
-    fun dispatch(effect: SystemEffect) {
+    fun dispatch(effect: SystemEffect): Boolean = runCatching {
         when (effect) {
             is SystemEffect.Brightness -> applyBrightness(effect.value)
             is SystemEffect.Volume -> applyVolume(effect.index)
         }
-    }
+        true
+    }.onFailure {
+        com.github.avbox.osc.util.AppLog.e("echo-gesture-system-effect-failed: " + effect.javaClass.simpleName + " " + it.javaClass.simpleName)
+    }.getOrDefault(false)
 
     private fun applyBrightness(value: Float) {
         val window = activity()?.window ?: return

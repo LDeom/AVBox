@@ -173,7 +173,9 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
         if (target < 0f) target = 0f
         if (target > 1f) target = 1f
         if (target != lastAppliedBrightness) {
-            systemEffects.dispatch(SystemEffect.Brightness(target))
+            val firstApply = lastAppliedBrightness.isNaN()
+            val success = systemEffects.dispatch(SystemEffect.Brightness(target))
+            if (firstApply) AppLog.i("echo-gesture-brightness-apply success=" + success + " target=" + (target * 100).toInt())
             lastAppliedBrightness = target
         }
         if (VERBOSE_GESTURE_LOG) {
@@ -200,7 +202,9 @@ internal class VideoGestureActionsImpl(private val host: VideoPlayerController) 
         if (index < 0f) index = 0f
         val applied = index.toInt()
         if (applied != lastAppliedVolume) {
-            systemEffects.dispatch(SystemEffect.Volume(applied))
+            val firstApply = lastAppliedVolume == Int.MIN_VALUE
+            val success = systemEffects.dispatch(SystemEffect.Volume(applied))
+            if (firstApply) AppLog.i("echo-gesture-volume-apply success=" + success + " index=" + applied + " max=" + streamMax)
             lastAppliedVolume = applied
         }
         if (VERBOSE_GESTURE_LOG) {
