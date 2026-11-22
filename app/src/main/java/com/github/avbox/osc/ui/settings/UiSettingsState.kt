@@ -17,6 +17,7 @@ data class UiSettingsConfig(
     val longPressSpeed: Int,
     val musicAutoOpenPage: Boolean,
     val dohIndex: Int,
+    val runtimeLogEnabled: Boolean,
 )
 
 object UiSettingsState {
@@ -36,6 +37,7 @@ object UiSettingsState {
         longPressSpeed = KV.get(KVKeys.LONG_PRESS_SPEED, KVKeys.LONG_PRESS_SPEED_DEFAULT),
         musicAutoOpenPage = KV.get(KVKeys.MUSIC_AUTO_OPEN_PAGE, true),
         dohIndex = KV.get(KVKeys.DOH_URL, 0),
+        runtimeLogEnabled = KV.get(KVKeys.RUNTIME_LOG_ENABLED, false),
     )
 
     fun reload() {
@@ -110,5 +112,13 @@ object UiSettingsState {
         set(value) {
             KV.put(KVKeys.DOH_URL, value)
             current = current.copy(dohIndex = value)
+        }
+
+    var runtimeLogEnabled: Boolean
+        get() = current.runtimeLogEnabled
+        set(value) {
+            KV.put(KVKeys.RUNTIME_LOG_ENABLED, value)
+            com.github.avbox.osc.util.AppLog.setFileLoggingEnabled(value)
+            current = current.copy(runtimeLogEnabled = value)
         }
 }
