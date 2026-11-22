@@ -664,3 +664,12 @@
 - 新增单测锁定封装记录 12-byte IV；原有往返、随机密文与篡改认证测试继续覆盖。
 - 本次仅修复安全存储写入失败，不代表配置中心 JAR 的登录态已自动同步，也不代表 JSON token 能直接作为 Cookie 注入；后续仍需逐类核对登录凭据格式与请求认证方式。
 - 尚未运行 Gradle、单元测试或真机验证；未构建 APK。
+
+
+## 2026-11-22 网盘浏览器登录第一轮：WebView Cookie 捕获与域名隔离
+- 设置页移除手动 Cookie 输入，改为八家网盘独立的浏览器登录、重新登录与清除入口。
+- 新增 CloudDriveLoginActivity，使用 Android WebView 打开对应 provider 登录页；启用 DOM storage 与 CookieManager，禁用 file/content 访问，只允许 HTTPS 页面导航。
+- 用户完成网页登录后主动点击保存；仅从 provider allowlist 中逐个精确 host 读取 Cookie，序列化为 host->cookie JSON 后写入 CloudCredentialVault，不记录 Cookie 原文。
+- CloudCookieInjector 对 host-map 凭据按请求精确 host 读取，避免跨 host 广播；旧版单行 Cookie 仍兼容读取。
+- 新增 CloudDriveProviderCatalog 统一维护 provider 登录入口与 Cookie host allowlist；Manifest 注册非导出的登录 Activity。
+- 尚未运行 Gradle 编译、单元测试或真机网页登录；登录 URL、OAuth 重定向、验证码、Token-only provider 和配置中心 JAR 内部凭据同步仍待逐家验证；未构建 APK。

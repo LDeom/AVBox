@@ -638,10 +638,10 @@
     <string name="osd_cache">缓存</string>
     <string name="settings_group_runtime_log">运行日志</string><string name="settings_runtime_log_enabled">启用运行日志</string><string name="settings_runtime_log_enabled_subtitle">开启后记录应用诊断信息，关闭后停止写入日志文件</string><string name="settings_runtime_log_export">导出运行日志</string><string name="settings_runtime_log_export_subtitle">保存日志文件，便于排查播放或配置问题</string><string name="toast_runtime_log_exported">运行日志已导出</string><string name="toast_runtime_log_export_failed">运行日志导出失败</string>
 
-    <string name="settings_group_cloud_drive">网盘 Cookie</string>
-    <string name="settings_cloud_drive">云盘 Cookie 设置</string>
-    <string name="settings_cloud_drive_subtitle">统一保存各网盘 Cookie，供对应源请求使用</string>
-    <string name="cloud_drive_accounts">网盘列表</string>
+    <string name="settings_group_cloud_drive">网盘登录</string>
+    <string name="settings_cloud_drive">云盘登录与同步</string>
+    <string name="settings_cloud_drive_subtitle">登录一次，供配置中心对应网盘使用</string>
+    <string name="cloud_drive_accounts">网盘账号</string>
     <string name="cloud_drive_aliyun">阿里云盘</string>
     <string name="cloud_drive_quark">夸克网盘</string>
     <string name="cloud_drive_baidu">百度网盘</string>
@@ -650,11 +650,12 @@
     <string name="cloud_drive_xunlei">迅雷云盘</string>
     <string name="cloud_drive_tianyi">天翼云盘</string>
     <string name="cloud_drive_123">123 云盘</string>
-    <string name="cloud_drive_cookie_notice">按网盘分别填写 Cookie。凭据使用 Android Keystore 加密保存，不会显示在普通配置文件或运行日志中。只有对应源和请求桥接支持的网盘接口才能自动使用。</string>
-    <string name="cloud_drive_cookie_input">Cookie</string>
-    <string name="cloud_drive_cookie_placeholder">粘贴该网盘的 Cookie 内容</string>
-    <string name="cloud_drive_cookie_saved">Cookie 已加密保存</string>
-    <string name="cloud_drive_cookie_save_failed">Cookie 保存失败</string>
-    <string name="cloud_drive_cookie_cleared">Cookie 已清除</string>
-    <string name="cloud_drive_cookie_invalid">Cookie 不能包含换行符</string>
+    <string name="cloud_drive_login_notice">在此打开网盘官方网页完成登录，再点击保存登录状态。仅提取该网盘受支持域名的 Cookie，并使用 Android Keystore 加密保存。部分网盘可能采用 Token 等其他认证方式，仍需按配置中心驱动适配。</string>
+    <string name="cloud_drive_browser_login">浏览器登录</string>
+    <string name="cloud_drive_login_again">重新登录</string>
+    <string name="cloud_drive_login_instruction">请在下方官方网页完成扫码或账号登录。登录成功后点击“保存登录状态”。</string>
+    <string name="cloud_drive_login_save">完成登录并保存</string>
+    <string name="cloud_drive_login_cookie_missing">未检测到该网盘支持域名的 Cookie，请确认已完成登录。</string>
+    <string name="cloud_drive_cookie_save_failed">登录状态保存失败</string>
+    <string name="cloud_drive_cookie_cleared">登录状态已清除</string>
 </resources>

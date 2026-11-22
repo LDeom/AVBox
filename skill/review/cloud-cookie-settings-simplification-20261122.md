@@ -36,3 +36,10 @@
 - 已完成远程文件回读与静态差异核对。
 - 未运行 Gradle 编译、单元测试、静态门禁、JAR 真机联调或 APK 构建；不能宣称本轮代码已通过编译或测试。
 - 未构建 APK，未发布 Release。
+
+
+## 2026-11-22 浏览器登录第一轮补充
+- 设置 UI 已改为内置 WebView 登录；保存动作由用户明确触发，不在网页加载完成时自动抓取。
+- CookieManager 读取范围仅限每家 provider 的 host allowlist；持久化结构为加密 JSON host map。请求端只向 URL 精确 host 注入对应条目；保留旧版纯 Cookie 字符串读取兼容。
+- 首轮入口 URL 采用 provider 官方站点主域名，实际认证可能跳转到其他子域名；若 Cookie 仅存在于未列出的认证 host，保存时会提示未检测到 Cookie。应依据真实 WebView 跳转和 JAR 请求再扩展 allowlist，不能放宽到任意站点。
+- 本轮尚未编译、测试或真机验证。不能宣称八家登录均已成功；Token-only 驱动与独立网络栈 JAR 仍需适配。

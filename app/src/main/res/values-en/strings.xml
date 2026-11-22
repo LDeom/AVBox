@@ -638,10 +638,10 @@
     <string name="osd_cache">Cache</string>
     <string name="settings_group_runtime_log">Runtime Logs</string><string name="settings_runtime_log_enabled">Enable Runtime Logging</string><string name="settings_runtime_log_enabled_subtitle">Record diagnostic information when enabled; stop writing log files when disabled</string><string name="settings_runtime_log_export">Export Runtime Logs</string><string name="settings_runtime_log_export_subtitle">Save a log file to help diagnose playback or configuration issues</string><string name="toast_runtime_log_exported">Runtime logs exported</string><string name="toast_runtime_log_export_failed">Failed to export runtime logs</string>
 
-    <string name="settings_group_cloud_drive">Cloud Cookies</string>
-    <string name="settings_cloud_drive">Cloud Cookie Settings</string>
-    <string name="settings_cloud_drive_subtitle">Store cookies separately for each cloud provider</string>
-    <string name="cloud_drive_accounts">Cloud providers</string>
+    <string name="settings_group_cloud_drive">Cloud Drive Login</string>
+    <string name="settings_cloud_drive">Cloud Login and Sync</string>
+    <string name="settings_cloud_drive_subtitle">Sign in once for the matching provider in Config Center</string>
+    <string name="cloud_drive_accounts">Cloud accounts</string>
     <string name="cloud_drive_aliyun">Aliyun Drive</string>
     <string name="cloud_drive_quark">Quark Drive</string>
     <string name="cloud_drive_baidu">Baidu Netdisk</string>
@@ -650,11 +650,12 @@
     <string name="cloud_drive_xunlei">Xunlei Drive</string>
     <string name="cloud_drive_tianyi">Tianyi Cloud</string>
     <string name="cloud_drive_123">123 Pan</string>
-    <string name="cloud_drive_cookie_notice">Enter cookies separately for each provider. Credentials are encrypted with Android Keystore and are not written to regular configuration files or runtime logs. Automatic use depends on support in the matching source and request bridge.</string>
-    <string name="cloud_drive_cookie_input">Cookie</string>
-    <string name="cloud_drive_cookie_placeholder">Paste the provider cookie</string>
-    <string name="cloud_drive_cookie_saved">Cookie encrypted and saved</string>
-    <string name="cloud_drive_cookie_save_failed">Could not save cookie</string>
-    <string name="cloud_drive_cookie_cleared">Cookie cleared</string>
-    <string name="cloud_drive_cookie_invalid">Cookie must be a single line</string>
+    <string name="cloud_drive_login_notice">Sign in on each provider official page. Only cookies for that provider supported domains are collected and encrypted with Android Keystore. Some providers may use tokens or another authentication method and still require driver-specific integration.</string>
+    <string name="cloud_drive_browser_login">Browser sign-in</string>
+    <string name="cloud_drive_login_again">Sign in again</string>
+    <string name="cloud_drive_login_instruction">Complete QR-code or account sign-in below, then save the login state.</string>
+    <string name="cloud_drive_login_save">Finish and save login</string>
+    <string name="cloud_drive_login_cookie_missing">No cookies found for the supported provider domains. Confirm that sign-in is complete.</string>
+    <string name="cloud_drive_cookie_save_failed">Could not save login state</string>
+    <string name="cloud_drive_cookie_cleared">Login state cleared</string>
 </resources>

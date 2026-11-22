@@ -889,9 +889,11 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 
 
 
-## 4.18 网盘 Cookie 设置（2026-11-22）
-- 设置页提供统一「云盘 Cookie」入口，按配置中实际存在的八家 provider 管理：夸克、UC、百度、迅雷、阿里、光鸭、天翼、123 云盘；每家独立填写、覆盖保存与清除，不提供短信登录、扫码登录、账号状态检查、文件浏览器或独立云盘播放页。
-- Cookie 使用 CloudCredentialVault：每个 provider 独立 Android Keystore AES-GCM 密钥与应用私有目录 AtomicFile；不进入 MMKV、普通配置 JSON、运行日志或日志导出。cloud_credentials/ 必须从云备份与设备迁移中排除。
-- CloudCookieInjector 仅对 HTTPS 且匹配网盘服务域名的请求合并 Cookie；JS HTTP 请求通过 Connect 注入，TVBox JAR 通过宿主 com.github.catvod.net.OkHttp 的网络拦截器覆盖普通 API 请求，type-3 JAR 代理请求另由 ProxyEntry 按 provider 标识与域名双重校验。自带独立 HTTP 客户端、绕过宿主 OkHttp 门面的 JAR 不保证被拦截，必须按驱动验证。源请求显式提供的同名 Cookie 项由设置中保存的值覆盖，其余 Cookie 项保留。
-- 只对已识别的 provider 与匹配服务域的请求注入；普通点播/直播请求不得获得网盘 Cookie。JAR/JS 驱动是否实际使用 Cookie 仍取决于各驱动自身认证协议；使用 Token 或其他认证方式的驱动不能仅凭填写 Cookie 即视为已登录或已支持。
-- 不提供专用网盘播放、目录浏览、短信认证、公开分享或外链分发功能。若未来某驱动需要 Token，应先确认用户是否要扩展范围，再按其认证协议独立设计。
+## 4.18 网盘浏览器登录与认证同步（2026-11-22）
+- 设置页提供八家 provider 独立的内置 WebView 登录入口；登录完成后由用户点击保存，避免打开网页即误判登录成功。
+- WebView 仅允许 HTTPS 导航，禁用 file/content 访问；只从配置中列出的 provider Cookie host 读取 Cookie，不读取或记录其他站点 Cookie。
+- 登录 Cookie 按精确 host 序列化为 JSON，再通过 CloudCredentialVault 的 Android Keystore AES-GCM + AtomicFile 加密保存；旧版单行 Cookie 凭据仍可回退读取。
+- 请求注入按请求 URL 的精确 host 选择对应 Cookie，避免把登录 host 的 Cookie 广播到同一 provider 的所有服务域名。
+- 清除账号只清理对应 provider 的加密凭据；WebView 登录 Cookie 仍由 Android CookieManager 管理。退出登录/清除浏览器会话的独立选项尚未实现。
+- 登录 URL 与 host allowlist 是首轮配置；真实登录跳转、验证码/扫码和 API host 需逐家真机验证。Token-only 驱动、独立 HTTP 栈 JAR 和配置中心凭据内部格式仍需后续适配。
+

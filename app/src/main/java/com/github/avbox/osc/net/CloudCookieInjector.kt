@@ -1,26 +1,13 @@
 package com.github.avbox.osc.net
 
 import com.github.avbox.osc.util.security.CloudCredentialVault
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import org.json.JSONObject
 
 object CloudCookieInjector {
 
-    private data class Provider(
-        val id: String,
-        val aliases: Set<String>,
-        val domains: Set<String>,
-    )
-
-    private val providers = listOf(
-        Provider("quark", setOf("csp_PanQuark", "夸克网盘", "夸克"), setOf("pan.quark.cn", "drive.quark.cn", "api.quark.cn")),
-        Provider("uc", setOf("csp_PanUC", "UC网盘", "UC"), setOf("drive.uc.cn", "pc-api.uc.cn", "api.open.uc.cn")),
-        Provider("baidu", setOf("csp_PanBaidu", "百度网盘", "百度"), setOf("pan.baidu.com", "yun.baidu.com", "d.pcs.baidu.com")),
-        Provider("xunlei", setOf("csp_PanXunlei", "迅雷云盘", "迅雷"), setOf("pan.xunlei.com", "api-pan.xunlei.com", "xluser-ssl.xunlei.com")),
-        Provider("aliyun", setOf("csp_PanAli", "阿里云盘", "阿里"), setOf("www.alipan.com", "openapi.alipan.com", "api.aliyundrive.com", "auth.alipan.com")),
-        Provider("guangya", setOf("csp_PanGuangya", "光鸭网盘", "光鸭"), setOf("api.guangyapan.com", "account.guangyapan.com")),
-        Provider("tianyi", setOf("csp_PanTianyi", "天翼云盘", "天翼"), setOf("cloud.189.cn", "api.cloud.189.cn", "web.cloud.189.cn")),
-        Provider("pan123", setOf("csp_Pan123", "123云盘", "123"), setOf("www.123pan.com", "api.123pan.com", "open-api.123pan.com", "yun.123pan.cn")),
-    )
+    private val providers = CloudDriveProviderCatalog.providers
 
     fun apply(
         sourceKey: String?,
@@ -29,52 +16,63 @@ object CloudCookieInjector {
         headers: Map<String, String>,
     ): Map<String, String> {
         val provider = providerFor(sourceKey, api) ?: return headers
-        if (!matchesProvider(sourceKey, api, url)) return headers
-        val cookie = CloudCredentialVault.read(provider.id) ?: return headers
-        return merge(headers, cookie)
+        val target = url?.toHttpUrlOrNull() ?: return headers
+        if (!target.isHttps || target.host !in provider.cookieHosts) return headers
+        return applyProviderCookie(provider.id, target, headers)
     }
 
     fun applyForUrl(url: String, headers: Map<String, String>): Map<String, String> {
-        val provider = providerForUrl(url) ?: return headers
-        val cookie = CloudCredentialVault.read(provider.id) ?: return headers
-        return merge(headers, cookie)
+        val target = url.toHttpUrlOrNull() ?: return headers
+        if (!target.isHttps) return headers
+        val provider = providers.firstOrNull { target.host in it.cookieHosts } ?: return headers
+        return applyProviderCookie(provider.id, target, headers)
     }
 
     internal fun matchesProvider(sourceKey: String?, api: String?, url: String?): Boolean {
         val provider = providerFor(sourceKey, api) ?: return false
         val target = url?.toHttpUrlOrNull() ?: return false
-        return target.isHttps && provider.domains.any { target.host == it || target.host.endsWith(".$it") }
+        return target.isHttps && target.host in provider.cookieHosts
     }
 
-    internal fun matchesAnyProviderHost(url: String): Boolean = providerForUrl(url) != null
-
-    private fun providerForUrl(url: String): Provider? {
-        val target = url.toHttpUrlOrNull() ?: return null
-        if (!target.isHttps) return null
-        return providers.firstOrNull { provider ->
-            provider.domains.any { target.host == it || target.host.endsWith(".$it") }
-        }
+    internal fun matchesAnyProviderHost(url: String): Boolean {
+        val target = url.toHttpUrlOrNull() ?: return false
+        return target.isHttps && providers.any { target.host in it.cookieHosts }
     }
 
-    private fun providerFor(sourceKey: String?, api: String?): Provider? =
+    private fun applyProviderCookie(providerId: String, target: HttpUrl, headers: Map<String, String>): Map<String, String> {
+        val stored = CloudCredentialVault.read(providerId) ?: return headers
+        val cookie = cookieForHost(stored, target.host) ?: return headers
+        return merge(headers, cookie)
+    }
+
+    private fun cookieForHost(stored: String, host: String): String? {
+        if (!stored.trimStart().startsWith("{")) return stored
+        return runCatching { JSONObject(stored).optString(host).takeIf { it.isNotBlank() } }.getOrNull()
+    }
+
+    private fun providerFor(sourceKey: String?, api: String?): CloudDriveProvider? =
         providers.firstOrNull { item ->
-            item.aliases.any { alias ->
-                alias.equals(sourceKey, ignoreCase = true) || alias.equals(api, ignoreCase = true)
+            val aliases = when (item.id) {
+                "quark" -> setOf("csp_PanQuark", "夸克网盘", "夸克")
+                "uc" -> setOf("csp_PanUC", "UC网盘", "UC")
+                "baidu" -> setOf("csp_PanBaidu", "百度网盘", "百度")
+                "xunlei" -> setOf("csp_PanXunlei", "迅雷云盘", "迅雷")
+                "aliyun" -> setOf("csp_PanAli", "阿里云盘", "阿里")
+                "guangya" -> setOf("csp_PanGuangya", "光鸭网盘", "光鸭")
+                "tianyi" -> setOf("csp_PanTianyi", "天翼云盘", "天翼")
+                else -> setOf("csp_Pan123", "123云盘", "123")
             }
+            aliases.any { it.equals(sourceKey, ignoreCase = true) || it.equals(api, ignoreCase = true) }
         }
 
     internal fun merge(headers: Map<String, String>, storedCookie: String): Map<String, String> {
         val merged = LinkedHashMap<String, String>()
         headers.entries.firstOrNull { it.key.equals("Cookie", ignoreCase = true) }
-            ?.value
-            ?.let(::parseCookie)
-            ?.forEach { (name, value) -> merged[name] = value }
+            ?.value?.let(::parseCookie)?.forEach { (name, value) -> merged[name] = value }
         parseCookie(storedCookie).forEach { (name, value) -> merged[name] = value }
         if (merged.isEmpty()) return headers
         val result = LinkedHashMap<String, String>()
-        headers.filterKeys { !it.equals("Cookie", ignoreCase = true) }.forEach { (key, value) ->
-            result[key] = value
-        }
+        headers.filterKeys { !it.equals("Cookie", ignoreCase = true) }.forEach { (key, value) -> result[key] = value }
         result["Cookie"] = merged.entries.joinToString("; ") { it.key + "=" + it.value }
         return result
     }

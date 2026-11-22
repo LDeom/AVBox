@@ -112,6 +112,10 @@
         <activity
             android:name=".ui.CloudDriveSettingsActivity"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.CloudDriveLoginActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
 
         <service
             android:name=".dlna.DLNACastService"
