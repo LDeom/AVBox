@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 class PartitionListViewModel : ViewModel(), TmdbPosterCache {
@@ -36,6 +37,7 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         data object Loading : State
         data object Empty : State
         data object Ready : State
+        data object Error : State
     }
 
     data class UiState(
@@ -43,6 +45,8 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         val videos: List<Movie.Video> = emptyList(),
         val nextPage: Int = FIRST_PAGE,
         val maxPage: Int = 0,
+        val loadingMore: Boolean = false,
+        val loadMoreError: Boolean = false,
     ) {
         val hasMore: Boolean get() = !(maxPage > 0 && nextPage > maxPage)
     }
@@ -112,14 +116,21 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
             }
         }
 
-        fun release() {
+        @Synchronized
+        fun cancelRequest() {
             svm.cancelList()
             pending?.invoke(LoaderResult(true, null))
             pending = null
             busy = false
+        }
+
+        @Synchronized
+        fun release() {
+            cancelRequest()
             loaderScope.cancel()
         }
 
+        @Synchronized
         fun request(page: Int, data: MovieSort.SortData, sourceKey: String?, onDone: (LoaderResult) -> Unit) {
             pending?.invoke(LoaderResult(true, null))
             pending = onDone
@@ -194,27 +205,72 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
     fun loadMore() {
         if (nav.isEmpty()) return
         val s = _ui.value
-        if (s.state != State.Ready || !s.hasMore || loader.busy) return
+        if (s.state != State.Ready || !s.hasMore || s.loadingMore || s.loadMoreError || loader.busy) return
         request(s.nextPage)
+    }
+
+    fun retry() {
+        if (_ui.value.state == State.Error) reload()
+    }
+
+    fun retryLoadMore() {
+        val current = _ui.value
+        if (current.state == State.Ready && current.loadMoreError && !loader.busy) {
+            request(current.nextPage)
+        }
     }
 
     private fun request(page: Int) {
         val data = sort ?: return
+        if (page > FIRST_PAGE) {
+            _ui.value = _ui.value.copy(loadingMore = true, loadMoreError = false)
+        }
         scope.launch {
-            val result = suspendCancellableCoroutine<LoaderResult> { cont ->
-                loader.request(page, data, sourceKey) { r -> if (cont.isActive) cont.resume(r) }
+            val result = withTimeoutOrNull(20_000) {
+                suspendCancellableCoroutine<LoaderResult> { cont ->
+                    loader.request(page, data, sourceKey) { r -> if (cont.isActive) cont.resume(r) }
+                }
             }
-            if (!result.stale) applyResult(page, result.absXml)
+            if (result == null) {
+                loader.cancelRequest()
+                applyTimeout(page)
+            } else if (!result.stale) {
+                applyResult(page, result.absXml)
+            }
+        }
+    }
+
+    private fun applyTimeout(page: Int) {
+        val current = _ui.value
+        _ui.value = if (page == FIRST_PAGE) {
+            UiState(State.Error)
+        } else {
+            current.copy(loadingMore = false, loadMoreError = true)
         }
     }
 
     private fun applyResult(page: Int, abs: AbsXml?) {
-        val videos = abs?.movie?.videoList ?: emptyList()
-        val maxPage = abs?.movie?.pagecount ?: 0
-        val cur = _ui.value
+        val current = _ui.value
+        if (abs == null) {
+            _ui.value = if (page == FIRST_PAGE) {
+                UiState(State.Error)
+            } else {
+                current.copy(loadingMore = false, loadMoreError = true)
+            }
+            return
+        }
+        val videos = abs.movie?.videoList ?: emptyList()
+        val maxPage = abs.movie?.pagecount ?: 0
         _ui.value = when {
             videos.isEmpty() && page == FIRST_PAGE -> UiState(State.Empty, emptyList(), FIRST_PAGE, maxPage)
-            else -> UiState(State.Ready, if (page == 0) videos else cur.videos + videos, page + 1, maxPage)
+            else -> current.copy(
+                state = State.Ready,
+                videos = if (page == FIRST_PAGE) videos else current.videos + videos,
+                nextPage = page + 1,
+                maxPage = maxPage,
+                loadingMore = false,
+                loadMoreError = false,
+            )
         }
     }
 }
