@@ -80,12 +80,7 @@ object FileUtils {
     @JvmStatic
     fun readSimple(src: File): ByteArray? {
         try {
-            val bis = BufferedInputStream(FileInputStream(src))
-            val len = bis.available()
-            val data = ByteArray(len)
-            bis.read(data)
-            bis.close()
-            return data
+            return FileInputStream(src).use { it.readBytes() }
         } catch (e: IOException) {
             AppLog.e("FileUtils", e)
         }
@@ -474,15 +469,10 @@ object FileUtils {
     @JvmStatic
     fun saveCache(cache: File, json: String) {
         try {
-            val cacheDir = cache.parentFile
-            if (!cacheDir.exists())
-                cacheDir.mkdirs()
-            if (cache.exists())
-                cache.delete()
-            val fos = FileOutputStream(cache)
-            fos.write(json.toByteArray(Charsets.UTF_8))
-            fos.flush()
-            fos.close()
+            val data = json.toByteArray(Charsets.UTF_8)
+            if (!writeSimple(data, cache)) {
+                AppLog.i("FileUtils: cache write failed " + cache.absolutePath)
+            }
         } catch (th: Throwable) {
             AppLog.e("FileUtils", th)
         }
