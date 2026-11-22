@@ -3,6 +3,7 @@ package com.github.avbox.osc.io
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import com.whl.quickjs.wrapper.UriUtil
+import com.github.catvod.crawler.JarLoader
 import org.junit.Test
 
 class FileUtilsModulePathTest {
@@ -106,6 +107,17 @@ class FileUtilsModulePathTest {
             "https://example.com/js/api/main.js?token=1",
             UriUtil.resolve("https://example.com/js/api/main.js?token=1#section", null)
         )
+    }
+
+    @Test
+    fun normalizesAssetJarPathsWithoutReplacingNestedSegments() {
+        val loader = JarLoader()
+        assertEquals("lib/source.jar", loader.assetJarPath("assets://lib/source.jar"))
+        assertEquals("lib/source.jar", loader.assetJarPath("assets/lib/source.jar"))
+        assertEquals("nested/assets/source.jar", loader.assetJarPath("assets://nested/assets/source.jar"))
+        assertNull(loader.assetJarPath("assets://"))
+        assertNull(loader.assetJarPath("assets://../outside.jar"))
+        assertNull(loader.assetJarPath("assets-other/source.jar"))
     }
 
 }
