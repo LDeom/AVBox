@@ -321,6 +321,10 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
     }
 
     fun showCastDialog() {
+        if (scheduler.sourceKey() == "cloud:guangyapan") {
+            Toast.makeText(hostContext, hostContext.getString(R.string.cloud_drive_cast_disabled), Toast.LENGTH_SHORT).show()
+            return
+        }
         if (MediaSources.isoHeaders(scheduler.webHeaderMap())) {
             AppLog.i("echo-iso-cast-blocked")
             Toast.makeText(hostContext, hostContext.getString(R.string.player_iso_cast_unsupported), Toast.LENGTH_SHORT).show()
