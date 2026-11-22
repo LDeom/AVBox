@@ -194,6 +194,15 @@ PlaybackService(前台服务,托管生命周期)
 - `beginNewPlay()` / `stoppedForSourceSwitch()` / `userSelfRescue()` 等同会话内的复位**刻意不清**:自动重试与用户重试会走这些路径,清了等于开门。**不要**改回 gen 值比对:每轮 `startSession()` 会 `resetGen()`,某一轮涨到同值即误丢正常起播。
 - 走查通道(前缀均在 `AppLog.FILE_LOG_PREFIXES` 白名单内):投屏解析入口 `echo-cast prepare: resolve only, no playback side effects`、收摊 `echo-cast prepare end`、置位 `echo-cast abort set: drop in-flight resolve results`、**用户起播入口清除** `echo-cast abort clear`(`beginSession` 那次带 `: new playback session`;不存在"异常清除"这一路径)、丢弃 `echo-cast abort: drop late play url` 与 `echo-cast abort: drop retry (<reason>)`(`reason` ∈ `retryAfterStartedError` / `autoRetry` / `resolveTimeout` / `resolveFailed` / `switchLineTimeout`)、投屏准备期解析失败 `echo-cast prepare aborted: <err>`;归因侧的 `echo-goPlayUrl` / `echo-autoRetry` / `echo-resolvePlayUrl` / `echo-playM3u8` 也在白名单内(`echo-loadFoundVideoUrl` 只在 logcat,不在文件日志白名单)。注意两点:① `abort set` 在"投屏成功拿到地址"时**同样**会打 ⇒ 判"放弃"要看有没有 `echo-cast prepare: url resolved, keep playback off`;② `echo-goPlayUrl:` 是**入口判定之前**打的,故它只说明"走到门口"——竞态下(入口判定通过、UI Runnable 内被二次判定丢弃)它会与 `drop late play url` 同时出现,判"没起播"要看其后**没有** `echo-setDataSource` / `codec-init`。
 
+
+
+### 3.10 个人云盘文件播放（2026-11-22）
+- 云盘视频使用合成 VodInfo 与专用 source key（cloud:guangyapan），播放条目只保存内部标识 guangya://<fileId>，不把短时签名 URL 写入配置源、历史文件或分享链接。
+- PlaybackStarter 识别 guangya:// 后，在 IO 线程调用云盘 provider 换取临时 HTTPS 播放地址，再交给既有 playUrl / PlaybackEngine / PlayContainer 链路；不另建播放器内核。
+- 云盘会话的 source key 不在 ApiConfig 中注册，因此 PlaybackController.startSession 仅在 SourceBean 存在时更新当前点播源，避免播放个人云盘文件覆盖用户选中的点播源。
+- 临时播放地址只在应用内存和播放器请求中使用；PlaybackUrlLog.safe 对诊断日志隐藏路径、查询参数和 userinfo；云盘会话禁止外部投屏。
+- 该链路目前完成代码接线，仍需真机验证下载地址有效期、HTTP Header/重定向、Exo 播放、旋转与退出清理。禁止新增公开分享、公共代理或外部转发能力。
+
 ## 4. 真机验收清单
 
 > **结果(2026-09-14)**:真机回归确认无问题(功能项与稳定性项经日常操作走查)。**§4-6/7 的量化数据未采集**。
