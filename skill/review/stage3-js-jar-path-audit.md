@@ -180,3 +180,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - loadModule 使用规范化后的相对路径拼接本地代理地址，保持原有 LocalAddress/file/ 路由方式。
 - 新增测试覆盖两种有效 URI 形式及空/非目标 URI。
 - 代码结构已回读检查；尚未运行 Gradle 测试，也未验证设备端 LocalAddress 路由。
+
+
+## 第二十二轮 assets:// 与 js/lib 模块路径处理（2026-11-22）
+- assetsModulePath 显式验证 assets:// scheme 与非空资源路径，路径主体保持原样，不擅自 URL decode，避免破坏中文名或合法特殊字符。
+- loadModule 新增对已带 js/lib/ 前缀路径的直接打开分支，避免再次拼接 js/lib/ 造成重复目录。
+- jsLibAssetPath 统一处理已带前缀路径与 js/lib 根目录下的裸文件名；带其他目录的裸路径不误拼接。
+- 新增测试覆盖嵌套资源路径、中文路径、空路径和已带前缀的 js/lib 路径。
+- 代码已回读；尚未执行 Gradle 测试。实际 AssetManager 文件存在性及设备端 QuickJS 相对模块解析仍待集成验证。
