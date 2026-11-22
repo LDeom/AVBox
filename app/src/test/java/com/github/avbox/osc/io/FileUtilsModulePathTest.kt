@@ -39,4 +39,23 @@ class FileUtilsModulePathTest {
         assertNull(FileUtils.fileModulePath("https://example.com/helper.js"))
     }
 
+    @Test
+    fun resolvesAssetsModulePathsWithoutChangingNestedOrUnicodeNames() {
+        assertEquals("js/lib/helper.js", FileUtils.assetsModulePath("assets://js/lib/helper.js"))
+        assertEquals("模块目录/工具.js", FileUtils.assetsModulePath("assets://模块目录/工具.js"))
+    }
+
+    @Test
+    fun rejectsEmptyOrUnrelatedAssetsUris() {
+        assertNull(FileUtils.assetsModulePath("assets://"))
+        assertNull(FileUtils.assetsModulePath("file:///modules/helper.js"))
+    }
+
+    @Test
+    fun preservesAlreadyPrefixedJsLibraryPaths() {
+        assertEquals("js/lib/helper.js", FileUtils.jsLibAssetPath("js/lib/helper.js"))
+        assertEquals("js/lib/helper.js", FileUtils.jsLibAssetPath("helper.js"))
+        assertNull(FileUtils.jsLibAssetPath(""))
+    }
+
 }
