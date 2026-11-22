@@ -4,6 +4,7 @@ import android.text.TextUtils
 
 import com.github.catvod.crawler.SpiderReaper
 import com.github.avbox.osc.bean.SourceBean
+import com.github.avbox.osc.net.CloudCookieInjector
 import com.github.avbox.osc.net.StreamProxy
 import com.github.avbox.osc.util.DefaultConfig
 import com.github.avbox.osc.util.KVKeys
@@ -12,6 +13,7 @@ import com.github.avbox.osc.util.AppLog
 
 import java.net.URLDecoder
 import java.util.HashMap
+import org.json.JSONObject
 
 class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderLoader) {
     private var currentPlaySourceKey = ""
@@ -38,6 +40,7 @@ class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderL
                 && !isApiPy
 
         if (canUseType3) {
+            injectCloudCookie(param, source)
             try {
                 val spider = owner.getCSP(source)
 
@@ -99,6 +102,23 @@ class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderL
         }
 
         return spiderLoader.proxyInvokeJar(param)
+    }
+
+    private fun injectCloudCookie(param: MutableMap<String, String>, source: SourceBean) {
+        val rawUrl = param["url"] ?: return
+        val url = runCatching { URLDecoder.decode(rawUrl, "UTF-8") }.getOrNull() ?: return
+        val rawHeaders = param["header"] ?: "{}"
+        val json = runCatching { JSONObject(rawHeaders) }.getOrNull() ?: return
+        val headers = LinkedHashMap<String, String>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            headers[key] = json.optString(key)
+        }
+        val injected = CloudCookieInjector.apply(source.key, source.api, url, headers)
+        if (injected != headers) {
+            param["header"] = JSONObject(injected).toString()
+        }
     }
 
     private fun proxyDirect(param: MutableMap<String, String>): Array<Any?>? {
