@@ -15,9 +15,10 @@ object ConfigApplier {
 
     @JvmStatic
     fun applyHostRules(infoJson: JsonObject) {
+        if (!infoJson.has("rules")) return
+        VideoParseRuler.clearRule()
         val rulesValue = infoJson.get("rules")
         if (rulesValue != null && rulesValue.isJsonArray) {
-            VideoParseRuler.clearRule()
             for (oneHostRule in rulesValue.asJsonArray) {
                 if (!oneHostRule.isJsonObject) continue
                 val obj = oneHostRule.asJsonObject
