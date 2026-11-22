@@ -3,6 +3,7 @@ package com.github.avbox.osc.util.net
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import okhttp3.MediaType
@@ -226,6 +227,27 @@ class HttpTest {
     }
 
     @Test
+    fun get_closesResponseWhenCancelledAfterDelivery() = runBlocking {
+        val closed = AtomicInteger()
+        val response = Response.Builder()
+            .request(request())
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("test")
+            .body(bodyTrackingClose(closed))
+            .build()
+        try {
+            suspendCancellableCoroutine<Response> { cont ->
+                Http.resumeResponse(cont, response)
+                cont.cancel(CancellationException("cancelled before dispatch"))
+            }
+            fail("expected CancellationException")
+        } catch (e: CancellationException) {
+        }
+        assertEquals(1, closed.get())
+    }
+
+    @Test
     fun get_cancelPropagatesCancellationWithoutOtherFailure() = runBlocking {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
@@ -281,6 +303,24 @@ class HttpTest {
                 override fun timeout(): Timeout = Timeout.NONE
 
                 override fun close() = Unit
+            }.buffer()
+        }
+    }
+
+    private fun bodyTrackingClose(closed: AtomicInteger): ResponseBody {
+        return object : ResponseBody() {
+            override fun contentType(): MediaType? = null
+
+            override fun contentLength(): Long = 0
+
+            override fun source(): BufferedSource = object : Source {
+                override fun read(sink: Buffer, byteCount: Long): Long = -1
+
+                override fun timeout(): Timeout = Timeout.NONE
+
+                override fun close() {
+                    closed.incrementAndGet()
+                }
             }.buffer()
         }
     }
