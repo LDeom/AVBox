@@ -539,6 +539,7 @@ class Global {
                         settleStream(reply, null, "executor shutdown")
                         return
                     }
+                    httpGate.finish()
                     try {
                         executor.submit(Runnable {
                             if (destroyed.get()) {
