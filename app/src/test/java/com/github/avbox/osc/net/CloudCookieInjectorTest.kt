@@ -29,4 +29,20 @@ class CloudCookieInjectorTest {
         val result = CloudCookieInjector.merge(emptyMap(), "Path=/; Secure")
         assertEquals(emptyMap<String, String>(), result)
     }
+    @Test
+    fun onlyInjectsForMatchingProviderAndServiceDomain() {
+        assertEquals(
+            true,
+            CloudCookieInjector.matchesProvider("夸克网盘", "csp_PanQuark", "https://drive.quark.cn/api"),
+        )
+        assertEquals(
+            false,
+            CloudCookieInjector.matchesProvider("夸克网盘", "csp_PanQuark", "https://pan.baidu.com/api"),
+        )
+        assertEquals(
+            false,
+            CloudCookieInjector.matchesProvider("普通点播源", "csp_PanQuark", "https://drive.quark.cn/api"),
+        )
+    }
+
 }
