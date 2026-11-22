@@ -76,3 +76,9 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - getCache读取缓存JSON统一使用UTF-8，与setCache写入编码一致，避免依赖设备默认字符集。
 - JS API Jar下载/校验失败时不再主动删除现有缓存文件；下载失败只清理临时文件，保留旧缓存以便后续恢复或供旧配置继续使用。
 - 仍需运行测试确认文件替换与旧缓存保留行为；当前未执行Gradle或真机验证。
+
+## 第八轮 Spider Jar缓存替换与过期任务中止（2026-11-22）
+- SpiderLoader下载Jar时增加线程中断和加载epoch过期检查，避免切换源后继续读取网络响应并进入缓存替换。
+- 普通Jar和img+Jar两种下载结果均改用FileUtils.writeSimple进行安全替换，不再先删除旧缓存再rename/copy。
+- 下载内容先完整读入并拒绝空文件；替换失败保留原缓存，临时文件由finally清理。
+- 尚未运行Gradle测试或真机验证；需要进一步验证取消时序和缓存并发。
