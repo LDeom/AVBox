@@ -99,10 +99,13 @@ class JsLoader {
     }
 
     private fun loadJarInternal(jar: String, md5: String, key: String, generation: Long): Class<*>? {
-        if (generation != clearGeneration.get()) return null
-        if (classes.containsKey(key)) {
+        val cachedClass = synchronized(lifecycleLock) {
+            if (generation != clearGeneration.get()) return null
+            classes[key]
+        }
+        if (cachedClass != null) {
             Log.i("JSLoader", "echo-loadJarInternal cached")
-            return classes[key]
+            return cachedClass
         }
         val cache = File(requireNotNull(AppContextHolder.context()) { "app context not ready" }.filesDir.absolutePath + "/csp/" + key + ".jar")
         try {
@@ -114,12 +117,12 @@ class JsLoader {
         if (!md5.isEmpty()) {
             if (cache.exists() && MD5.fileMd5(cache).equals(md5, ignoreCase = true)) {
                 loadClassLoader(cache.absolutePath, key, generation)
-                return classes[key]
+                return cachedClass(key, generation)
             }
         } else {
             if (cache.exists() && !FileUtils.isWeekAgo(cache)) {
                 if (loadClassLoader(cache.absolutePath, key, generation)) {
-                    return classes[key]
+                    return cachedClass(key, generation)
                 }
             }
         }
@@ -155,7 +158,7 @@ class JsLoader {
             }
             temp.delete()
             loadClassLoader(cache.absolutePath, key, generation)
-            return classes[key]
+            return cachedClass(key, generation)
         } catch (e: Throwable) {
             AppLog.e("JsLoader", e)
             if (e is InterruptedException) Thread.currentThread().interrupt()
@@ -164,15 +167,28 @@ class JsLoader {
         return null
     }
 
+    private fun cachedClass(key: String, generation: Long): Class<*>? {
+        return synchronized(lifecycleLock) {
+            if (generation != clearGeneration.get()) null else classes[key]
+        }
+    }
+
     fun getSpider(key: String?, api: String?, ext: String?, jar: String?): Spider {
-        recentKey = requireNotNull(key) { "site key is null" }
-        spiders[key]?.let {
-            Log.i("JSLoader", "echo-getSpider cached " + key)
+        val siteKey = requireNotNull(key) { "site key is null" }
+        val generation: Long
+        val cachedSpider = synchronized(lifecycleLock) {
+            recentKey = siteKey
+            generation = clearGeneration.get()
+            spiders[siteKey]
+        }
+        cachedSpider?.let {
+            Log.i("JSLoader", "echo-getSpider cached " + siteKey)
             return it
         }
-        val generation = clearGeneration.get()
         synchronized(creationLock) {
-            val cached = spiders[key]
+            val cached = synchronized(lifecycleLock) {
+                if (generation == clearGeneration.get()) spiders[siteKey] else null
+            }
             if (cached != null) {
                 Log.i("JSLoader", "echo-getSpider cached " + key)
                 return cached
@@ -188,15 +204,15 @@ class JsLoader {
             var sp: Spider? = null
             try {
                 Log.i("JSLoader", "echo-getSpider load")
-                val created = JsSpider(key, requireNotNull(api) { "js api is null" }, classLoader)
+                val created = JsSpider(siteKey, requireNotNull(api) { "js api is null" }, classLoader)
                 sp = created
-                created.siteKey = key
+                created.siteKey = siteKey
                 created.init(AppContextHolder.context(), ext)
                 val registered = synchronized(lifecycleLock) {
                     if (generation != clearGeneration.get()) {
                         false
                     } else {
-                        spiders[key] = created
+                        spiders[siteKey] = created
                         true
                     }
                 }
@@ -224,7 +240,7 @@ class JsLoader {
 
     fun proxyInvoke(params: Map<String, String>?): Array<Any?>? {
         try {
-            val proxyFun = spiders[recentKey]
+            val proxyFun = synchronized(lifecycleLock) { spiders[recentKey] }
             if (proxyFun != null) {
                 return SpiderReaper.track(proxyFun) { proxyFun.proxyLocal(params) }
             }
