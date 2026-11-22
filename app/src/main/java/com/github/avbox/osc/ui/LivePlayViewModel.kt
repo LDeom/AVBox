@@ -14,6 +14,7 @@ import com.github.avbox.osc.bean.LiveSettingItem
 import com.github.avbox.osc.player.core.PlayState
 import com.github.avbox.osc.boot.BootGuard
 import com.github.avbox.osc.util.AppContextHolder
+import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.util.KVKeys
 
 import com.github.avbox.osc.util.KV

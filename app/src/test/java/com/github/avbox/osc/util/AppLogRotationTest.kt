@@ -20,6 +20,13 @@ class AppLogRotationTest {
     }
 
     @Test
+    fun operationIdsIncreaseMonotonically() {
+        val first = AppLog.newOperationId()
+        val second = AppLog.newOperationId()
+        assertTrue(second > first)
+    }
+
+    @Test
     fun sanitizesSensitiveLogFieldsBeforeExport() {
         val line = "request authorization=Bearer bearer-secret token=abc123 api_key:secret password=hunter2 keep=value"
         val sanitized = AppLog.sanitizeLogLine(line)
