@@ -2,6 +2,9 @@ name: Build Tablet Test APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/tablet-live-immersive
 
 permissions:
   contents: read
