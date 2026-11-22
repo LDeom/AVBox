@@ -106,16 +106,14 @@ class JarLoader {
             val cachePath = jarDir().absolutePath
             val loader = DexClassLoader(file.absolutePath, cachePath, cachePath, requireNotNull(AppContextHolder.context()) { "app context not ready" }.classLoader)
             invokeInit(loader)
-            invokeProxy(key, loader)
-            invokeDanmaku(key, loader)
+            val proxyMethod = findProxyMethod(loader)
+            val danmakuMethods = findDanmakuMethods(loader)
             injectProxyPort(loader)
             synchronized(lifecycleLock) {
-                if (generation != clearGeneration.get()) {
-                    proxyMethods.remove(key)
-                    danmuClickMethods.remove(key)
-                    danmuLongClickMethods.remove(key)
-                    return false
-                }
+                if (generation != clearGeneration.get()) return false
+                if (proxyMethod != null) proxyMethods[key] = proxyMethod
+                if (danmakuMethods.first != null) danmuClickMethods[key] = danmakuMethods.first
+                if (danmakuMethods.second != null) danmuLongClickMethods[key] = danmakuMethods.second
                 loaders[key] = loader
             }
             BootGuard.scheduleStableRunReset()
@@ -138,31 +136,35 @@ class JarLoader {
         }
     }
 
-    private fun invokeProxy(key: String, loader: DexClassLoader) {
-        try {
+    private fun findProxyMethod(loader: DexClassLoader): Method? {
+        return try {
             val clz = loader.loadClass("com.github.catvod.spider.Proxy")
-            val method = clz.getMethod("proxy", Map::class.java)
-            proxyMethods[key] = method
+            clz.getMethod("proxy", Map::class.java)
         } catch (e: Throwable) {
-            AppLog.e("echo-proxy-jar: register fail key=" + key + " | " + e)
+            AppLog.e("echo-proxy-jar: register fail | " + e)
+            null
         }
     }
 
-    private fun invokeDanmaku(key: String, loader: DexClassLoader) {
-        try {
+    private fun findDanmakuMethods(loader: DexClassLoader): Pair<Method?, Method?> {
+        return try {
             val clz = loader.loadClass("com.github.catvod.spider.Danmaku")
-            try {
-                danmuClickMethods[key] = clz.getMethod("onClick", String::class.java, String::class.java)
+            val click = try {
+                clz.getMethod("onClick", String::class.java, String::class.java)
             } catch (ignored: Throwable) {
                 AppLog.d("JarLoader", "danmaku onClick method not found")
+                null
             }
-            try {
-                danmuLongClickMethods[key] = clz.getMethod("onLongClick", String::class.java, String::class.java)
+            val longClick = try {
+                clz.getMethod("onLongClick", String::class.java, String::class.java)
             } catch (ignored: Throwable) {
                 AppLog.d("JarLoader", "danmaku onLongClick method not found")
+                null
             }
+            Pair(click, longClick)
         } catch (ignored: Throwable) {
             AppLog.d("JarLoader", "danmaku class not found in jar")
+            Pair(null, null)
         }
     }
 
