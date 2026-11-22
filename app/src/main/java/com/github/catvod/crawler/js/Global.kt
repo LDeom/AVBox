@@ -48,6 +48,7 @@ class Global {
     private val callbackLock: Any = Any()
     private val pendingTimerFunctions: MutableSet<PendingTimer> = ConcurrentHashMap.newKeySet()
     private val destroyed: AtomicBoolean = AtomicBoolean(false)
+    private val cleanupStarted: AtomicBoolean = AtomicBoolean(false)
 
     private val httpTag: String
 
@@ -671,12 +672,19 @@ class Global {
         }
     }
 
-    fun destroy() {
+    fun stopAccepting() {
         synchronized(callbackLock) {
-            if (!destroyed.compareAndSet(false, true)) return
+            destroyed.set(true)
         }
         synchronized(timerLock) {
             timer.cancel()
+        }
+    }
+
+    fun destroy() {
+        stopAccepting()
+        if (!cleanupStarted.compareAndSet(false, true)) return
+        synchronized(timerLock) {
             for (pending in pendingTimerFunctions) {
                 if (pendingTimerFunctions.remove(pending)) pending.function.release()
             }
