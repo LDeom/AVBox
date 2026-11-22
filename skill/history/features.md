@@ -203,3 +203,9 @@
 - StreamReply hold 部分失败回滚，release 幂等。
 - HttpGate 执行器关闭时逐项失败待处理请求，不再静默丢弃；新增关闭状态测试。
 - 未运行 Gradle/设备验证。
+
+## 2026-11-22 第3阶段 QuickJS任务队列与Context销毁顺序
+- JsSpider 用 taskLock 串行化任务提交和 destroy，销毁后拒绝新任务，避免旧调用任务排在Context teardown之后。
+- 新增 Global.stopAccepting，在 JsSpider 排入Context teardown前停止HTTP、stream、timer回调入队；Global.destroy在JS单线程执行器内完成资源清理。
+- Global清理增加独立幂等状态，stopAccepting与destroy分离。
+- 未运行 Gradle/设备验证。
