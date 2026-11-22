@@ -31,3 +31,29 @@ Gradle 日志报告 Android 资源合并时出现重复资源项：
 - Run 45029067532（提交 `cb270516b5bc24a7c72960f6b55d2821aa0a6d12`）已通过资源阶段，但 Kotlin 编译失败：`ConfigRepository.kt:86` 缺少闭合大括号。
 - 检查确认文件末尾只闭合了 `switchLiveSource` 的 synchronized lambda，遗漏 `ConfigRepository` 对象闭合；已补齐，提交 `fd4f1e797c3c4f36f52f5d8ecd83f521b2d204c6`。
 - 后续自动构建尚未完成；Run 45029122382 在检查时仍处于 Kotlin 编译阶段。APK 产物尚未验证，签名步骤尚未执行。
+
+
+## 后续构建复测与第二批修复
+
+### 旧 run 重跑问题
+- 用户再次看到失败时，run 45028275802 的 attempt 2 仍使用旧 SHA `9134ba95c5aaa93eda13bb837b91e667f7bd9b60`，因此重复报重复资源 key。修复提交 `9428ccc...` 并未包含在该 run 中。
+- 为避免再次重跑旧 SHA，在功能分支工作流增加对 `feature/tablet-live-immersive` 的 push 触发，同时保留手动触发。
+
+### 新 SHA 暴露的资源问题
+- 新提交构建发现 `values-en/strings.xml` 的 `cloud_drive_cookie_placeholder` 文案含未转义撇号，AAPT2 报告 Invalid unicode escape sequence / invalid string resource。
+- 将英文文案调整为不含撇号的 “Paste the provider cookie”。
+
+### 新 SHA 暴露的 Kotlin 编译问题
+- `ConfigRepository.kt` 缺少 object 最终闭合括号。
+- `SearchSourcesState.kt` 与 `SearchViewModel.kt` 对可空 `SourceBean.key` 直接作为非空字符串使用。
+- `SpiderLoader.kt` 调用 `replaceCache` 时漏传 `epoch`。
+- `FileUtils.kt` 把 Gson 的 Boolean 属性 `isJsonPrimitive` 再当作 JsonPrimitive 访问 `isString`。
+- `VideoGestureHandler.kt` 重复声明并重复赋值 `downX`。
+- `PlayContainer.kt` 保留了已删除专用云盘播放流程的投屏限制，并引用已删除的资源字符串。
+- `JarLoader.kt` 对跨模块 Pair 属性重复访问导致 Kotlin 无法 smart cast。
+- 已按对应类型契约修复以上问题，代码变更和说明已写入功能分支。
+
+### 当前验证状态
+- 之前的新 SHA 构建已经通过 Android 资源合并并进入 Kotlin 编译阶段，暴露上述编译错误。
+- 第二批修复已推送，push 触发的新构建正在执行/等待确认。
+- APK 尚未成功生成；签名验证与 artifact 上传仍未执行。
