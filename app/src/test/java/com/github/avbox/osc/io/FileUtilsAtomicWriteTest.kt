@@ -6,6 +6,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 
 class FileUtilsAtomicWriteTest {
 
@@ -21,6 +23,33 @@ class FileUtilsAtomicWriteTest {
         assertEquals("new content", target.readText())
         assertTrue(File(target.absolutePath + ".tmp").let { !it.exists() })
         assertTrue(File(target.absolutePath + ".bak").let { !it.exists() })
+    }
+
+    @Test
+    fun concurrentWritesKeepCacheFileComplete() {
+        val target = File(folder.root, "concurrent-cache.bin")
+        val values = (0 until 8).map { index -> ByteArray(64 * 1024) { (index + 1).toByte() } }
+        val executor = Executors.newFixedThreadPool(values.size)
+        val ready = CountDownLatch(values.size)
+        val start = CountDownLatch(1)
+        try {
+            val tasks = values.map { value ->
+                executor.submit {
+                    ready.countDown()
+                    start.await()
+                    assertTrue(FileUtils.writeSimple(value, target))
+                }
+            }
+            ready.await()
+            start.countDown()
+            tasks.forEach { it.get() }
+        } finally {
+            executor.shutdownNow()
+        }
+        val actual = FileUtils.readSimple(target)
+        assertTrue(values.any { it.contentEquals(actual) })
+        assertTrue(!File(target.absolutePath + ".tmp").exists())
+        assertTrue(!File(target.absolutePath + ".bak").exists())
     }
 
     @Test
