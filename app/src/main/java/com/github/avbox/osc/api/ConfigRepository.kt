@@ -23,6 +23,8 @@ internal fun createVodSwitchSnapshot(
 
 object ConfigRepository {
 
+    internal val liveSourceLock = Any()
+
     data class VodSwitchSnapshot(
         val vodUrl: String,
         val liveUrl: String,
@@ -32,16 +34,18 @@ object ConfigRepository {
         val liveLineSource: String,
     )
 
-    fun snapshotVodSwitch(): VodSwitchSnapshot = createVodSwitchSnapshot(
-        vodUrl = vodUrl(),
-        liveUrl = liveUrl(),
-        vodLines = KV.get(KVKeys.API_LINE_LIST, ArrayList<String>()),
-        vodLineSource = KV.get(KVKeys.API_LINE_SOURCE, ""),
-        liveLines = KV.get(KVKeys.LIVE_API_LINE_LIST, ArrayList<String>()),
-        liveLineSource = KV.get(KVKeys.LIVE_API_LINE_SOURCE, ""),
-    )
+    fun snapshotVodSwitch(): VodSwitchSnapshot = synchronized(liveSourceLock) {
+        createVodSwitchSnapshot(
+            vodUrl = vodUrl(),
+            liveUrl = liveUrl(),
+            vodLines = KV.get(KVKeys.API_LINE_LIST, ArrayList<String>()),
+            vodLineSource = KV.get(KVKeys.API_LINE_SOURCE, ""),
+            liveLines = KV.get(KVKeys.LIVE_API_LINE_LIST, ArrayList<String>()),
+            liveLineSource = KV.get(KVKeys.LIVE_API_LINE_SOURCE, ""),
+        )
+    }
 
-    fun restoreVodSwitch(snapshot: VodSwitchSnapshot) {
+    fun restoreVodSwitch(snapshot: VodSwitchSnapshot) = synchronized(liveSourceLock) {
         KV.put(KVKeys.API_URL, snapshot.vodUrl)
         KV.put(KVKeys.LIVE_API_URL, snapshot.liveUrl)
         KV.put(KVKeys.API_LINE_LIST, ArrayList(snapshot.vodLines))
@@ -55,7 +59,7 @@ object ConfigRepository {
 
     fun liveUrl(): String = KV.get(KVKeys.LIVE_API_URL, "")
 
-    fun switchVodSource(url: String): Boolean {
+    fun switchVodSource(url: String): Boolean = synchronized(liveSourceLock) {
         val followLive = ApiConfig.isLiveFollowVod()
         val oldApi = vodUrl()
         val oldFollowTarget = liveUrl().ifEmpty { oldApi }
@@ -66,10 +70,10 @@ object ConfigRepository {
             if (url != oldFollowTarget) HistoryHelper.clearLiveApiLineList()
         }
         if (!HistoryHelper.isApiLineHistory(url)) HistoryHelper.clearApiLineList()
-        return oldApi == url
+        oldApi == url
     }
 
-    fun switchLiveSource(url: String) {
+    fun switchLiveSource(url: String) = synchronized(liveSourceLock) {
         KV.put(KVKeys.LIVE_API_URL, url)
         if (url.isEmpty()) {
             HistoryHelper.clearLiveApiLineList()
@@ -80,4 +84,3 @@ object ConfigRepository {
         ApiConfig.get().clearLiveHosts()
         ApiConfig.get().invalidateLiveConfig()
     }
-}
