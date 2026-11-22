@@ -13,9 +13,10 @@ class AesGcmEnvelopeTest {
 
     @Test
     fun encryptDecryptRoundTrip() {
+        val key = key()
         val secret = "refresh-token-敏感内容".toByteArray(Charsets.UTF_8)
-        val encrypted = AesGcmEnvelope.encrypt(secret, key())
-        assertArrayEquals(secret, AesGcmEnvelope.decrypt(encrypted, keyFor(encrypted, secret)))
+        val encrypted = AesGcmEnvelope.encrypt(secret, key)
+        assertArrayEquals(secret, AesGcmEnvelope.decrypt(encrypted, key))
     }
 
     @Test
@@ -41,10 +42,5 @@ class AesGcmEnvelopeTest {
             failed = true
         }
         assertTrue(failed)
-    }
-
-    private fun keyFor(encrypted: ByteArray, plain: ByteArray) = key().also {
-        assertTrue(encrypted.isNotEmpty())
-        assertTrue(plain.isNotEmpty())
     }
 }
