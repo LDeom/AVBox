@@ -545,10 +545,8 @@ object FileUtils {
     @JvmStatic
     fun asOpen(name: String): String {
         try {
-            val ins = requireNotNull(AppContextHolder.context()) { "app context not initialized" }.assets.open(name)
-            val data = ByteArray(ins.available())
-            ins.read(data)
-            return String(data, Charsets.UTF_8)
+            return requireNotNull(AppContextHolder.context()) { "app context not initialized" }
+                    .assets.open(name).use { input -> String(input.readBytes(), Charsets.UTF_8) }
         } catch (e: Exception) {
             AppLog.e("FileUtils", e)
         }
@@ -566,23 +564,31 @@ object FileUtils {
             if (TextUtils.isEmpty(code)) {
                 return ""
             }
-            val asJsonObject = (Gson().fromJson(code, JsonObject::class.java)).asJsonObject
-            if (asJsonObject.get("expires").asInt.toLong() <= System.currentTimeMillis() / 1000) {
-                recursiveDelete(open(name))
+            val asJsonObject = Gson().fromJson(code, JsonObject::class.java) ?: return ""
+            val expires = asJsonObject.get("expires")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }
+                    ?.asLong ?: return ""
+            if (isCacheExpired(expires, System.currentTimeMillis() / 1000)) {
+                recursiveDelete(file)
+                return ""
             }
-            return asJsonObject.get("data").asString
+            return asJsonObject.get("data")?.takeIf { it.isJsonPrimitive && it.isJsonPrimitive.isString }
+                    ?.asString ?: ""
         } catch (e4: Exception) {
             return ""
         }
+    }
+
+    internal fun isCacheExpired(expiresAtSeconds: Long, nowSeconds: Long): Boolean {
+        return expiresAtSeconds <= nowSeconds
     }
 
     @JvmStatic
     fun setCache(time: Int, name: String, data: String) {
         try {
             val jSONObject = JSONObject()
-            jSONObject.put("expires", (time + (System.currentTimeMillis() / 1000)).toInt())
+            jSONObject.put("expires", time.toLong() + System.currentTimeMillis() / 1000)
             jSONObject.put("data", data)
-            writeSimple(jSONObject.toString().toByteArray(Charset.defaultCharset()), open(name))
+            writeSimple(jSONObject.toString().toByteArray(Charsets.UTF_8), open(name))
         } catch (e: Exception) {
             AppLog.e("FileUtils", e)
         }
