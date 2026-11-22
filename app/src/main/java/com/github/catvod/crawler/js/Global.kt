@@ -374,23 +374,27 @@ class Global {
     @Keep
     @Function
     fun _http(url: String, options: JSObject): JSObject? {
+        if (destroyed.get()) return null
         val complete = options.getJSFunction("complete")
         if (complete == null) return req(url, options)
         val ctx = runtime
         return try {
             val req = Req.objectFrom(JSUtils.toJsonObject(options).toString())
             requireSession(req)
-            httpGate.dispatch(HttpGate.Request(
-                start = Runnable {
-                    try {
-                        Connect.to(url, req, httpTag).enqueue(getCallback(complete, req, ctx))
-                    } catch (th: Throwable) {
-                        httpGate.finish()
-                        deliver(ctx, complete, req, null, th.message.orEmpty())
-                    }
-                },
-                fail = { message -> deliver(ctx, complete, req, null, message) }
-            ))
+            synchronized(callbackLock) {
+                if (destroyed.get()) return null
+                httpGate.dispatch(HttpGate.Request(
+                    start = Runnable {
+                        try {
+                            Connect.to(url, req, httpTag).enqueue(getCallback(complete, req, ctx))
+                        } catch (th: Throwable) {
+                            httpGate.finish()
+                            deliver(ctx, complete, req, null, th.message.orEmpty())
+                        }
+                    },
+                    fail = { message -> deliver(ctx, complete, req, null, message) }
+                ))
+            }
             null
         } catch (th: Throwable) {
             AppLog.e("Global", th)
@@ -447,6 +451,7 @@ class Global {
     @Keep
     @Function(name = "_stream")
     fun stream(url: String, options: JSObject, resolve: JSFunction?, reject: JSFunction?): Any? {
+        if (destroyed.get()) return null
         val ctx = runtime
         if (ctx == null || resolve == null || reject == null) return null
         val reply = StreamReply(resolve, reject)
@@ -460,17 +465,23 @@ class Global {
         try {
             requireSession(req)
             val call = Connect.to(url, req, httpTag)
-            httpGate.dispatch(HttpGate.Request(
-                start = Runnable {
-                    try {
-                        call.enqueue(streamCallback(ctx, reply, req.getSessionId()))
-                    } catch (th: Throwable) {
-                        httpGate.finish()
-                        settleStream(reply, null, th.message.orEmpty())
-                    }
-                },
-                fail = { message -> settleStream(reply, null, message) }
-            ))
+            synchronized(callbackLock) {
+                if (destroyed.get()) {
+                    settleStream(reply, null, "spider destroyed")
+                } else {
+                    httpGate.dispatch(HttpGate.Request(
+                        start = Runnable {
+                            try {
+                                call.enqueue(streamCallback(ctx, reply, req.getSessionId()))
+                            } catch (th: Throwable) {
+                                httpGate.finish()
+                                settleStream(reply, null, th.message.orEmpty())
+                            }
+                        },
+                        fail = { message -> settleStream(reply, null, message) }
+                    ))
+                }
+            }
         } catch (th: Throwable) {
             AppLog.e("Global", th)
             settleStream(reply, null, th.message.orEmpty())
