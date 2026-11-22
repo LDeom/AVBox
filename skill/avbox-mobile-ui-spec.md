@@ -894,5 +894,5 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 - 光鸭账号仅允许个人账号文件浏览与 AVBox 应用内访问，不实现公共分享、外链分发或代理转发。
 - 光鸭登录采用独立适配器：手机号短信两阶段认证、验证码挑战失败时提示用户走官方验证，不绕过人机验证；成功后保存 access/refresh token，刷新令牌轮换时必须串行更新。
 - 登录凭据使用 Android Keystore AES-GCM 加密后存入应用私有目录 AtomicFile；不进入 MMKV、运行日志或日志导出。凭据文件必须从 Android 云备份和设备迁移中排除，避免 Keystore 密钥不随备份迁移导致无法解密。
-- 光鸭设置页支持账号状态检查、退出登录与个人目录浏览；目录请求在 IO 线程执行。当前阶段仅提供文件列表，尚未接入播放 URL 与 ExoPlayer 播放桥，不能标记为视频源已接通。
+- 光鸭设置页支持账号状态检查、退出登录与个人目录浏览；目录请求在 IO 线程执行。视频文件点击后通过独立 Activity 和既有 PlayContainer/PlaybackEngine 播放，PlaybackStarter 识别内部 guangya:// 标识后在 IO 线程换取 HTTPS 临时地址；临时地址只在应用内存与播放器链路使用，不提供分享入口，并禁用该会话的外部投屏。
 - 后续各网盘必须按自身认证协议独立实现；Cookie 只允许绑定对应服务域，禁止全局注入任意请求。
