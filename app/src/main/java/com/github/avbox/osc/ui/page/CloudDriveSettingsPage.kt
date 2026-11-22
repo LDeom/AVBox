@@ -63,11 +63,17 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     var message by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            cloudCookieProviders.forEach { provider ->
-                val exists = runCatching { !CloudCredentialVault.read(provider.id).isNullOrBlank() }
-                    .getOrElse { false }
-                configured[provider.id] = exists
+        val results = withContext(Dispatchers.IO) {
+            cloudCookieProviders.associate { provider ->
+                provider.id to runCatching { !CloudCredentialVault.read(provider.id).isNullOrBlank() }
+            }
+        }
+        results.forEach { (providerId, result) ->
+            result.onSuccess {
+                configured[providerId] = it
+            }.onFailure {
+                configured[providerId] = false
+                message = it.message ?: context.getString(R.string.cloud_drive_cookie_save_failed)
             }
         }
     }
@@ -147,6 +153,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                             busy[provider.id] = true
                                             val result = runCatching {
                                                 withContext(Dispatchers.IO) {
+                                                    require(cookie.none { it == '\r' || it == '\n' }) { "Cookie must be a single header line" }
                                                     CloudCredentialVault.write(provider.id, cookie)
                                                 }
                                             }
