@@ -146,7 +146,6 @@ class JsLoader {
         } catch (e: Throwable) {
             AppLog.e("JsLoader", e)
             if (temp.exists()) temp.delete()
-            if (cache.exists() && !md5.isEmpty() && !MD5.fileMd5(cache).equals(md5, ignoreCase = true)) cache.delete()
         }
         return null
     }
