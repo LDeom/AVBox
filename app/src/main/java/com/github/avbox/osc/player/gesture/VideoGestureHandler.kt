@@ -60,7 +60,6 @@ class VideoGestureHandler(
     private var mode = Mode.UNDECIDED
     private var downX = 0f
     private var downY = 0f
-    private var downX = 0f
     private var lastX = 0f
     private var moved = false
     private var longPressed = false
@@ -81,7 +80,6 @@ class VideoGestureHandler(
         this.session = session
         this.downX = x
         this.downY = y
-        this.downX = x
         this.lastX = x
         this.mode = Mode.UNDECIDED
         this.moved = false
