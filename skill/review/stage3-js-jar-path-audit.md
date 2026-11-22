@@ -196,3 +196,7 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 构造失败时不再从调用方线程直接销毁 QuickJSContext；先停止 Global 接收新回调，再将 Global/Context 清理排入 JsSpider 单线程 Executor，随后关闭 Executor。这样若 native QuickJS 调用暂时不响应 interrupt，清理会排在其后，不与正在使用 Context 的线程并发销毁。
 - 若清理任务无法排队则记录并关闭 Executor；native 调用是否及时响应中断仍需真机/压力测试确认。
 - 本轮静态检查已完成，未运行 Gradle、QuickJS native 测试或设备验证。
+
+
+## 初始化等待线程中断处理补充
+- 补充处理 initializeJS() 等待 Future 时的 InterruptedException：取消初始化任务、恢复当前线程中断标记并向构造方传播异常；构造失败清理继续通过 QuickJS 单线程 Executor 排队执行。
