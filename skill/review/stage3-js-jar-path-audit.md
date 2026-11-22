@@ -207,3 +207,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 现将根 API 模块缺失、bytecode/模块执行异常及 Spider 对象缺失提升为初始化异常；与上一轮超时修复配合，统一走构造失败路径和 QuickJS 单线程清理，避免无效实例进入缓存。
 - 依赖模块的空模块回退策略暂时保留，避免未经集成测试破坏旧站点兼容；根模块与依赖模块区分处理。
 - 尚未运行 Gradle 或真实配置集成测试；需用正常 JS API、无效 API、语法错误 API 和缺少导出对象的 API 做回归。
+
+
+## 第二十四轮 JS 模块响应内容判定可测试化（2026-11-22）
+- 将 JS 模块响应内容判定抽离为 internal 的纯 Kotlin helper：JsModuleContent.isInvalid，避免测试必须创建 QuickJSContext。
+- 错误响应大小写转换固定使用 Locale.ROOT，避免设备系统语言影响 HTML/404/Not Found 判断。
+- 新增 JsModuleContentTest，覆盖 null/空白、HTML错误页、大小写混合、404、Not Found、JSON 404、BOM，以及正常 JS/JSON 文本不误判。
+- 该测试仅覆盖响应文本分类，不代表真实网络、QuickJS ModuleLoader、循环导入或 AssetManager 集成已经通过。
+- 未运行 Gradle；当前环境没有可用的仓库本地构建执行结果，需后续在 GitHub Actions/本地 Android SDK 环境执行。
