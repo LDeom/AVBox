@@ -75,3 +75,11 @@
 - 已完成：Manifest、Activity 生命周期、PlaybackEngine 挂摘、BasePlayerView、SurfaceView/TextureView 和 ExoPlayer 输出解除顺序的静态交叉审查。
 - 未完成：Gradle 编译/测试、Android 真机连续旋转、渲染模式切换、快速切频道压力测试。
 - 未生成 APK、未发布 Release。
+
+
+## 第四轮：TextureView 旋转诊断增强
+- 为 `EngineTextureRenderView` 的 SurfaceTexture available、sizeChanged、destroyed 回调增加诊断日志。
+- 日志记录 SurfaceTexture identity、尺寸、是否已有播放器、是否复用保留的 Texture，以及 destroyed 回调是否返回 false。
+- 目的：与 LivePlayActivity 的 PID/onDestroy/onCreate 日志、PlayerEngine 的 surface bind/detach 日志对齐，区分 Activity 重建、SurfaceTexture 重建和播放器内核重建。
+- 提交：`f287495b7f5bbe9d7f074e6fedbebdb794e7d706`。
+- 日志只增加诊断，不改变 SurfaceTexture 所有权及回调返回值；仍需真机旋转验证日志时序。
