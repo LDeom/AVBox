@@ -54,7 +54,14 @@ object TxtSubscribe {
                         if (isUrl(url) && !urls.contains(url)) urls.add(url)
                     }
                 }
-                if (!urls.isEmpty()) channelMap[channelName] = urls
+                if (!urls.isEmpty()) {
+                    val existing = channelMap[channelName]
+                    if (existing == null) {
+                        channelMap[channelName] = urls
+                    } else {
+                        for (url in urls) if (!existing.contains(url)) existing.add(url)
+                    }
+                }
             }
             if (!channelMap.isEmpty()) linkedHashMap[groupName] = channelMap
         }
