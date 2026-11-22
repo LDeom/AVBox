@@ -898,3 +898,6 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 - 设置页清除账号会删除对应 provider 的加密凭据，并尝试按 allowlist host 清理 WebView CookieManager 会话；不调用全局 Cookie 删除。清理行为需真机验证，Cookie 的 path/domain 变体可能需要进一步适配。
 - 登录页提供加载进度、主框架加载错误/HTTP 错误提示与重试入口；登录 URL 与 host allowlist 是首轮配置，真实登录跳转、验证码/扫码和 API host 仍需逐家真机验证。Token-only 驱动、独立 HTTP 栈 JAR 和配置中心凭据内部格式仍需后续适配。
 
+
+
+## 4.19 内置浏览器诊断日志\n- 网盘 WebView 登录诊断统一使用 AppLog 前缀 `echo-webview-login`，由 4.17 用户运行日志开关控制文件日志记录。\n- 日志覆盖页面起止 host、加载进度阶梯、主框架错误代码/HTTP 状态、被拦截的外部 scheme、Cookie 保存状态与页面销毁。不得记录 Cookie 值、完整 URL/query、页面标题或异常明文。\n- 用户可在设置页开启运行日志后复现网页登录问题，再从运行日志导出诊断信息。\n
