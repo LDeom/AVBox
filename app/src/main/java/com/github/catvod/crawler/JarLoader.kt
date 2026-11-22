@@ -58,15 +58,27 @@ class JarLoader {
 
     fun setRecentJarKey(key: String?) {
         if (key.isNullOrEmpty()) return
-        recent = realKey(key)
-        injectProxyPort(loaders[recent])
+        val loader = synchronized(lifecycleLock) {
+            recent = realKey(key)
+            loaders[recent]
+        }
+        injectProxyPort(loader)
     }
 
     fun loadLiveJar(jar: String?) {
         val key = jarKey(jar)
-        liveJars.add(key)
-        parseJar(key, jar)
-        setRecentJarKey(key)
+        val generation = clearGeneration.get()
+        synchronized(lifecycleLock) {
+            if (generation != clearGeneration.get()) return
+            liveJars.add(key)
+        }
+        parseJar(key, jar, generation)
+        val loader = synchronized(lifecycleLock) {
+            if (generation != clearGeneration.get()) return
+            recent = realKey(key)
+            loaders[recent]
+        }
+        injectProxyPort(loader)
     }
 
     fun clear() {
@@ -169,9 +181,12 @@ class JarLoader {
     }
 
     fun parseJar(key: String?, jar: String?) {
+        parseJar(key, jar, clearGeneration.get())
+    }
+
+    private fun parseJar(key: String?, jar: String?, generation: Long) {
         if (key.isNullOrEmpty() || jar.isNullOrEmpty()) return
-        val generation = clearGeneration.get()
-        if (loaders.containsKey(key)) return
+        if (generation != clearGeneration.get() || loaders.containsKey(key)) return
         val lock = lock(key)
         synchronized(lock) {
             if (generation != clearGeneration.get() || loaders.containsKey(key)) return
@@ -182,7 +197,10 @@ class JarLoader {
                 source = texts[0]
                 md5 = texts[1].trim { it <= ' ' }
             }
-            aliases[jarKey(source)] = key
+            synchronized(lifecycleLock) {
+                if (generation != clearGeneration.get()) return
+                aliases[jarKey(source)] = key
+            }
             if (md5.startsWith("http")) {
                 val value = OkHttp.string(md5, null)
                 md5 = value?.trim { it <= ' ' } ?: ""
@@ -224,18 +242,21 @@ class JarLoader {
 
         val jaKey = if (TextUtils.isEmpty(spiderJar)) MAIN_KEY else jarKey(spiderJar)
         val spKey = jaKey + spiderKey
-        recent = jaKey
-        siteJarKeys[spiderKey] = jaKey
+        val snapshot = synchronized(lifecycleLock) {
+            recent = jaKey
+            siteJarKeys[spiderKey] = jaKey
+            clearGeneration.get() to spiders[spKey]
+        }
         injectProxyPort(loaders[jaKey])
 
-        val cached = spiders[spKey]
+        val cached = snapshot.second
         if (cached != null) {
             Log.i(TAG, "getSpider cached key=" + spKey)
             return cached
         }
 
         val lock = locks.computeIfAbsent(spKey) { Any() }
-        val generation = clearGeneration.get()
+        val generation = snapshot.first
         synchronized(lock) {
             val cachedAgain = spiders[spKey]
             if (cachedAgain != null) return cachedAgain
