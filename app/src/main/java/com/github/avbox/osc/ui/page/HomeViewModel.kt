@@ -204,6 +204,9 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     override fun onCleared() {
+        watchdogJob?.cancel()
+        sortViewModel.cancelSort()
+        recViewModel.cancelSort()
         val staleLoaders = ArrayList(loaders.values)
         loaders.clear()
         staleLoaders.forEach { it.release() }
