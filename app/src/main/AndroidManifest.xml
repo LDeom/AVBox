@@ -107,6 +107,9 @@
             android:name=".ui.PlaySettingsActivity" />
         <activity
             android:name=".ui.PreferenceSettingsActivity" />
+        <activity
+            android:name=".ui.CloudDriveSettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <service
             android:name=".dlna.DLNACastService"
