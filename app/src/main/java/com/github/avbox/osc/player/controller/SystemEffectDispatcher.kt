@@ -17,19 +17,21 @@ class SystemEffectDispatcher(
             is SystemEffect.Brightness -> applyBrightness(effect.value)
             is SystemEffect.Volume -> applyVolume(effect.index)
         }
-        true
     }.onFailure {
         com.github.avbox.osc.util.AppLog.e("echo-gesture-system-effect-failed: " + effect.javaClass.simpleName + " " + it.javaClass.simpleName)
     }.getOrDefault(false)
 
-    private fun applyBrightness(value: Float) {
-        val window = activity()?.window ?: return
+    private fun applyBrightness(value: Float): Boolean {
+        val window = activity()?.window ?: return false
         val attrs = window.attributes
         attrs.screenBrightness = value
         window.attributes = attrs
+        return true
     }
 
-    private fun applyVolume(index: Int) {
-        audio()?.setStreamVolume(AudioManager.STREAM_MUSIC, index, AudioManager.FLAG_SHOW_UI)
+    private fun applyVolume(index: Int): Boolean {
+        val manager = audio() ?: return false
+        manager.setStreamVolume(AudioManager.STREAM_MUSIC, index, AudioManager.FLAG_SHOW_UI)
+        return true
     }
 }
