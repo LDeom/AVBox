@@ -113,22 +113,20 @@ object AppLog {
 
     @JvmStatic
     fun i(msg: String?) {
-        if (!BuildConfig.DEBUG) return
-        Log.i(TAG, "" + msg)
         fileLog("I", msg.toString())
+        if (BuildConfig.DEBUG) Log.i(TAG, "" + msg)
     }
 
     @JvmStatic
     fun debugI(msg: String?) {
-        if (!BuildConfig.DEBUG) return
+        if (!BuildConfig.DEBUG && !fileLogEnabled) return
         i(msg)
     }
 
     @JvmStatic
     fun d(tag: String?, msg: String?) {
-        if (!BuildConfig.DEBUG) return
-        Log.d(TAG, tag + ": " + msg)
         fileLog("D", msg.toString())
+        if (BuildConfig.DEBUG) Log.d(TAG, tag + ": " + msg)
     }
 
     @JvmStatic
@@ -145,7 +143,7 @@ object AppLog {
 
     @JvmStatic
     fun longI(prefix: String?, msg: String?) {
-        if (!BuildConfig.DEBUG) return
+        if (!BuildConfig.DEBUG && !fileLogEnabled) return
         longLog(Log.INFO, prefix, msg)
     }
 
@@ -157,6 +155,7 @@ object AppLog {
     private fun longLog(priority: Int, prefix: String?, msg: String?) {
         val text = msg ?: "null"
         val title = prefix ?: ""
+        fileLog(if (priority == Log.ERROR) "E" else "I", title + text)
         val length = text.length
         if (length <= MAX_LOG_LENGTH) {
             Log.println(priority, TAG, title + text)
