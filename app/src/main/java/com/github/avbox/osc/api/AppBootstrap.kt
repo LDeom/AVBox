@@ -97,8 +97,17 @@ object AppBootstrap {
         _state.value = Boot.Loading
         AppLog.debugI("echo-switch: request")
         scope.launch {
+            val canContinue = synchronized(vodSwitchLock) {
+                if (!bootGeneration.isLatest(generation)) {
+                    false
+                } else {
+                    ApiConfig.get().invalidateVodConfig()
+                    true
+                }
+            }
+            if (!canContinue) return@launch
             val startedAt = System.currentTimeMillis()
-            ApiConfig.get().invalidateVodConfig()
+            
             AppLog.debugI("echo-switch: invalidate dt=" + (System.currentTimeMillis() - startedAt) + "ms")
             SearchSourcesState.refresh()
             subscriptionCidFlow.value = CurrentSubscription.cid()
@@ -119,7 +128,15 @@ object AppBootstrap {
         _state.value = Boot.Loading
         AppLog.debugI("echo-switch: request")
         scope.launch {
-            ApiConfig.get().invalidateVodConfig()
+            val canContinue = synchronized(vodSwitchLock) {
+                if (!bootGeneration.isLatest(generation)) {
+                    false
+                } else {
+                    ApiConfig.get().invalidateVodConfig()
+                    true
+                }
+            }
+            if (!canContinue) return@launch
             SearchSourcesState.refresh()
             subscriptionCidFlow.value = CurrentSubscription.cid()
             startInit(
