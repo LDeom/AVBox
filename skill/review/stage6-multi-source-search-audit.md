@@ -80,3 +80,26 @@
 - 同一 JS 源内搜索与播放等请求仍共享 Spider 级取消范围；若要精确到单次调用，需要设计并验证 QuickJS 执行任务与 OkHttp 请求的关联 tag。
 - 需继续检查 sourceKey 重复/空值配置边界、搜索结果流的乱序/重复回调，以及真实设备的连续搜索压力。
 - 尚未运行 Gradle 编译、单元测试或设备测试；未构建 APK。
+
+
+## 第四轮：来源 key 完整性与 JS 请求取消架构结论
+- 搜索源列表统一过滤空白 key，并按 key 去重；SearchSourcesState 的展示列表、已选 key 集合与 SearchViewModel 实际执行列表使用一致的有效来源规则。
+- 增加来源规范化单元测试：空 key、空白 key、不可搜索源被排除；重复 key 仅保留首个配置项。
+- 深入检查 `Connect`、`Global`、`JsSpider`、`JsSession`：
+  - 当前 HTTP 请求 tag 由每个 Global/Spider 持有，所有通过该 JS Spider 发起的请求共享 tag。
+  - JS 的同步 HTTP、异步 `_http`、Promise stream、openStream 及会话请求分别有不同生命周期；部分异步回调由 Global 的 executor/HttpGate 延后执行。
+  - 仅在 JsSpider.call() 外层临时替换 tag，不能保证所有异步回调、后续 timer、session 请求都仍属于原始搜索调用；可能造成漏取消或误取消。
+  - SearchLoader 目前通过 Spider 接口调用 `searchContent(key, quick)`，没有请求级取消上下文；简单扩展一个 token 而不贯穿 QuickJS 异步请求生命周期不安全。
+- 因此本轮不伪造“单次请求取消”：目前保留按来源 Spider 取消的兼容行为，并明确其同源并发请求可能受影响。下一步若要实现严格请求级取消，需要在 JS API 请求对象、异步回调/流、会话与取消注册表中贯穿 task id，再对全部请求入口做回归测试。
+- 本轮没有改变全局 JS HTTP tag，也没有改动 QuickJS 异步执行模型。
+
+## 第四轮提交
+- 搜索源空 key/重复 key 过滤：`67f9659ae59abdf928ebb2482b19cdcf97afb6f7`
+- SearchViewModel 执行列表 key 防护：`f7bda680b2a8754b38f59295754abe426d71a793`
+- 提取来源规范化函数：`deac286951434b3a1e078c24cc84cd72be202d20`
+- 来源 key 边界测试：`41086f1f735828dcecf9fad67132ac7d645dcad0`
+
+## 测试状态
+- 已添加自动化测试代码，但尚未执行 Gradle 编译或单元测试。
+- 尚未进行多 JS 源并发、同源搜索与播放并发、快速连续搜索的设备压力测试。
+- 未构建 APK。
