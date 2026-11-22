@@ -98,6 +98,7 @@ class SourceViewModel : ViewModel() {
             val forwardJob = launch {
                 requestResult.flow.collect { result ->
                     if (isCurrentSourceSortRequest(requestId, sortRequestGeneration.get())) {
+                        AppLog.operationEvent(operationId, "source.sort", if (result == null) "empty" else "success", "resultPresent=${result != null}")
                         sortResult.postValue(result)
                     }
                 }
@@ -132,6 +133,7 @@ class SourceViewModel : ViewModel() {
             val forwardJob = launch {
                 requestResult.flow.collect { result ->
                     if (isCurrentSourceListRequest(requestId, listRequestGeneration.get())) {
+                        AppLog.operationEvent(operationId, "source.list", if (result == null) "empty" else "success", "resultPresent=${result != null}")
                         listResult.postValue(result)
                     }
                 }

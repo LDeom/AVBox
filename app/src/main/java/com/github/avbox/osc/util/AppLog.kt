@@ -64,7 +64,7 @@ object AppLog {
     fun operationEvent(operationId: Long, feature: String, phase: String, detail: String = "") {
         val safeFeature = feature.replace(Regex("[^A-Za-z0-9_.-]"), "_").take(64)
         val safePhase = phase.replace(Regex("[^A-Za-z0-9_.-]"), "_").take(32)
-        val safeDetail = sanitizeLogLine(detail).take(1200)
+        val safeDetail = sanitizeLogLine(detail).filterNot { it.isISOControl() && it != '\t' }.take(1200)
         i("event: op=$operationId feature=$safeFeature phase=$safePhase" +
             if (safeDetail.isBlank()) "" else " $safeDetail")
     }

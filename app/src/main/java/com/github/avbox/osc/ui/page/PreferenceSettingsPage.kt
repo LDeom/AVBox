@@ -75,9 +75,11 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
     ) { uri ->
         if (uri != null) {
             scope.launch {
+                AppLog.operationEvent(AppLog.newOperationId(), "settings.runtime_log.export", "start")
                 val result = runCatching {
                     withContext(Dispatchers.IO) { AppLog.exportTo(context, uri) }
                 }
+                AppLog.operationEvent(AppLog.newOperationId(), "settings.runtime_log.export", if (result.isSuccess) "success" else "failure")
                 Toast.makeText(
                     context,
                     context.getString(if (result.isSuccess) R.string.toast_runtime_log_exported else R.string.toast_runtime_log_export_failed),
@@ -207,7 +209,10 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
                         subtitle = stringResource(R.string.settings_runtime_log_enabled_subtitle),
                         leadingIconRes = R.drawable.ic_settings_history,
                         checked = uiConfig.runtimeLogEnabled,
-                        onCheckedChange = { UiSettingsState.runtimeLogEnabled = it },
+                        onCheckedChange = {
+                            UiSettingsState.runtimeLogEnabled = it
+                            AppLog.operationEvent(AppLog.newOperationId(), "settings.runtime_log", if (it) "enabled" else "disabled")
+                        },
                     )
                 }
                 SettingsCard(SettingsCardPosition.LAST) {
