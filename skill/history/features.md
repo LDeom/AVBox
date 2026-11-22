@@ -253,3 +253,9 @@
 - 根 JS API 模块缺失/无效、模块执行异常或未创建 Spider 对象时不再返回半初始化实例，统一抛出初始化失败并触发安全清理，防止 JsLoader 缓存不可用 Spider。
 - 依赖模块缺失的空模块兼容策略暂时保留，待集成测试后再评估。
 - 尚未运行 Gradle 或真实配置回归测试。
+
+
+## 2026-11-22 第3阶段 JS 模块响应判定测试
+- 抽离纯 Kotlin JS 模块内容错误响应判定，使用 Locale.ROOT 保证语言环境无关。
+- 新增测试覆盖空内容、HTML错误页、404/Not Found、JSON 404、BOM及正常 JS/JSON内容。
+- 尚未执行 Gradle；未完成真实 QuickJS ModuleLoader 和 AssetManager 集成验证。
