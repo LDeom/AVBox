@@ -49,7 +49,7 @@ import kotlinx.coroutines.withContext
 fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var phone by rememberSaveable { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf(GuangYaPanClient.accountPhone()) }
     var smsCode by rememberSaveable { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
