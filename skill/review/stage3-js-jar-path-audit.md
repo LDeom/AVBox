@@ -215,3 +215,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 新增 JsModuleContentTest，覆盖 null/空白、HTML错误页、大小写混合、404、Not Found、JSON 404、BOM，以及正常 JS/JSON 文本不误判。
 - 该测试仅覆盖响应文本分类，不代表真实网络、QuickJS ModuleLoader、循环导入或 AssetManager 集成已经通过。
 - 未运行 Gradle；当前环境没有可用的仓库本地构建执行结果，需后续在 GitHub Actions/本地 Android SDK 环境执行。
+
+
+## 模块错误响应识别边界补充
+- JSON 404 响应识别补充空白容忍：支持 code 字段前后存在空格的 JSON 错误体，避免只识别无空格的固定前缀。
+- 新增测试覆盖 JSON code=404 的空白格式及土耳其语系统 Locale，验证错误响应判断固定使用 Locale.ROOT。
+- 保留仅识别明确错误体的策略，避免把普通业务 JSON 中出现的数字 404 误判为下载失败。
+- 仍未运行 Gradle；以上测试已提交但尚未执行。
