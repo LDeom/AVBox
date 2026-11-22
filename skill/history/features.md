@@ -341,3 +341,9 @@
 - 确认 BasePlayerView.release() 原先先销毁 ExoPlayer，再调用渲染宿主 detachVideoSurface；现调整为先移除并释放渲染宿主、解除视频输出，再释放 KernelPlayer/ExoPlayer，统一资源释放顺序。
 - 直播 Activity 已有 PID 与生命周期日志；正常旋转配置声明静态上应由 onConfigurationChanged 处理，但仍需通过真机日志区分 Activity 重建与进程重启。
 - 尚未运行 Gradle/设备测试；未构建 APK。
+
+
+## 2026-11-22 第5阶段 TextureView 旋转诊断增强
+- EngineTextureRenderView 增加 SurfaceTexture available、sizeChanged、destroyed 生命周期日志，记录纹理 identity、尺寸、播放器绑定状态、是否复用 retained Texture 及 destroyed 回调返回值。
+- 用于与 LivePlayActivity PID/Activity 生命周期及 PlayerEngine surface bind/detach 日志交叉判断旋转时的故障层级。
+- 本次仅增加诊断，不改变 SurfaceTexture 所有权和回调行为；尚未执行 Gradle、真机旋转和播放器压力测试。
