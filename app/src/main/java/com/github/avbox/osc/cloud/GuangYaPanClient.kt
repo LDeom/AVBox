@@ -372,15 +372,19 @@ object GuangYaPanClient {
                 throw IOException("光鸭服务请求失败（HTTP " + response.code + "）")
             }
             val parsed = runCatching { gson.fromJson<T>(text, type) }.getOrNull()
-                ?: throw IOException("光鸭服务返回了无法识别的数据")
-            if (authError && parsed is ApiEnvelope<*>) {
+            if (authError) {
+                if (parsed is ApiEnvelope<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    return (parsed.copy(code = response.code) as T)
+                }
                 @Suppress("UNCHECKED_CAST")
-                return (parsed.copy(code = response.code) as T)
+                return (ApiEnvelope<Any>(code = response.code, msg = "unauthorized") as T)
             }
-            if (parsed is ApiEnvelope<*> && parsed.error.isNotBlank()) {
-                throw IOException(parsed.errorDescription.ifBlank { parsed.error })
+            val result = parsed ?: throw IOException("光鸭服务返回了无法识别的数据")
+            if (result is ApiEnvelope<*> && result.error.isNotBlank()) {
+                throw IOException(result.errorDescription.ifBlank { result.error })
             }
-            return parsed
+            return result
         }
     }
 
