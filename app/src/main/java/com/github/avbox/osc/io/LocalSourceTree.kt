@@ -15,11 +15,15 @@ object LocalSourceTree {
 
     fun remember(context: Context, tree: Uri): String? {
         val path = treePath(context, tree) ?: return null
-        try {
-            context.contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        } catch (th: Throwable) {
-            AppLog.e("LocalSourceTree", th)
+        if (!hasPersistedReadGrant(context, tree)) {
+            try {
+                context.contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (th: Throwable) {
+                AppLog.e("LocalSourceTree", th)
+                return null
+            }
         }
+        if (!hasPersistedReadGrant(context, tree)) return null
         val trees = ArrayList(remembered(context))
         if (!trees.contains(tree.toString())) {
             trees.add(tree.toString())
@@ -32,7 +36,12 @@ object LocalSourceTree {
         KV.get(KVKeys.LOCAL_SOURCE_TREES, arrayListOf<String>())
 
     fun serves(context: Context, path: String): Boolean = remembered(context).any { text ->
-        val tree = treePath(context, Uri.parse(text)) ?: return@any false
+        val uri = Uri.parse(text)
+        if (!hasPersistedReadGrant(context, uri)) {
+            forget(context, text)
+            return@any false
+        }
+        val tree = treePath(context, uri) ?: return@any false
         relativeUnder(tree, path) != null
     }
 
@@ -40,6 +49,10 @@ object LocalSourceTree {
         val target = Environment.getExternalStorageDirectory().absolutePath + "/" + relativePath
         for (text in remembered(context)) {
             val tree = Uri.parse(text)
+            if (!hasPersistedReadGrant(context, tree)) {
+                forget(context, text)
+                continue
+            }
             val path = treePath(context, tree) ?: continue
             val relative = relativeUnder(path, target) ?: continue
             val document = findDocument(context, tree, relative) ?: continue
@@ -92,6 +105,25 @@ object LocalSourceTree {
             }
         }
     }
+
+    private fun forget(context: Context, uri: String) {
+        val trees = ArrayList(remembered(context))
+        if (trees.remove(uri)) KV.put(KVKeys.LOCAL_SOURCE_TREES, trees)
+    }
+
+    private fun hasPersistedReadGrant(context: Context, tree: Uri): Boolean =
+        hasPersistedReadGrant(
+            tree.toString(),
+            try {
+                context.contentResolver.persistedUriPermissions
+                    .filter { it.isReadPermission }
+                    .map { it.uri.toString() }
+                    .toSet()
+            } catch (th: Throwable) {
+                AppLog.e("LocalSourceTree", th)
+                emptySet()
+            },
+        )
 
     private fun treePath(context: Context, tree: Uri): String? = try {
         treeDocPath(
