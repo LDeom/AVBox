@@ -288,3 +288,9 @@
 - 将 JarLoader 的 live Jar 登记、别名写入、recent/siteJarKeys 更新和 Spider 创建绑定 clearGeneration，避免 clear() 后旧请求重新注册状态或跨代际继续加载。
 - 主 Jar recent 更新与 setRecentJarKey 快照使用 lifecycleLock；Jar Spider 初始化监视器采用 try/finally 保证异常路径收尾。
 - 尚未运行 Gradle，真实并发 Jar 加载与清理需设备/压力测试验证。
+
+
+## 2026-11-22 第3阶段 Jar Spider 注册竞态修复
+- 修复 JarLoader.getSpider 中 generation 校验与 Spider 缓存写入不原子的窗口；注册和代际校验现由 lifecycleLock 一次完成，旧代际实例不会在 clear 后重新进入缓存。
+- 二次缓存命中校验加入 generation 检查；空 live Jar 不再登记。
+- 尚未运行 Gradle 或设备压力测试。
