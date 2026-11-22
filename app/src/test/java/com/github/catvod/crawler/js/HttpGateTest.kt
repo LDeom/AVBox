@@ -41,6 +41,20 @@ class HttpGateTest {
         assertEquals("too many pending requests", message)
     }
 
+
+    @Test
+    fun clear_failsQueuedRequestsAndReleasesTheirCallbacks() {
+        val gate = HttpGate(executor)
+        val start = Runnable {}
+        repeat(16) { gate.dispatch(HttpGate.Request(start) {}) }
+        val messages = ArrayList<String>()
+        repeat(2) { gate.dispatch(HttpGate.Request(start) { messages.add(it) }) }
+
+        gate.clear()
+
+        assertEquals(listOf("cancelled", "cancelled"), messages)
+    }
+
     @Test
     fun cancelPending_failsQueuedRequests() {
         val gate = HttpGate(executor)
