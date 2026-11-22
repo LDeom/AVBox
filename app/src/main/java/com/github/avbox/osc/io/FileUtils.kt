@@ -38,17 +38,43 @@ object FileUtils {
 
     @JvmStatic
     fun writeSimple(data: ByteArray, dst: File): Boolean {
+        val parent = dst.parentFile
+        if (parent != null && !parent.exists() && !parent.mkdirs()) return false
+        val temp = File(dst.absolutePath + ".tmp")
+        val backup = File(dst.absolutePath + ".bak")
         try {
-            if (dst.exists())
-                dst.delete()
-            val bos = BufferedOutputStream(FileOutputStream(dst))
-            bos.write(data)
-            bos.close()
+            if (temp.exists()) temp.delete()
+            BufferedOutputStream(FileOutputStream(temp)).use { bos ->
+                bos.write(data)
+                bos.flush()
+            }
+            if (!temp.exists() || temp.length() != data.size.toLong()) {
+                temp.delete()
+                return false
+            }
+            if (backup.exists()) backup.delete()
+            if (dst.exists() && !dst.renameTo(backup)) {
+                temp.delete()
+                return false
+            }
+            if (!temp.renameTo(dst)) {
+                if (backup.exists()) backup.renameTo(dst)
+                temp.delete()
+                return false
+            }
+            if (backup.exists()) backup.delete()
             return true
         } catch (e: IOException) {
             AppLog.e("FileUtils", e)
+            if (!dst.exists() && backup.exists()) backup.renameTo(dst)
+            temp.delete()
+            return false
+        } catch (e: Throwable) {
+            AppLog.e("FileUtils", e)
+            if (!dst.exists() && backup.exists()) backup.renameTo(dst)
+            temp.delete()
+            return false
         }
-        return false
     }
 
     @JvmStatic
