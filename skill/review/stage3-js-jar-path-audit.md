@@ -273,3 +273,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - clan:// Jar 下载路径也统一传递 generation。
 - 另发现不同 ;md5; 后缀会生成不同 loader key，却指向同一 fileForJar(source) 缓存文件，原先按 loader key 加锁无法防止同一 .tmp 文件并发写入。parseJar 现按规范化 source 的缓存身份使用 jar-cache 前缀锁，同一物理缓存目标串行处理。
 - 尚未运行 Gradle、网络并发测试或真机测试；需覆盖下载中 clear、同 URL 不同 MD5 后缀、下载失败旧缓存保留及并发复制。
+
+
+## 第三十轮后续校验补充（2026-11-22）
+- 复核全部调用点后补齐 clanToAddress(source) 的下载调用，确保 clan:// Jar 路径也传递原始 generation；所有 download/copyAsset/replaceCacheFile 调用均使用代际参数。
+- 将 parseJar 的互斥锁改为基于去除 ;md5; 后缀后的源身份（jar-cache: + MD5(source)），避免相同物理缓存文件因不同 MD5 声明使用不同锁并发写同一 .tmp。
+- md5 远程校验结果需要回填，因此 checksum 局部变量保持可变；已回读确认所有下载/复制/替换调用均使用新签名。
+- 上述为静态源码回读，没有运行 Kotlin/Gradle 编译；最终编译仍待 CI/本地 Android SDK 验证。
