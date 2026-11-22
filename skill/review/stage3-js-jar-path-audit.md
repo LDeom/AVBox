@@ -130,3 +130,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - Global 的异步 HTTP/stream 回调现在通过 callbackLock 与 destroy 串行化：已提交回调排在 JsSpider Context 销毁任务之前；销毁后不再提交/执行QuickJS回调；stream response 在销毁竞态中关闭并释放回调引用。
 - _http/_stream 的请求入队与 destroy 同步，防止队列清理后又提交新请求。
 - 未运行 Gradle、QuickJS native 测试或设备验证。
+
+## 第十六轮 JsLoader 缓存读取与清理代际同步（2026-11-22）
+- 修复 getSpider() 无锁读取 spiders 缓存并返回实例的竞态：recentKey、generation快照与缓存读取统一在 lifecycleLock 内完成；创建锁内的二次缓存读取也验证generation。
+- loadJarInternal()读取classes缓存改为 lifecycleLock 内检查代际并读取；所有Jar加载后的类读取通过 cachedClass()再次验证代际。
+- 下载JS API Jar后，在 lifecycleLock 内检查generation并安全替换缓存，避免 clear() 后的旧下载覆盖缓存文件。
+- proxyInvoke()读取当前Spider时同步读取recentKey对应的实例。
+- 进一步将HTTP/stream完成回调中的HttpGate.finish与destroy协调；销毁后先清空待处理请求再释放当前in-flight槽位，避免迟到回调继续启动排队请求。
+- 未运行 Gradle、QuickJS native 测试或设备验证。
