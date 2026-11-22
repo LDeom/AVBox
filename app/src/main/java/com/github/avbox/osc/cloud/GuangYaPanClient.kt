@@ -75,6 +75,11 @@ private data class FileListData(
     val list: List<GuangYaFile> = emptyList(),
 )
 
+private data class DownloadData(
+    @SerializedName("signedURL") val signedUrl: String = "",
+    @SerializedName("downloadUrl") val downloadUrl: String = "",
+)
+
 object GuangYaPanClient {
 
     private const val ACCOUNT_BASE = "https://account.guangyapan.com"
@@ -233,6 +238,40 @@ object GuangYaPanClient {
             throw IOException(response.msg)
         }
         return response.data?.list.orEmpty()
+    }
+
+
+    internal fun resolveInAppPlaybackUrl(fileId: String): String {
+        require(fileId.isNotBlank()) { "文件 ID 不能为空" }
+        var credential = loadCredential() ?: throw IOException("光鸭账号尚未登录")
+        var response = postApi<DownloadData>(
+            "/nd.bizuserres.s/v1/get_res_download_url",
+            mapOf("fileId" to fileId),
+            credential,
+        )
+        if (response.code == 401 || response.code == 403) {
+            refreshCredential()
+            credential = loadCredential() ?: throw IOException("光鸭登录状态已失效")
+            response = postApi(
+                "/nd.bizuserres.s/v1/get_res_download_url",
+                mapOf("fileId" to fileId),
+                credential,
+            )
+        }
+        if (response.code == 401 || response.code == 403) {
+            throw IOException("光鸭登录状态已失效，请重新登录")
+        }
+        if (response.msg.isNotBlank() && !response.msg.equals("success", ignoreCase = true)) {
+            throw IOException(response.msg)
+        }
+        val url = response.data?.signedUrl?.takeIf { it.isNotBlank() }
+            ?: response.data?.downloadUrl?.takeIf { it.isNotBlank() }
+            ?: throw IOException("光鸭未返回可用的文件播放地址")
+        val uri = android.net.Uri.parse(url)
+        if (uri.scheme != "https" || uri.host.isNullOrBlank() || uri.userInfo != null) {
+            throw IOException("光鸭返回的文件地址不符合安全要求")
+        }
+        return url
     }
 
     fun logout() {
