@@ -44,6 +44,9 @@ class Global {
     var executor: ExecutorService
 
     private val timer: Timer
+    private val timerLock: Any = Any()
+    private val pendingTimerFunctions: MutableSet<JSFunction> = ConcurrentHashMap.newKeySet()
+    private val destroyed: AtomicBoolean = AtomicBoolean(false)
 
     private val httpTag: String
 
@@ -579,26 +582,42 @@ class Global {
     @Keep
     @Function
     fun setTimeout(func: JSFunction, delay: Int?) {
+        val delayMs = requireNotNull(delay) { "delay is null" }.toLong().coerceAtLeast(0L)
         func.hold()
-        timer.schedule(object : TimerTask() {
-            override fun run() {
-                if (!executor.isShutdown) {
-                    try {
-                        executor.submit(Runnable {
+        synchronized(timerLock) {
+            if (destroyed.get()) {
+                func.release()
+                return
+            }
+            pendingTimerFunctions.add(func)
+            try {
+                timer.schedule(object : TimerTask() {
+                    override fun run() {
+                        synchronized(timerLock) {
+                            if (!pendingTimerFunctions.remove(func)) return
+                            if (destroyed.get() || executor.isShutdown) {
+                                func.release()
+                                return
+                            }
                             try {
-                                func.call()
-                            } finally {
+                                executor.submit(Runnable {
+                                    try {
+                                        if (!destroyed.get()) func.call()
+                                    } finally {
+                                        func.release()
+                                    }
+                                })
+                            } catch (e: RejectedExecutionException) {
                                 func.release()
                             }
-                        })
-                    } catch (e: RejectedExecutionException) {
-                        func.release()
+                        }
                     }
-                } else {
-                    func.release()
-                }
+                }, delayMs)
+            } catch (th: Throwable) {
+                if (pendingTimerFunctions.remove(func)) func.release()
+                throw th
             }
-        }, requireNotNull(delay) { "delay is null" }.toLong())
+        }
     }
 
     private fun closeSessionStreams(token: Int) {
@@ -613,12 +632,18 @@ class Global {
     }
 
     fun destroy() {
+        if (!destroyed.compareAndSet(false, true)) return
+        synchronized(timerLock) {
+            timer.cancel()
+            for (func in pendingTimerFunctions) {
+                if (pendingTimerFunctions.remove(func)) func.release()
+            }
+        }
         for (token in sessions) {
             JsSession.close(token)
             closeSessionStreams(token)
         }
         sessions.clear()
-        timer.cancel()
         httpGate.clear()
         for (stream in streams) stream.close()
         streams.clear()
