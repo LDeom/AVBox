@@ -67,6 +67,7 @@ class KVKeySpec : KVDecoder.TypeRegistry {
             register(KVKeys.TMDB_API_BASE, "")
             register(KVKeys.TMDB_IMAGE_BASE, "")
             register(KVKeys.BUILTIN_SOURCE_CATALOG_VERSION, "")
+            register(KVKeys.CLOUD_DRIVE_CREDENTIALS, "")
 
             register(KVKeys.PLAY_TYPE, 0)
             register(KVKeys.PLAY_RENDER, 0)
