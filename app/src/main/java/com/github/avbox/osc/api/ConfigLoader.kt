@@ -460,7 +460,7 @@ class ConfigLoader(private val owner: ApiConfig) {
                 AppLog.e("echo-live-config-fail url=$liveApiUrl err=$error")
                 callback.error(ApiConfig.str(R.string.toast_live_config_fetch_failed))
             }
-        })
+        }, requestId)
     }
 
     private fun localSourceUnreadableMsg(): String {
@@ -593,8 +593,12 @@ class ConfigLoader(private val owner: ApiConfig) {
         fun error(error: String?)
     }
 
-    private fun fetchConfigAsync(apiUrl: String, requestUrl: String, configKey: String?, kind: String, callback: ConfigFetchCallback) {
+    private fun fetchConfigAsync(apiUrl: String, requestUrl: String, configKey: String?, kind: String, callback: ConfigFetchCallback, liveRequestId: Long? = null) {
         configLoadExecutor.execute(Runnable {
+            if (kind == KIND_LIVE && (liveRequestId == null || !isCurrentLiveLoad(liveRequestId, apiUrl))) {
+                callback.error("stale")
+                return@Runnable
+            }
             var result = ""
             var error: String? = ""
             var response: okhttp3.Response? = null
