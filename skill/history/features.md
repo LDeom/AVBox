@@ -183,3 +183,9 @@
 - 修复 Global.setTimeout 中 JSFunction.hold() 与 Timer.cancel() 的资源不平衡：销毁时释放所有未触发回调。
 - 使用独立 Timer entry 跟踪，支持同一函数多次定时调度；锁定 timer 回调提交与 Context 销毁顺序，避免销毁后回调访问 QuickJS。
 - 未运行 Gradle/设备验证。
+
+## 2026-11-22 第3阶段 Async 与 HTTP 回调销毁安全
+- Async.Result 加入 first-completion-wins 原子状态和可见性保证，新增 AsyncResultTest。
+- HttpGate.clear 改为通知队列中每个请求取消，避免未执行 _stream 的 JS resolve/reject hold 引用泄漏；新增 clear 测试。
+- Global 的 HTTP/stream 回调派发、请求入队与 destroy 通过 callbackLock 协调；销毁后阻止 QuickJS 回调触碰已销毁 Context，并关闭竞态中的流响应。
+- 未运行 Gradle/设备验证。
