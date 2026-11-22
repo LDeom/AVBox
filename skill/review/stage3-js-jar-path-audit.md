@@ -164,3 +164,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 按 URI 相对引用语义修复：空引用返回基础 URI，并移除基础 URI 的 fragment；保留 query 与原路径。
 - 新增回归测试覆盖空字符串、null，以及正常相对模块路径，确保常规模块目录解析不受影响。
 - 尚未运行 Gradle 单元测试；测试结果待执行验证。
+
+
+## 第二十轮 clan:// 模块路径边界修复（2026-11-22）
+- FileUtils.loadModule 原先解析 clan://host/path 时直接使用 substring(0, indexOf('/'))；当地址缺少路径分隔符时 indexOf 返回 -1，抛出异常后被外层捕获并静默返回 null。
+- 抽离 clanModuleUrl 做纯路径转换，并在访问 host/path 前验证主机非空且存在路径分隔符；无效地址明确记录日志，不再依赖异常控制流程。
+- 保留 clan://host/ 的空文件路径行为及原有 http://host/file/path 映射。
+- 新增 FileUtilsModulePathTest 覆盖正常主机路径、缺少主机/分隔符及空路径。
+- 尚未运行 Gradle 测试；网络端点及真实设备本地代理仍待集成验证。
