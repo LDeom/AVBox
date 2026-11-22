@@ -37,3 +37,18 @@
 - 已完成：GitHub 分支源码静态读取、Manifest 与 Activity/BaseActivity/PlaybackEngine 生命周期交叉审查。
 - 未完成：Gradle 编译、单元测试执行、Android 设备旋转复现、Surface/Texture 生命周期实测。
 - 本轮未修改播放器核心逻辑、未构建 APK、未发布 Release。
+
+
+## 第二轮：BasePlayerView 释放路径修复
+### 发现
+- `BasePlayerView.release()` 原先把渲染视图的移除与 `render.release()` 放在 `lastReportedPlayState != IDLE` 条件内。
+- 播放器内核已创建渲染视图、但状态仍为 IDLE 的边界情况下，`kernelPlayer` 会被释放并置空，而 `activeRenderView` 可能仍留在 `playerFrame`，Surface/Texture 与视图引用没有被统一清理。
+
+### 修复
+- 将渲染视图从容器移除、调用渲染器 release、清空 activeRenderView，以及关闭 keepScreenOn 调整为无条件执行。
+- 仅保留进度采集、保存、播放位置复位和状态派发在原有 hadActiveState 条件内，避免改变 IDLE 状态下的进度/状态语义。
+- 提交：`0efd567fdc95cf659781b41f535f3ddae6e168ae`。
+
+### 验证与风险
+- 已静态检查修改前后的条件边界；未执行 Gradle 编译、单元测试或 Surface/Texture 真机测试。
+- 后续需验证 IDLE/ PREPARING/ PLAYING 三种状态下 release 幂等性，以及 SurfaceView/TextureView 释放后重新创建和重绑定。
