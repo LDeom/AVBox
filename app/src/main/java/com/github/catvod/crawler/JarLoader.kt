@@ -195,16 +195,12 @@ class JarLoader {
     private fun parseJar(key: String?, jar: String?, generation: Long) {
         if (key.isNullOrEmpty() || jar.isNullOrEmpty()) return
         if (generation != clearGeneration.get() || loaders.containsKey(key)) return
-        val lock = lock(key)
+        val texts = RegexUtils.getPattern(";md5;").split(jar)
+        val source = texts[0]
+        val md5 = if (texts.size > 1) texts[1].trim { it <= ' ' } else ""
+        val lock = lock("jar-cache:" + jarKey(source))
         synchronized(lock) {
             if (generation != clearGeneration.get() || loaders.containsKey(key)) return
-            var source = jar
-            var md5 = ""
-            val texts = RegexUtils.getPattern(";md5;").split(source)
-            if (texts.size > 1) {
-                source = texts[0]
-                md5 = texts[1].trim { it <= ' ' }
-            }
             synchronized(lifecycleLock) {
                 if (generation != clearGeneration.get()) return
                 aliases[jarKey(source)] = key
