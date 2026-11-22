@@ -804,7 +804,10 @@ class LivePlayActivity : BaseActivity() {
         ),
         list = LiveChannelListActions(
             onToggleGroup = { toggleChannelGroup(it) },
-            onSelectGroup = { selectChannelGroup(it, -1) },
+            onSelectGroup = {
+                selectChannelGroup(it, -1)
+                requestChannelScroll()
+            },
             onSelectChannel = { groupIndex, position -> selectChannel(groupIndex, position) },
             onToggleDrawer = { vm.setChannelDrawerVisible(!vm.state.value.channelList.channelDrawerVisible) },
             onDismissDrawer = { vm.setChannelDrawerVisible(false) },
