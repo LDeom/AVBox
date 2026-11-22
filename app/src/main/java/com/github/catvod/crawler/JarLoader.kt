@@ -132,8 +132,8 @@ class JarLoader {
             synchronized(lifecycleLock) {
                 if (generation != clearGeneration.get()) return false
                 if (proxyMethod != null) proxyMethods[key] = proxyMethod
-                if (danmakuMethods.first != null) danmuClickMethods[key] = danmakuMethods.first
-                if (danmakuMethods.second != null) danmuLongClickMethods[key] = danmakuMethods.second
+                danmakuMethods.first?.let { danmuClickMethods[key] = it }
+                danmakuMethods.second?.let { danmuLongClickMethods[key] = it }
                 loaders[key] = loader
             }
             BootGuard.scheduleStableRunReset()
