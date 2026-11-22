@@ -31,7 +31,10 @@ import me.jessyan.autosize.unit.Subunits
 class App : Application() {
 
     override fun attachBaseContext(base: Context) {
-        Probe.step("kvInit") { KV.init(base) }
+        Probe.step("kvInit") {
+            KV.init(base)
+            AppLog.setFileLoggingEnabled(KV.get(KVKeys.RUNTIME_LOG_ENABLED, false))
+        }
         super.attachBaseContext(LanguageManager.wrap(base))
     }
 
