@@ -73,6 +73,10 @@ class JsLoader {
                     Thread.sleep(200)
                 } catch (th: Throwable) {
                     AppLog.e("JsLoader", th)
+                    if (th is InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        break
+                    }
                 }
                 count++
             } while (count < 5)
@@ -145,6 +149,7 @@ class JsLoader {
             return classes[key]
         } catch (e: Throwable) {
             AppLog.e("JsLoader", e)
+            if (e is InterruptedException) Thread.currentThread().interrupt()
             if (temp.exists()) temp.delete()
         }
         return null
