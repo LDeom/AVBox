@@ -300,13 +300,13 @@ open class BasePlayerView @JvmOverloads constructor(
         if (hadActiveState) captureLivePosition()
         audioFocusHelper?.abandonFocus()
         audioFocusHelper = null
-        kernelPlayer?.release()
-        kernelPlayer = null
         activeRenderView?.let { render ->
             playerFrame.removeView(render.getView())
             render.release()
         }
         activeRenderView = null
+        kernelPlayer?.release()
+        kernelPlayer = null
         playerFrame.keepScreenOn = false
         if (hadActiveState) {
             saveProgress()
