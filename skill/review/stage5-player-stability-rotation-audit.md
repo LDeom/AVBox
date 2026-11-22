@@ -52,3 +52,26 @@
 ### 验证与风险
 - 已静态检查修改前后的条件边界；未执行 Gradle 编译、单元测试或 Surface/Texture 真机测试。
 - 后续需验证 IDLE/ PREPARING/ PLAYING 三种状态下 release 幂等性，以及 SurfaceView/TextureView 释放后重新创建和重绑定。
+
+
+## 第三轮：Surface/Texture 释放顺序与页面旋转边界
+### 交叉核实
+- `DetailActivity` 在 Manifest 声明 `orientation|screenSize`，`LivePlayActivity` 声明更完整的显示配置变化项；正常设备旋转应由各自 Activity 的 `onConfigurationChanged` 接收，而不是默认销毁重建。
+- `LivePlayActivity` 覆写 `applyOrientationPolicy()`，因此不会被 `BaseActivity` 的手机竖屏策略覆盖；全屏方向由 `applyLiveOrientation()` 统一设为 `SENSOR_LANDSCAPE`，退出全屏恢复 `UNSPECIFIED`。
+- `LivePlayActivity` 已记录 PID、onPause/onStop/onDestroy、changingConfigurations/finishing 与配置方向。若旋转时 PID 不变且没有 onDestroy，属于配置变化处理；若出现 onDestroy/onCreate 但 PID 不变，属于 Activity 重建；PID 改变才是进程重启。
+- `EngineSurfaceRenderView.release()` 和 `EngineTextureRenderView.release()` 都会先要求 KernelPlayer 解除视频输出，再释放 Surface/SurfaceTexture 资源。原 `BasePlayerView.release()` 却先释放 KernelPlayer/ExoPlayer，之后才调用 render.release()，导致渲染宿主的解除输出操作发生在内核销毁之后，调用顺序不一致。
+
+### 修复
+- 调整 `BasePlayerView.release()`：先从容器移除并释放当前渲染宿主（Surface/Texture 解除输出），再释放 KernelPlayer/ExoPlayer。
+- 保持上一轮已修复的无条件释放渲染视图；进度保存和状态派发仍只在 hadActiveState 时执行。
+- 提交：`8317dbb34881433db115e2829d665fd4649e10fc`。
+
+### 当前结论
+- 旋转配置声明和直播方向策略在静态代码中没有发现明确冲突；不应继续通过叠加方向锁来试错。
+- 渲染释放顺序已统一，但这不等于已修复用户报告的旋转重启。必须结合已有 PID/生命周期日志与 Surface bind/detach 日志确认故障层级。
+- `EngineTextureRenderView.onSurfaceTextureDestroyed()` 返回 false，表示应用保留 SurfaceTexture 所有权；当前实现通过后续重新挂接及显式 release 管理它。该路径需要 Android 真机重复旋转、切换 TextureView/SurfaceView 模式测试，静态审查不能证明系统行为完全正确。
+
+## 验证状态更新
+- 已完成：Manifest、Activity 生命周期、PlaybackEngine 挂摘、BasePlayerView、SurfaceView/TextureView 和 ExoPlayer 输出解除顺序的静态交叉审查。
+- 未完成：Gradle 编译/测试、Android 真机连续旋转、渲染模式切换、快速切频道压力测试。
+- 未生成 APK、未发布 Release。
