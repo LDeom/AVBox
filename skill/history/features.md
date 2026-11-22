@@ -173,3 +173,8 @@
 - JsSpider 的同步等待、JS调用及转换调用在超时/线程中断时显式取消对应 Future；中断时恢复中断标记。
 - 处理 Executor 拒绝提交的异常，避免调用路径异常外溢。
 - 尚未运行 Gradle 或真机测试；native QuickJS 执行中断能力仍待验证。
+
+## 2026-11-22 第3阶段 JsLoader 代际同步
+- JsLoader.clear() 与 Spider/Class 缓存写入统一使用 lifecycleLock；旧代际 JS API Jar 和 Spider 创建任务不能在清理后重新注册缓存。
+- generation 显式贯穿 JS API Jar 下载/类加载及 Spider 创建后的注册。
+- 尚未运行 Gradle 或真机验证。
