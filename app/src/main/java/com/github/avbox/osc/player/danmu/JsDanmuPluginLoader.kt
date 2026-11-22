@@ -2,6 +2,7 @@ package com.github.avbox.osc.player.danmu
 
 import android.content.Context
 import com.github.avbox.osc.util.AppLog
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -21,7 +22,9 @@ object JsDanmuPluginLoader {
                             return@use
                         }
                         val candidates = runtime.search(title, episode)
-                        val selected = selectCandidate(candidates.toList(), title, episode)
+                        val candidateList = ArrayList<JSONObject>(candidates.length())
+                        for (index in 0 until candidates.length()) candidates.optJSONObject(index)?.let(candidateList::add)
+                        val selected = selectCandidate(candidateList, title, episode)
                         if (selected == null) {
                             AppLog.i("echo-danmu JS plugin no unique candidate: " + plugin.id)
                             return@use

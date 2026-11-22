@@ -105,10 +105,14 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
         host.danmuLoadController?.startIfReady()
     }
 
-    fun resetDanmuState() {
+    fun cancelDanmuPluginLoad() {
         jsDanmuRequestId++
         jsDanmuJob?.cancel()
         jsDanmuJob = null
+    }
+
+    fun resetDanmuState() {
+        cancelDanmuPluginLoad()
         host.danmuLoadController?.reset()
     }
 
