@@ -541,3 +541,11 @@
 - 新增中英文资源字符串；保留原有透明面板、双栏比例、频道点击/密码校验/当前频道滚动定位逻辑。
 - 代码提交：`9a0c0e58267de359fe1dd374fe5be48ef7d5a999`、`a046878284ae46fdbfd9453bc9970b0e5f4615c1`、`c018814fd9e5c09fbddeb05c493711dff2302fd8`。
 - 尚未运行 Gradle 编译、单元测试或真机验证。
+
+
+## 2026-11-22 第九阶段第二轮：折叠屏与窄窗口弹层适配
+- 主界面 MainActivity 增加 Activity 级方向、屏幕尺寸、键盘、screenLayout 与 smallestScreenSize 配置变更声明；折叠/展开与旋转时交由 BaseActivity.onConfigurationChanged() 更新方向策略，Compose 按新窗口配置重组，避免常规窗口变化销毁主 Activity。
+- 居中对话框水平边距随窗口宽度收缩，最小宽度动态不超过实际可用宽度；保留 560dp 最大宽度、90% 最大高度与原滚动行为，降低窄分屏溢出风险。
+- 首页与栏目网格继续沿用现有自适应列数；WindowSizeTest 已锁定手机三列策略，本轮不改变既定卡片布局。
+- 提交：9b1f2b5caa60197dd5d8ae9cb619369941776c00、a93bceec580e397516b235350c465679051ec36d。
+- 尚未运行 Gradle 编译、单元测试或折叠屏/分屏真机验证；未构建 APK。
