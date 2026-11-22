@@ -606,3 +606,12 @@
 - ExoPlayer 下载链路通过内部传输标记启用独立标准 TLS 客户端，标记在 HTTP 发出前移除，且不进入缓存键；云盘签名 URL 不经 trust-all TLS 客户端请求。
 - 尚未实现其他五家网盘；光鸭短信服务端可能要求官方人机验证或调整登录方式。
 - 尚未运行 Gradle 编译、单元测试、Android Keystore 真机登录、文件列表联调或播放验证；未构建 APK。
+
+
+## 2026-11-22 网盘接入简化：Cookie 设置与来源限定注入
+- 按用户最新要求，将网盘功能收敛为设置页 Cookie 管理；覆盖配置中八家 provider：夸克、UC、百度、迅雷、阿里、光鸭、天翼、123 云盘。各 provider 独立保存、覆盖与清除，沿用 Android Keystore AES-GCM + AtomicFile，不回显已保存的 Cookie。
+- 新增 CloudCookieInjector，按 provider API 标识/站点 key 与服务域名双重匹配；JS HTTP 请求由 Global 将站点身份传给 Connect 注入，type-3 JAR 代理请求由 ProxyEntry 注入。Cookie 合并保留其他键，仅由设置值覆盖同名键。
+- 设置页移除短信登录、账号状态、文件列表与目录浏览 UI；删除 GuangYaPanClient 和 CloudDrivePlaybackActivity，并移除 PlaybackStarter 的 guangya:// 专用地址解析、PlaybackController 的 cloud: 特殊生命周期分支及 Manifest 注册。保留通用 Keystore 凭据保险库供 Cookie 使用。
+- 修正 Android device-transfer 排除规则，确保 cloud_credentials/ 目录不会随设备迁移复制。
+- 新增 CloudCookieInjectorTest，覆盖同名覆盖、Cookie 属性过滤与空 Cookie 输入。
+- 当前仅完成源码与文档更新；未运行 Gradle、单元测试、门禁、真机网盘联调或 APK 构建。各驱动真实认证兼容性仍需按实际请求验证，Token-only 驱动不会因 Cookie 保存而自动登录。
