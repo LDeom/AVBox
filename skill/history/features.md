@@ -643,3 +643,9 @@
 - 检查文件末尾确认 `switchLiveSource` 的 synchronized lambda 已闭合，但 `ConfigRepository` object 缺少最后一个闭合大括号；补齐对象闭合，不改源切换行为。
 - 修复提交：`fd4f1e797c3c4f36f52f5d8ecd83f521b2d204c6`。
 - 当前只完成源码结构修复并提交；后续构建仍需验证 Kotlin 编译、单元测试与 APK 签名/上传步骤，未宣称构建成功。
+
+
+## 2026-11-22 APK 构建第三轮修复：Kotlin 编译错误收敛
+- 修复后续真实构建暴露的编译错误：ConfigRepository 缺少 object 结束括号；SearchSourcesState 与 SearchViewModel 未处理 SourceBean.key 可空；SpiderLoader 调用 replaceCache 时漏传 epoch；FileUtils 对 Gson JsonElement 的 isString 属性访问错误；VideoGestureHandler 重复声明/赋值 downX；PlayContainer 残留已删除网盘播放流程的投屏限制和不存在的字符串资源；JarLoader 对跨模块 Pair 属性做不安全 smart cast。
+- 对应修复为补齐括号、对 key 做显式非空过滤与归一化、传递当前 epoch、通过 asJsonPrimitive.isString 判断、删除重复 downX、移除废弃的光鸭专用投屏分支、对 Pair 值使用安全 let 写入。
+- 这些问题由最新 Actions 编译日志逐项定位；修复提交已推送，分支 push 工作流会自动重新编译。尚待新一轮构建结果确认是否还存在其他错误。
