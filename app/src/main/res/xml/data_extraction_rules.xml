@@ -2,7 +2,7 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="cloud_credentials/" />
-    <exclude domain="file" path="cloud_credentials.enc" />
+        <exclude domain="file" path="cloud_credentials.enc" />
         <exclude domain="file" path="cloud_credentials.enc.bak" />
         <exclude domain="file" path="cloud_credentials.enc.new" />
     </cloud-backup>
