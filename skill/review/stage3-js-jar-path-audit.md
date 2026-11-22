@@ -157,3 +157,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - Global.destroy() 使用独立 cleanupStarted 保证清理仅执行一次；在 executor 所属线程中释放定时器、HTTP、stream及Context关联资源。
 - 该顺序保证已排入任务先于 teardown 执行，销毁标记后不再产生新 QuickJS 任务；已排入回调检测 destroyed 后跳过 JS 调用并释放持有引用。
 - 未运行 Gradle、QuickJS native 测试或设备验证。
+
+
+## 第十九轮 JS 模块 URI 空引用边界修复（2026-11-22）
+- 静态追踪发现 UriUtil.resolve() 在 referenceUri 为空字符串或 null 时，会继续访问 reference[0]，触发越界异常。
+- 按 URI 相对引用语义修复：空引用返回基础 URI，并移除基础 URI 的 fragment；保留 query 与原路径。
+- 新增回归测试覆盖空字符串、null，以及正常相对模块路径，确保常规模块目录解析不受影响。
+- 尚未运行 Gradle 单元测试；测试结果待执行验证。
