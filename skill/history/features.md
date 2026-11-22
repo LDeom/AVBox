@@ -437,3 +437,14 @@
 - 新增 ConfigRepositorySnapshotTest，验证快照对点播/直播线路列表使用独立副本。
 - 提交：`3e5f98e820d719418c8cb6b59670e3f266588ddf`、`5baf5c118e1e0099a1c6abdb6608a99a513c47ca`、`dda77250af02396df5083fb8fa60254e12273051`、`d03489abba549c53cd82a76d2b3f9623f3c936ff`、`44673a9cb259475942007f8a6230f540f346bbb7`、`c36b2493e6eb1eadf2bf0c7b67ace1667485241d`、`0ae4607930291e7fce9a455b142ad88257f9e115`、`26517433196a16da2d027d242b57c2d0cd1ab83d`。
 - 尚未运行 Gradle/单测或真机验证。
+
+
+## 2026-11-22 第七阶段配置中心第六轮：直播源切换旧请求污染保护
+- 修复 ConfigLoader 在 ViewModel 丢弃旧回调之前就解析旧直播响应、覆盖全局频道组的问题。
+- 新增直播请求 generation；新请求使旧请求失效并取消旧网络调用。
+- 缓存、网络响应和失败缓存回退统一经过当前 generation + 当前有效 URL 检查。
+- ConfigRepository 的直播源切换、点播切换对直播跟随关系的调整、点播切换快照保存/恢复，与直播配置解析使用同一把锁，消除检查与解析之间的切源竞态。
+- 协程取消按请求代际执行，避免旧协程取消新请求。
+- 新增 LiveConfigRequestGateTest，覆盖有效请求、旧 generation、URL 改变。
+- 提交：`9baa708b13c4cc9700012d152e903b41003e2159`、`b074ccb1c39ba9bf976198c64b7173d6b7bb65a2`、`d0f6271994091c6d3210b9d2570bda9b2e036bc5`、`37469f358c25e0ae4e5bf7073e70f9fbcbd77e36`、`a455d0327c28aea2b462f1c1c8dd59ac9f69a111`。
+- 尚未运行 Gradle/单测或真机验证。
