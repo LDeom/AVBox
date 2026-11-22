@@ -579,3 +579,13 @@
 - 导出使用 Android 系统文件保存窗口，不申请存储权限；先等待日志写入队列排空，再按备份/当前日志顺序合并为 UTF-8 文本。
 - 导出副本对常见凭据键值（authorization、cookie、token、API key、password、secret、IMEI、MAC）脱敏；设备内原始日志不修改。脱敏并非完整的数据泄露检测，用户分享前仍应检查文件。
 - 新增日志脱敏纯逻辑单元测试代码；尚未运行 Gradle 编译或单元测试，未做 Android 文件保存窗口真机验证，未构建 APK。
+
+
+## 2026-11-22 网盘账号接入第一轮：Keystore 加密凭据底座
+- 新增 AES-GCM 凭据封装格式，随机生成 96-bit IV，使用 128-bit GCM tag，并带版本字段；同一明文每次加密得到不同密文，密文篡改会认证失败。
+- 新增 CloudCredentialVault，通过 Android Keystore 管理 AES-256 密钥，MMKV 只保存 Base64 密文；按 provider ID 隔离读写/删除，整个账号集合加密后落盘。
+- 新增 MMKV 字符串键登记，避免凭据密文绕过 KVKeySpec 类型约束。
+- 新增 AES-GCM 纯 JVM 单元测试，覆盖往返、随机 IV 与篡改检测。
+- 本轮仅建立安全存储底座，尚未接入网盘登录 UI、短信/扫码流程、文件浏览或播放接口；Keystore 设备兼容、备份恢复及真实账号测试仍待验证。
+- 代码提交：33925d74a3d22d5e2005818912e0295700cc8706、5a5d83c47c5b59665796beb81ebc920938fc4920、726bc34da766451ff6b7657aec234c32d828f153，随后补齐 KV 键登记及测试修正。
+- 尚未运行 Gradle 编译、单元测试或 Android Keystore 真机验证；未构建 APK。
