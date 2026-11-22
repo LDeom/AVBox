@@ -260,7 +260,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         val home = ApiConfig.get().homeSourceBean()
         val picked = SearchSourcesState.state.value.pickedKeys
         val sources = ApiConfig.get().getSourceBeanList()
-            .filter { it.isSearchable() && picked.contains(it.key) }
+            .filter { it.isSearchable() && it.key.isNotBlank() && picked.contains(it.key) }
+            .distinctBy { it.key }
             .sortedBy { it.key != home.key }
         activeJsSourceKeys.addAll(sources.filter { it.type == 3 }.mapNotNull { it.key })
         arriveSeq = 0
