@@ -35,6 +35,7 @@ import com.github.avbox.osc.R
 import com.github.avbox.osc.cloud.GuangYaFile
 import com.github.avbox.osc.cloud.GuangYaPanClient
 import com.github.avbox.osc.ui.WindowSize
+import com.github.avbox.osc.ui.CloudDrivePlaybackActivity
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
 import com.github.avbox.osc.ui.components.SettingsCard
 import com.github.avbox.osc.ui.components.SettingsCardPosition
@@ -271,14 +272,18 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable(enabled = file.isFolder && !busy) {
-                                            folderStack.add(file.fileId)
-                                            loadFiles(file.fileId)
+                                        .clickable(enabled = (file.isFolder || isPlayableCloudFile(file.fileName)) && !busy) {
+                                            if (file.isFolder) {
+                                                folderStack.add(file.fileId)
+                                                loadFiles(file.fileId)
+                                            } else {
+                                                CloudDrivePlaybackActivity.start(context, file.fileId, file.fileName)
+                                            }
                                         }
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(if (file.isFolder) "📁" else "📄")
+                                    Text(if (file.isFolder) "📁" else if (isPlayableCloudFile(file.fileName)) "🎬" else "📄")
                                     Text(
                                         file.fileName,
                                         modifier = Modifier.weight(1f).padding(start = 10.dp),
@@ -297,4 +302,10 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
             }
         }
     }
+}
+
+
+private fun isPlayableCloudFile(fileName: String): Boolean {
+    val extension = fileName.substringAfterLast('.', "").lowercase()
+    return extension in setOf("mp4", "mkv", "mov", "avi", "ts", "m3u8", "mpg", "mpeg", "wmv", "flv", "webm", "m4v")
 }
