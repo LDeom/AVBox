@@ -7,6 +7,7 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -180,6 +181,16 @@ class CloudDriveLoginActivity : BaseActivity() {
                                 cookieManager.setAcceptThirdPartyCookies(this, true)
 
                                 webChromeClient = object : WebChromeClient() {
+                                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                                        val sourceHost = runCatching {
+                                            android.net.Uri.parse(consoleMessage.sourceId()).host.orEmpty()
+                                        }.getOrDefault("")
+                                        AppLog.i(
+                                            "echo-webview-login provider=${provider.id} js-console level=${consoleMessage.messageLevel()} host=$sourceHost line=${consoleMessage.lineNumber()}",
+                                        )
+                                        return true
+                                    }
+
                                     override fun onReceivedTitle(view: WebView?, title: String?) {
                                         pageTitle = title.orEmpty()
                                     }

@@ -110,3 +110,11 @@
 - 新增单元测试覆盖多 Cookie 键值与包含 URL 编码 Cookie Header 的签名请求 URL。
 - 注意：此前已经写入磁盘的旧日志不会被自动改写；导出时仍会经过新脱敏逻辑。新日志从本次代码运行后才会在写入前脱敏。
 - 未运行编译或测试；未构建 APK、未发布 Release。
+
+
+## 2026-11-23 Cookie 清理与登录空白页诊断补充
+- Cookie 清理原先只按 host-only、Path=/ 发送过期 Cookie，不能覆盖显式 Domain 属性的 Cookie；现在对 allowlist host 与其逐级父域分别发送 host-only/Domain 过期指令，并等待每次 setCookie 回调后 flush。
+- 清理范围仍严格限制在当前 provider 的 cookieHosts，不调用全局 removeAllCookies，避免清除其他网盘账号会话。
+- WebChromeClient 新增 JS Console 错误元数据诊断，仅记录等级、来源 host 和行号，不记录 console 原文，避免脚本意外输出凭据。
+- Cookie 路径属性无法通过 CookieManager.getCookie() 读取；当前清理覆盖常见 Path=/，无法保证清除所有自定义 Path Cookie。若仍出现二次登录残留，需要基于 provider 的实际 Cookie 行为继续处理，不能声称已彻底覆盖。
+- 用户上传的运行日志没有包含 echo-webview-login 登录过程，因此无法仅凭该日志确认“登录页空白”的具体原因；下一次启用文件日志时可收集新增加的安全诊断项。

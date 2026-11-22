@@ -206,10 +206,23 @@ private suspend fun clearProviderCookies(hosts: Set<String>) {
             val separator = part.indexOf('=')
             if (separator <= 0) null else part.substring(0, separator).trim().takeIf { it.isNotEmpty() }
         }.distinct()
+        val domains = buildList {
+            add(host)
+            val labels = host.split('.')
+            for (start in 1 until labels.lastIndex) {
+                add(labels.drop(start).joinToString("."))
+            }
+        }.distinct()
         for (name in names) {
-            suspendCancellableCoroutine<Unit> { continuation ->
-                manager.setCookie(url, "$name=; Max-Age=0; Path=/; Secure") {
-                    if (continuation.isActive) continuation.resume(Unit)
+            val expired = linkedSetOf("$name=; Max-Age=0; Path=/; Secure")
+            domains.forEach { domain ->
+                expired += "$name=; Max-Age=0; Path=/; Domain=$domain; Secure"
+            }
+            for (cookie in expired) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    manager.setCookie(url, cookie) {
+                        if (continuation.isActive) continuation.resume(Unit)
+                    }
                 }
             }
         }
