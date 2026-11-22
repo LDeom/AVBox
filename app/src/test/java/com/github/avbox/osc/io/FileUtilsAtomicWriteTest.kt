@@ -30,4 +30,27 @@ class FileUtilsAtomicWriteTest {
         assertTrue(FileUtils.writeSimple(byteArrayOf(1, 2, 3), target))
         assertEquals(3L, target.length())
     }
+
+    @Test
+    fun saveCacheReplacesExistingFileWithoutLeavingTemporaryFiles() {
+        val target = File(folder.root, "cache.json")
+        target.writeText("old cache")
+
+        FileUtils.saveCache(target, """{"data":"new cache"}""")
+
+        assertEquals("""{"data":"new cache"}""", target.readText())
+        assertTrue(!File(target.absolutePath + ".tmp").exists())
+        assertTrue(!File(target.absolutePath + ".bak").exists())
+    }
+
+    @Test
+    fun readSimpleReturnsCompleteFileContent() {
+        val target = File(folder.root, "module.js")
+        val expected = ByteArray(128 * 1024) { (it % 251).toByte() }
+        target.writeBytes(expected)
+
+        val actual = FileUtils.readSimple(target)
+
+        assertTrue(expected.contentEquals(actual))
+    }
 }
