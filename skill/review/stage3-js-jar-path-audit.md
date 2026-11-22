@@ -101,3 +101,9 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - Jar 反射得到的 Proxy/Danmaku 方法先保存在局部变量，只有通过生命周期代际校验后才写入共享注册表，避免清理与加载交错造成旧方法残留或误删新方法。
 - JsLoader 的自定义 JS API Jar 类查找在遇到 InterruptedException 时恢复线程中断标记并停止重试；下载异常路径同样保留中断状态。
 - 本轮为静态源码修复；未运行 Gradle 测试、设备验证或动态 Jar 加载测试。
+
+## 第十二轮 QuickJS 任务超时与取消（2026-11-22）
+- JsSpider.submitAndWait() 在任务等待超时或调用线程中断时，显式 cancel Future；中断路径恢复线程中断标记。
+- JsSpider.call() 与 callConverted() 对执行器拒绝、等待超时和线程中断分别处理；超时/中断会请求取消任务，避免已排队任务在调用方放弃后继续执行。
+- 本轮没有改动 QuickJS native Context 的线程归属和销毁顺序；Future.cancel(true) 不能保证中断正在执行的 native QuickJS 代码，后续仍需审查 Async 内部任务及 Context 生命周期。
+- 未运行 Gradle 测试、设备验证或 QuickJS native 压力测试。
