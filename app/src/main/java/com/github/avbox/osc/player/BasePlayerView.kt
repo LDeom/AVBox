@@ -137,6 +137,7 @@ open class BasePlayerView @JvmOverloads constructor(
             ensureAudioFocusHelper()
             audioFocusHelper?.onNewPlayback()
         }
+        releaseActiveRenderView()
         kernelPlayer?.release()
         kernelPlayer = null
         initPlayer()
@@ -203,11 +204,7 @@ open class BasePlayerView @JvmOverloads constructor(
     }
 
     protected open fun addDisplay() {
-        activeRenderView?.let { render ->
-            playerFrame.removeView(render.getView())
-            kernelPlayer?.detachVideoSurface()
-            render.release()
-        }
+        releaseActiveRenderView()
         val render = renderFactory.createRenderView(context)
         kernelPlayer?.let { render.attachToPlayer(it) }
         activeRenderView = render
@@ -295,16 +292,20 @@ open class BasePlayerView @JvmOverloads constructor(
         saveProgress()
     }
 
-    open fun release() {
-        val hadActiveState = lastReportedPlayState != PlayState.IDLE
-        if (hadActiveState) captureLivePosition()
-        audioFocusHelper?.abandonFocus()
-        audioFocusHelper = null
+    private fun releaseActiveRenderView() {
         activeRenderView?.let { render ->
             playerFrame.removeView(render.getView())
             render.release()
         }
         activeRenderView = null
+    }
+
+    open fun release() {
+        val hadActiveState = lastReportedPlayState != PlayState.IDLE
+        if (hadActiveState) captureLivePosition()
+        audioFocusHelper?.abandonFocus()
+        audioFocusHelper = null
+        releaseActiveRenderView()
         kernelPlayer?.release()
         kernelPlayer = null
         playerFrame.keepScreenOn = false
