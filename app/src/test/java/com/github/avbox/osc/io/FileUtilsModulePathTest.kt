@@ -56,6 +56,7 @@ class FileUtilsModulePathTest {
         assertEquals("js/lib/helper.js", FileUtils.jsLibAssetPath("js/lib/helper.js"))
         assertEquals("js/lib/helper.js", FileUtils.jsLibAssetPath("helper.js"))
         assertNull(FileUtils.jsLibAssetPath(""))
+        assertNull(FileUtils.jsLibAssetPath("js/lib/"))
     }
 
 }
