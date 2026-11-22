@@ -50,3 +50,9 @@
 - 将 WebView 实例改由 Activity 生命周期持有；销毁时停止加载、清理并 destroy，保存前调用 CookieManager.flush()。
 - 检查 CloudCookieInjector 的 provider 匹配方法仍由 ProxyEntry type-3 路径使用；凭据 vault 的清理/旧凭据兼容逻辑保留，不作未经调用关系证明的删除。
 - 本轮构建结果以对应 GitHub Actions run 为准；WebView 登录和真实驱动认证仍需真机验证。
+
+
+## 2026-11-22 网盘网页登录兼容性修正第一轮
+- 登录 WebView 采用桌面 User-Agent、viewport、缩放与兼容混合内容设置，并允许 HTTP/HTTPS 页面内跳转，拒绝其他 scheme。
+- 维持 host allowlist Cookie 捕获及加密 Vault；未扩大 Cookie 捕获范围。
+- 尚未逐家真机验证，不能确认网页登录、保存和配置中心驱动注入均成功。
