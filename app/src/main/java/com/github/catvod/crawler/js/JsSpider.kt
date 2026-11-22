@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class JsSpider : Spider {
 
     private val executor: ExecutorService
+    private val taskLock: Any = Any()
     private val dex: Class<*>?
     private var ctx: QuickJSContext? = null
     private var jsObject: JSObject? = null
@@ -129,16 +130,42 @@ class JsSpider : Spider {
     }
 
     private fun submit(runnable: Runnable) {
-        if (!destroyed.get()) executor.submit(runnable)
+        synchronized(taskLock) {
+            if (!destroyed.get()) {
+                try {
+                    executor.submit(runnable)
+                } catch (th: Throwable) {
+                    AppLog.i("echo-js-submit-rejected " + th)
+                }
+            }
+        }
     }
 
     private fun <T> submit(callable: Callable<T>): Future<T> {
-        return executor.submit(callable)
+        return synchronized(taskLock) {
+            if (destroyed.get()) throw IllegalStateException("js spider destroyed")
+            executor.submit(callable)
+        }
+    }
+
+    private fun <T> submitTask(callable: Callable<T>): Future<T>? {
+        return synchronized(taskLock) {
+            if (destroyed.get()) return@synchronized null
+            try {
+                executor.submit(callable)
+            } catch (th: Throwable) {
+                AppLog.i("echo-js-submit-rejected " + th)
+                null
+            }
+        }
     }
 
     private fun <T> submitAndWait(task: Callable<T>): T? {
         val pending = try {
-            executor.submit(task)
+            synchronized(taskLock) {
+                if (destroyed.get()) return null
+                executor.submit(task)
+            }
         } catch (e: Exception) {
             AppLog.i("echo-js-submitAndWait-rejected " + e)
             return null
@@ -163,9 +190,9 @@ class JsSpider : Spider {
     private fun call(func: String, vararg args: Any?): Any? {
         val target = jsObject ?: return null
         if (destroyed.get()) return null
-        val pending = try {
-            executor.submit(Callable { Async.run(target, func, args) })
-        } catch (e: Exception) {
+        val pending = submitTask(Callable { Async.run(target, func, args) })
+            ?: return null
+        try {
             AppLog.i("Executor 提交失败 " + e)
             return null
         }
@@ -301,28 +328,28 @@ class JsSpider : Spider {
     }
 
     override fun destroy() {
-        if (!destroyed.compareAndSet(false, true)) return
-        val globalRef = global
-        if (globalRef != null) {
+        synchronized(taskLock) {
+            if (!destroyed.compareAndSet(false, true)) return
             try {
-                globalRef.destroy()
-            } catch (ignored: Throwable) {
-                AppLog.d("JsSpider", "global destroy failed")
+                executor.submit(Runnable {
+                    try {
+                        try {
+                            global?.destroy()
+                        } catch (th: Throwable) {
+                            AppLog.d("JsSpider", "global destroy failed")
+                        }
+                        jsObject = null
+                        ctx?.destroy()
+                    } catch (th: Throwable) {
+                        AppLog.i("echo-js-destroy-error " + th.message)
+                    } finally {
+                        executor.shutdown()
+                    }
+                })
+            } catch (th: Throwable) {
+                AppLog.i("echo-js-destroy-submit-rejected " + th.message)
+                executor.shutdownNow()
             }
-        }
-        try {
-            executor.submit(Runnable {
-                try {
-                    jsObject = null
-                    ctx?.destroy()
-                } catch (th: Throwable) {
-                    AppLog.i("echo-js-destroy-error " + th.message)
-                } finally {
-                    executor.shutdown()
-                }
-            })
-        } catch (th: Throwable) {
-            executor.shutdownNow()
         }
     }
 
@@ -583,9 +610,9 @@ class JsSpider : Spider {
     private fun callConverted(func: String, converter: (Any?) -> Any?, vararg args: Any?): Any? {
         val target = jsObject ?: return null
         if (destroyed.get()) return null
-        val pending = try {
-            executor.submit(Callable { Async.run(target, func, args, converter) })
-        } catch (e: Exception) {
+        val pending = submitTask(Callable { Async.run(target, func, args, converter) })
+            ?: return null
+        try {
             AppLog.i("echo-js-call-rejected " + e)
             return null
         }
