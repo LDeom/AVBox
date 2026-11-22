@@ -174,6 +174,39 @@ class VideoGestureHandlerTest {
     }
 
     @Test
+    fun disabledGestureSwitchBlocksSeekAndVerticalAdjustmentsButKeepsTap() {
+        val r = Recorder()
+        val h = VideoGestureHandler(r)
+        h.beginSession(session(gestureEnabled = false), 200f, 300f)
+        assertFalse("关闭手势后不应调节亮度", h.onMove(200f, 500f, slop = 8f))
+        h.endSession(cancelled = false, nowMs = 1000L)
+        h.beginSession(session(gestureEnabled = false), 800f, 300f)
+        assertFalse("关闭手势后不应调节音量", h.onMove(800f, 500f, slop = 8f))
+        h.endSession(cancelled = false, nowMs = 2000L)
+        h.beginSession(session(gestureEnabled = false), 300f, 300f)
+        assertFalse("关闭手势后不应拖动进度", h.onMove(600f, 300f, slop = 8f))
+        assertFalse("关闭手势后不应长按提速", h.maybeLongPress())
+        h.endSession(cancelled = false, nowMs = 3000L)
+        assertTrue("单击仍用于显示控制栏", h.markSingleTapConfirmed())
+        assertEquals(listOf("singleTap"), r.calls)
+    }
+
+    @Test
+    fun verticalGestureSideIsFixedByInitialTouchHalf() {
+        val leftRecorder = Recorder()
+        val leftHandler = VideoGestureHandler(leftRecorder)
+        leftHandler.beginSession(session(), 480f, 300f)
+        assertTrue(leftHandler.onMove(520f, 500f, slop = 8f))
+        assertTrue("从左半屏开始应始终调亮度", leftRecorder.calls.single().startsWith("brightness"))
+
+        val rightRecorder = Recorder()
+        val rightHandler = VideoGestureHandler(rightRecorder)
+        rightHandler.beginSession(session(), 520f, 300f)
+        assertTrue(rightHandler.onMove(480f, 500f, slop = 8f))
+        assertTrue("从右半屏开始应始终调音量", rightRecorder.calls.single().startsWith("volume"))
+    }
+
+    @Test
     fun verticalDragRejectedInNormalStateWhenDisabled() {
         val r = Recorder()
         val h = VideoGestureHandler(r)
