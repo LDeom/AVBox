@@ -206,7 +206,7 @@ fun SettingsPage(
                         onClick = { PlaySettingsActivity.start(context) },
                     )
                 }
-                SettingsCard(SettingsCardPosition.LAST) {
+                SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsRow(
                         title = stringResource(R.string.settings_preference_title),
                         subtitle = stringResource(R.string.settings_preference_subtitle),
