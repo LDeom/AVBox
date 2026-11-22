@@ -521,16 +521,25 @@ class Global {
         return object : Callback {
             override fun onResponse(call: Call, response: Response) {
                 httpGate.finish()
-                if (executor.isShutdown) {
-                    response.close()
-                    settleStream(reply, null, "executor shutdown")
-                    return
-                }
-                try {
-                    executor.submit(Runnable { deliverStream(ctx, response, reply, sessionId) })
-                } catch (th: Throwable) {
-                    response.close()
-                    settleStream(reply, null, th.message.orEmpty())
+                synchronized(callbackLock) {
+                    if (destroyed.get() || executor.isShutdown) {
+                        response.close()
+                        settleStream(reply, null, "executor shutdown")
+                        return
+                    }
+                    try {
+                        executor.submit(Runnable {
+                            if (destroyed.get()) {
+                                response.close()
+                                settleStream(reply, null, "spider destroyed")
+                            } else {
+                                deliverStream(ctx, response, reply, sessionId)
+                            }
+                        })
+                    } catch (th: Throwable) {
+                        response.close()
+                        settleStream(reply, null, th.message.orEmpty())
+                    }
                 }
             }
 
