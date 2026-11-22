@@ -2,7 +2,6 @@ package com.github.avbox.osc.player
 
 import android.text.TextUtils
 import com.github.avbox.osc.R
-import com.github.avbox.osc.cloud.GuangYaPanClient
 import com.github.avbox.osc.base.App
 import com.github.avbox.osc.bean.VodInfo
 import com.github.avbox.osc.data.AppGraph
@@ -26,12 +25,10 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.HashMap
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class PlaybackStarter(private val host: Host) {
 
@@ -120,13 +117,10 @@ class PlaybackStarter(private val host: Host) {
     }
 
     private var playUrlGeneration: Int = 0
-    private var cloudResolveJob: kotlinx.coroutines.Job? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     fun play(reset: Boolean) {
-        cloudResolveJob?.cancel()
-        cloudResolveJob = null
         val prepareOnly = host.attemptState().castPrepareOnly
         if (prepareOnly) AppLog.i("echo-cast prepare: resolve only, no playback side effects")
         host.updateAttemptState { it.copy(switchStopPending = false) }
@@ -215,29 +209,6 @@ class PlaybackStarter(private val host: Host) {
 
         val seriesUrl = requireNotNull(vs.url)
         val thunderGen = host.resolverCurrentGen()
-        if (seriesUrl.startsWith("guangya://")) {
-            val fileId = seriesUrl.removePrefix("guangya://").trim()
-            if (fileId.isBlank()) {
-                host.handleResolvePlayUrlFailed("光鸭文件 ID 无效")
-                return
-            }
-            cloudResolveJob = scope.launch {
-                try {
-                    val playbackUrl = withContext(Dispatchers.IO) {
-                        GuangYaPanClient.resolveInAppPlaybackUrl(fileId)
-                    }
-                    if (!host.resolverIsParseResultCurrent(thunderGen)) return@launch
-                    playUrl(thunderGen, playbackUrl, mapOf(MediaSources.HEADER_STRICT_TLS to "true"))
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Throwable) {
-                    if (host.resolverIsParseResultCurrent(thunderGen)) {
-                        host.handleResolvePlayUrlFailed(error.message ?: "光鸭文件播放地址获取失败")
-                    }
-                }
-            }
-            return
-        }
         val magnetPending = Thunder.isMagnetUrl(seriesUrl)
         if (Thunder.play(seriesUrl, object : Thunder.ThunderCallback {
                 override fun status(code: Int, info: String) {
@@ -271,11 +242,6 @@ class PlaybackStarter(private val host: Host) {
         if (!kernelPresent) return false
         val bridge = host.view() ?: return false
         return bridge.playState() == PlayState.IDLE
-    }
-
-    fun cancelPendingCloudResolve() {
-        cloudResolveJob?.cancel()
-        cloudResolveJob = null
     }
 
     fun isCrossContentReuseAllowed(): Boolean {
