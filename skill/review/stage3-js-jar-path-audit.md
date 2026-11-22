@@ -140,3 +140,12 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 未运行 Gradle、QuickJS native 测试或设备验证。
 
 - 复核修正：stream onResponse 在未销毁分支仍需释放 HttpGate in-flight 槽位，已补回 finish()，保持队列持续调度；销毁分支则先清队列再释放槽位。
+
+## 第十七轮 HTTP 回调引用释放与队列关闭（2026-11-22）
+- _http() 从 options 获取 complete JSFunction 后新增 HttpReply：持有引用直到回调完成、请求入队失败、HTTP失败或 Spider销毁；通过一次性投递和一次性释放避免重复回调/重复release。
+- HTTP成功/失败回调在销毁后释放回调引用，不再向已销毁 QuickJS Context 派发任务。
+- Global.destroy() 现在取消该 Spider 专属 httpTag 的活动请求，促使在途请求结束并释放持有的 JSFunction。
+- StreamReply 增加部分 hold 失败时回滚已持有引用，并使 release 幂等，避免重复释放。
+- HttpGate.finish() 在 Executor 已关闭时不再静默清空待处理请求，而是逐个调用 fail("executor shutdown")；shutdown 状态在 gate lock 内读取。
+- 新增 HttpGateTest.finish_failsQueuedRequestsWhenExecutorIsShutdown。
+- 未运行 Gradle、QuickJS native 测试或设备验证。
