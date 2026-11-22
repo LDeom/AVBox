@@ -138,3 +138,5 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - proxyInvoke()读取当前Spider时同步读取recentKey对应的实例。
 - 进一步将HTTP/stream完成回调中的HttpGate.finish与destroy协调；销毁后先清空待处理请求再释放当前in-flight槽位，避免迟到回调继续启动排队请求。
 - 未运行 Gradle、QuickJS native 测试或设备验证。
+
+- 复核修正：stream onResponse 在未销毁分支仍需释放 HttpGate in-flight 槽位，已补回 finish()，保持队列持续调度；销毁分支则先清队列再释放槽位。
