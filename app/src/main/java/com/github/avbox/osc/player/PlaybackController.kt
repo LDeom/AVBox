@@ -109,7 +109,7 @@ class PlaybackController {
         _quality.value = null
         sourceKey = session.sourceKey()
         sourceBean = ApiConfig.get().getSource(sourceKey)
-        ApiConfig.get().setCurrentPlaySourceKey(sourceKey)
+        if (sourceBean != null) ApiConfig.get().setCurrentPlaySourceKey(sourceKey)
         initPlayerCfg()
         _persistedPlayerCfg.value = vod?.playerCfg
     }
