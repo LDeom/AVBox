@@ -549,3 +549,11 @@
 - 首页与栏目网格继续沿用现有自适应列数；WindowSizeTest 已锁定手机三列策略，本轮不改变既定卡片布局。
 - 提交：9b1f2b5caa60197dd5d8ae9cb619369941776c00、a93bceec580e397516b235350c465679051ec36d。
 - 尚未运行 Gradle 编译、单元测试或折叠屏/分屏真机验证；未构建 APK。
+
+
+## 2026-11-22 第九阶段第三轮：平板方向切换与分屏网格
+- PartitionListActivity 增加 Activity 级 orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize 配置变更处理，复用 BaseActivity.onConfigurationChanged()，降低平板旋转/折叠时 Activity 重建并重复加载栏目数据的风险。
+- WindowSize 新增 gridMinColumns：可用网格宽度 <252dp 最低 1 列，252–327dp 最低 2 列，≥328dp 最低 3 列；原 130dp 目标卡宽、12dp 间距和网格动态扩列算法不变。
+- 首页与栏目二级页网格统一按当前 Compose 容器可用宽度选择最低列数；360dp 手机仍保持三列，窄分屏/自由窗口可降低到两列或一列。
+- WindowSizeTest 新增窄分屏列数和卡片宽度断言；既有手机方向锁定阈值测试保留。
+- 尚未运行 Gradle 编译或单元测试，未做平板/折叠屏/自由窗口真机验证；未构建 APK。
