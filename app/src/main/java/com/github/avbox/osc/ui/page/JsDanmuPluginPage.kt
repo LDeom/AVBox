@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.player.danmu.JsDanmuPluginStore
+import com.github.avbox.osc.player.danmu.JsDanmuPluginRuntime
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
 import com.github.avbox.osc.ui.components.TopBarActionBox
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ fun JsDanmuPluginScreen(onNavigateBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var plugins by remember { mutableStateOf(JsDanmuPluginStore.list(context)) }
     var importing by remember { mutableStateOf(false) }
+    var checkingId by remember { mutableStateOf<String?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             importing = true
@@ -32,7 +34,7 @@ fun JsDanmuPluginScreen(onNavigateBack: () -> Unit) {
             plugins = JsDanmuPluginStore.list(context)
             importing = false
             result.exceptionOrNull()?.let { Toast.makeText(context, it.message ?: "导入失败", Toast.LENGTH_LONG).show() }
-                ?: Toast.makeText(context, "插件已导入；运行环境和播放器接口仍在开发中。", Toast.LENGTH_LONG).show()
+                ?: Toast.makeText(context, "插件已导入；请使用“运行检查”验证 CommonJS 加载，播放器接入仍在开发中。", Toast.LENGTH_LONG).show()
         }
     }
     AppTopBarScaffold(
@@ -61,6 +63,24 @@ fun JsDanmuPluginScreen(onNavigateBack: () -> Unit) {
                             })
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            TextButton(enabled = checkingId == null, onClick = {
+                                scope.launch {
+                                    checkingId = plugin.id
+                                    val result = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            JsDanmuPluginRuntime(JsDanmuPluginStore.readSource(context, plugin.id)).use { runtime ->
+                                                runtime.initialize()
+                                            }
+                                        }
+                                    }
+                                    checkingId = null
+                                    result.onSuccess { meta ->
+                                        Toast.makeText(context, "运行检查通过：${meta.optString("name")}", Toast.LENGTH_LONG).show()
+                                    }.onFailure {
+                                        Toast.makeText(context, "运行检查失败：${it.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }) { Text(if (checkingId == plugin.id) "检查中…" else "运行检查") }
                             TextButton(onClick = {
                                 JsDanmuPluginStore.remove(context, plugin.id)
                                 plugins = JsDanmuPluginStore.list(context)

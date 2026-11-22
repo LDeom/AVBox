@@ -60,6 +60,17 @@ object JsDanmuPluginStore {
         return updated.last()
     }
 
+    @Synchronized fun readSource(context: Context, id: String): String {
+        val plugin = list(context).firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("找不到指定插件")
+        require(plugin.enabled) { "插件当前已停用" }
+        val root = directory(context).canonicalFile
+        val file = File(root, plugin.fileName).canonicalFile
+        require(file.parentFile == root && file.isFile) { "插件文件路径无效" }
+        require(file.length() in 1..MAX_PLUGIN_BYTES) { "插件文件大小无效" }
+        return file.readText(Charsets.UTF_8)
+    }
+
     @Synchronized fun setEnabled(context: Context, id: String, enabled: Boolean) =
         persist(context, list(context).map { if (it.id == id) it.copy(enabled = enabled) else it })
 
