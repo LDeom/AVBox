@@ -76,7 +76,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
     }
 
 
-    LaunchedEffect(loggedIn) {
+    LaunchedEffect(Unit) {
         if (loggedIn) loadFiles("")
     }
     AppTopBarScaffold(
@@ -148,7 +148,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
             }
 
             SettingsGroup(title = stringResource(R.string.cloud_drive_guangya)) {
-                SettingsCard(SettingsCardPosition.FIRST) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(stringResource(R.string.cloud_drive_guangya_scope), style = MaterialTheme.typography.bodySmall)
                         OutlinedTextField(
@@ -198,7 +198,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                             smsCode = ""
                                             message = context.getString(R.string.cloud_drive_login_success)
                                             folderStack.clear()
-                                            loadFiles()
+                                            loadFiles("")
                                         }.onFailure {
                                             message = it.message ?: context.getString(R.string.cloud_drive_login_failed)
                                         }
