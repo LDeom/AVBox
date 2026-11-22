@@ -150,10 +150,13 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
                                     onClick = {
                                         val cookie = values[provider.id].orEmpty().trim()
                                         scope.launch {
+                                            if (cookie.any { it == '\r' || it == '\n' }) {
+                                                message = context.getString(R.string.cloud_drive_cookie_invalid)
+                                                return@launch
+                                            }
                                             busy[provider.id] = true
                                             val result = runCatching {
                                                 withContext(Dispatchers.IO) {
-                                                    require(cookie.none { it == '\r' || it == '\n' }) { "Cookie must be a single header line" }
                                                     CloudCredentialVault.write(provider.id, cookie)
                                                 }
                                             }
