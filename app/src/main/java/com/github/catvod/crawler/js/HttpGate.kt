@@ -44,8 +44,9 @@ class HttpGate(private val executor: ExecutorService) {
     fun finish() {
         var next: Request? = null
         val dropped = ArrayList<Request>()
-        val shutdown = executor.isShutdown
+        var shutdown = false
         synchronized(lock) {
+            shutdown = executor.isShutdown
             if (!shutdown) {
                 next = pending.pollFirst()
             } else {
