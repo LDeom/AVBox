@@ -599,5 +599,8 @@
 - 新增光鸭个人文件列表分页接口与目录进入/返回 UI；仅展示个人文件元信息，不生成公开分享链接。
 - 新增 Android full backup 与 device transfer 排除规则，避免加密凭据文件被备份而 Keystore 密钥未迁移。
 - CloudCredentialVault 改为依赖 AtomicFile.openRead() 恢复备份文件，避免中断写入后仅检查 base 文件存在而误判凭据为空。
-- 尚未实现下载 URL 到 ExoPlayer 的应用内播放桥；尚未实现其他五家网盘；光鸭短信服务端可能要求官方人机验证或调整登录方式。
+- 新增应用内播放链：文件列表视频点击进入 CloudDrivePlaybackActivity，构造内部 guangya:// 播放项，PlaybackStarter 在 IO 线程换取短时 HTTPS 地址并复用既有 PlayContainer/PlaybackEngine；云盘会话禁用外部投屏，不生成公开分享链接。
+- 新增 PlaybackUrlLog，日志仅记录 URL 主机与脱敏占位符；新增单测覆盖查询参数、路径和 userinfo 脱敏。
+- 网盘请求使用独立标准 TLS 客户端，避免复用 HttpClients 中关闭证书校验的通用客户端，同时保留应用代理选择。
+- 尚未实现其他五家网盘；光鸭短信服务端可能要求官方人机验证或调整登录方式。
 - 尚未运行 Gradle 编译、单元测试、Android Keystore 真机登录、文件列表联调或播放验证；未构建 APK。
