@@ -387,6 +387,50 @@ class ConfigParserTest {
         )
     }
 
+    @Test
+    fun parseSites_skipsMalformedEntriesWithoutAborting() {
+        val sites = ConfigParser.parseSites(
+            json("{\"sites\":[null,5,{\"key\":\"badType\",\"type\":\"x\",\"api\":\"http://bad\"},{\"key\":\"\",\"type\":1,\"api\":\"http://empty\"},{\"key\":\"ok\",\"type\":1,\"api\":\"http://ok\"}]}"),
+        )
+        assertEquals(1, sites.size)
+        assertEquals("ok", sites[0].key)
+    }
+
+    @Test
+    fun parseSites_returnsEmptyForMissingOrInvalidSitesArray() {
+        assertTrue(ConfigParser.parseSites(json("{}")).isEmpty())
+        assertTrue(ConfigParser.parseSites(json("{\"sites\":null}")).isEmpty())
+        assertTrue(ConfigParser.parseSites(json("{\"sites\":\"invalid\"}")).isEmpty())
+    }
+
+    @Test
+    fun parseLiveSettingItems_handlesMalformedEntries() {
+        val items = ConfigParser.parseLiveSettingItems(jsonArray("[null,5,{\"name\":5},{\"name\":\"有效线路\"}]"))
+        assertEquals(4, items.size)
+        assertEquals("线路1", items[0].itemName)
+        assertEquals("线路2", items[1].itemName)
+        assertEquals("线路3", items[2].itemName)
+        assertEquals("有效线路", items[3].itemName)
+    }
+
+    @Test
+    fun parseHosts_skipsNonStringAndEmptyEntries() {
+        val hosts = ConfigParser.parseHosts(jsonArray("[null,5,\"=value\",\"host=\",\"valid=ip\"]"))
+        assertEquals(1, hosts.size)
+        assertEquals("ip", hosts["valid"])
+    }
+
+    @Test
+    fun parseParseBeans_skipsMalformedEntries() {
+        val beans = ConfigApplier.parseParseBeans(
+            json("{\"parses\":[null,5,{\"name\":5,\"url\":\"http://bad\"},{\"name\":\"空地址\"},{\"name\":\"有效\",\"url\":\"http://ok\",\"ext\":\"not-object\"}]}"),
+        )
+        assertEquals(1, beans.size)
+        assertEquals("有效", beans[0].name)
+        assertEquals("http://ok", beans[0].url)
+        assertEquals("", beans[0].ext)
+    }
+
     companion object {
         private val GSON = Gson()
 
