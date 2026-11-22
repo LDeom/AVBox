@@ -28,6 +28,7 @@ import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -266,6 +267,17 @@ private fun PartitionListScreen(mode: String, videosJson: String?, onBack: () ->
                 loadingContent = { ContainedLoadingIndicator(Modifier.size(64.dp)) },
             )
 
+            ui.state == PartitionListViewModel.State.Error -> LoadStateBox(
+                state = LoadState.Error(),
+                emptyText = "",
+                errorText = stringResource(R.string.home_load_failed),
+                retryText = stringResource(R.string.common_retry),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = topPad),
+                onRetry = { vm.retry() },
+            )
+
             ui.state == PartitionListViewModel.State.Empty -> LoadStateBox(
                 state = LoadState.Empty,
                 emptyText = stringResource(R.string.common_empty_content),
@@ -283,6 +295,9 @@ private fun PartitionListScreen(mode: String, videosJson: String?, onBack: () ->
                     onCardLongClick = { video -> vodMenu.show(video) },
                     onLoadMore = { vm.loadMore() },
                     enableLoadMore = true,
+                    loadingMore = ui.loadingMore,
+                    loadMoreError = ui.loadMoreError,
+                    onRetryLoadMore = { vm.retryLoadMore() },
                     topPadding = topPad - 20.dp,
                     resetKey = level,
                 )
@@ -336,6 +351,9 @@ private fun VideoGrid(
     onCardLongClick: (Movie.Video) -> Unit,
     onLoadMore: () -> Unit = {},
     enableLoadMore: Boolean = false,
+    loadingMore: Boolean = false,
+    loadMoreError: Boolean = false,
+    onRetryLoadMore: () -> Unit = {},
     topPadding: Dp = 0.dp,
     resetKey: Any? = null,
 ) {
@@ -366,7 +384,22 @@ private fun VideoGrid(
         }
         if (enableLoadMore) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                LaunchedEffect(videos.size) { onLoadMore() }
+                when {
+                    loadingMore -> Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ContainedLoadingIndicator(Modifier.size(32.dp))
+                    }
+                    loadMoreError -> TextButton(
+                        onClick = onRetryLoadMore,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        Text(stringResource(R.string.common_retry))
+                    }
+                }
             }
         }
     }
