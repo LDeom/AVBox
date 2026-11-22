@@ -75,3 +75,9 @@
 - 修复 TXT/JSON 订阅映射输出阶段同组同名频道重复出现时，后条频道 URL 覆盖前条 URL 的问题；现在合并并去重 URL，保留首次顺序。
 - 新增单元测试覆盖同名频道跨条目合并 URL 的场景。
 - 未运行 Gradle、门禁或真机验证。
+
+
+## 2026-11-22 第3阶段 JS、Jar与路径审查首轮
+- 定位并审查 SpiderLoader、JarLoader、JsLoader、JsSpider及QuickJS UriUtil入口。
+- 记录JS API Jar缓存下载非原子写入等待验证风险，新增审查记录 `skill/review/stage3-js-jar-path-audit.md`。
+- 尚未修复或执行Gradle测试，待审阅Http实现与模块相对路径链路后继续。
