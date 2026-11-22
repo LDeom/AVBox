@@ -412,3 +412,11 @@
 - 配置管理 ViewModel 会在异步加载开始后立即显示新活动 URL，失败路径没有回滚；ConfigLoader 仅尝试新 URL 自身缓存，不会回退到切换前的源。
 - 该问题涉及点播/直播跟随关系、多仓线路、内存配置和加载代际；本轮只记录事务回滚边界，未做不完整的 URL 局部回滚。
 - 详细审查见 `skill/review/stage7-config-center-audit.md`。尚未运行 Gradle、单元测试或设备验证。
+
+
+## 2026-11-22 第七阶段配置中心第三轮：本地目录持久授权校验
+- 修复 LocalSourceTree.remember 在获取持久 URI 读取授权失败后仍保存目录 URI 的问题；只有系统确认存在精确 URI 的持久读取授权时才登记。
+- LocalSourceTree.serves/open 使用前复核授权，发现撤销或历史无授权的记录时清理并跳过，避免把失效目录当作可用依赖目录。
+- 新增 LocalSourceTreePermissionTest 覆盖精确授权匹配、无授权及不同 URI。
+- 提交：`333dd1fdf73bc0a9c3243c3a63e423742ceeca5d`、`ad441240cfdf977f7fe63ae2164c5fd5c3ce8636`、`2c4094fe9cc8db6f20eb8d17c3251ee456136110`。
+- 尚未运行 Gradle/单测或 Android SAF 真机授权撤销测试。
