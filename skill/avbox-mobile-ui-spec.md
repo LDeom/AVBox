@@ -449,6 +449,13 @@
 - 设置主页、偏好设置、播放设置、主题设置与配置管理页在宽屏窗口中，主要纵向内容列统一最大宽度 **840dp** 并水平居中；小于该宽度时按可用宽度铺满，保留原有 16dp 页面边距。
 - 此限制只作用于设置/配置内容列，不限制顶栏、弹层、播放器、直播画面或详情页全屏 Hero。宽屏下避免设置项横向拉伸过长，手机端布局不变。
 
+### 4.14 折叠屏与紧凑窗口弹层（2026-11-22）
+
+- 主界面 MainActivity 在 Activity 级声明 orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize 配置变更处理，折叠/展开、旋转和窗口尺寸变化交由 BaseActivity.onConfigurationChanged() 更新方向策略，Compose 根据新 Configuration 重组；不得仅依赖 Application 级 configChanges。
+- 主界面保留 rememberPagerState、各页面 ViewModel 与滚动状态，不因常规方向/窗口尺寸变化主动重建 Activity。
+- 居中对话框最大宽度仍为 560dp；水平外边距随窗口宽度缩小，最小宽度不超过扣除边距后的可用宽度，确保窄分屏窗口内不横向溢出。高度继续限制在窗口高度的 90%，内容可滚动。
+- 底部与侧边 Sheet 的既有最大宽度和形态不因本条改变。
+
 ## 5. 视觉与组件约定
 
 - 卡片触摸反馈:ripple + 按压缩放(0.96~0.98)。**涟漪透明度全局 = M3 默认 2 倍**(2026-09-13,沿用参考实现的 `Theme.kt`):`AVBoxTheme` 用 `LocalRippleConfiguration` 下发 `RippleConfiguration(rippleAlpha = …)`,pressed 0.20 / hovered 0.16 / focused 0.20 / dragged 0.32 —— M3 默认 pressed 仅 10%,首页海报卡是深色图片 + 黑色渐变 scrim,几乎看不出"点到了"。走全局配置而不是逐卡传 `indication`:`clickable`/`combinedClickable`/`Surface(onClick)`/`ToggleButton` 一次覆盖。⚠️ `RippleConfiguration` 已 deprecated 但官方无替代入口,必须 `@Suppress("DEPRECATION")`。圆角卡必须 **先 `.clip(shape)` 再挂 `clickable`**,否则涟漪与长按激活区会溢出圆角变成矩形(`PressableCard` 已是此顺序)。参考项目的按压缩放目标是 **0.94**(经 `Modifier.scale` + `spring(dampingRatio=0.6f, stiffness=800f)`),本项目沿用自定的 0.96~0.98 不改。
@@ -606,7 +613,7 @@
 - **方向策略与布局分档必须用不同判据**(见 §4.11):方向用 `smallestScreenWidthDp`,布局用当前窗口宽度。
 - ⚠️ **运行期有硬写方向的点,只改 manifest 无效**。**已处理**:`DetailActivity.applyFullscreen(false)` 与 `LivePlayActivity` 的同名分支改为 `orientationPolicyValue()`(大屏上恢复为 `UNSPECIFIED`,否则退出一次全屏就把平板压回信箱模式);**进全屏的方向**在点播详情页按视频宽高选(§4.4),直播页仍恒 `SENSOR_LANDSCAPE`。**有意保留**:`PlayerActionsDelegate.onRotateClicked()` 设 `SENSOR_PORTRAIT`/`SENSOR_LANDSCAPE` 属**显式按钮**,锁住正是用户要的结果,且退出全屏会被策略值复位(`onBackClicked()` 原先也在"设方向的显式按钮"之列,2026-10-03 已改为只转交宿主、不设方向);上游 dkplayer 遗留(`player/.../BaseVideoController.java`、`ControlWrapper.java`)不在当前 Compose 路径上,未动。
 - **`applyOrientationPolicy()` 只在策略值本身变化时下发**(实例字段 `orientationPolicy` 缓存),否则每次配置变化都会覆盖「旋转」按钮刚设过的方向;`smallestScreenWidthDp` 与设备方向无关,故手机旋转不会触发重复下发,也就不会形成"设置方向 → 配置变化 → 再设置"的回环。
-- **`configChanges="orientation|screenSize|keyboardHidden"` 已全量声明** ⇒ 旋转不重建 Activity、无状态丢失。**不要**按"重建即正确"的思路写代码;也不要依赖 AutoSize 的 `postDelayed(300ms)` 刷新(`BaseActivity.refreshAutoSize`)—— 旋转后约 300ms 内 mm 档尺寸仍是旧值(播放器覆盖层已脱离 AutoSize,见下条;其它 mm/XML 消费方仍受此约束)。
+- **Activity 级配置变更声明必须与实际处理范围一致**:主界面 `MainActivity` 需声明 `orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize`，由 `BaseActivity.onConfigurationChanged()` 重算方向策略；仅写在 `application` 上不能替代 Activity 声明。播放器页按各自既有清单处理配置变化。**不要**按"重建即正确"的思路写代码;也不要依赖 AutoSize 的 `postDelayed(300ms)` 刷新(`BaseActivity.refreshAutoSize`)—— 旋转后约 300ms 内 mm 档尺寸仍是旧值(播放器覆盖层已脱离 AutoSize,见下条;其它 mm/XML 消费方仍受此约束)。
 - **✅ 已解除的"改列数前置约束"(2026-09-23 七轮核对,原记录已过时)**:`PartitionListActivity` 的"加载更多"曾用硬编码 `GridItemSpan(3)`(列数一变 span 就失去语义),**已在 `e4baccf` 统一成 `GridItemSpan(maxLineSpan)`** —— 现在全项目 6 处栅格 span(首页 5 + 栏目页 1)全是 `maxLineSpan`,改列数不再有这条前置条件。同一轮把上面那条"首屏没排满就预取"也接到了栏目二级页(`VideoGrid` 的 `enableLoadMore` 分支,与首页共用 `shouldPrefetchNextPage`);`CollectPage` 是本地收藏列表、无分页哨兵,不需要接。
 - **`LazyGridState` 会跨尺寸保留**(`HomeGridLayout` 按 `sourceKey` 缓存、`PartitionListActivity` 用 `rememberLazyGridState()`、`CollectPage` 用外部 `listState`)⇒ 列数变化时 `firstVisibleItemIndex` 保留但视觉位置跳变。属可接受行为,但旋转/分屏改尺寸时会有一次跳位。
 - ⚠️ **insets 在横屏会露馅**:横屏三键导航时导航栏在**侧边**,`WindowInsets.navigationBars.getBottom()` 变成 0 ⇒ `MainScreen` 的 `liquidBackdropBandHeight` 与底部渐变遮罩(都只算 `getBottom()`)会偏小。`FloatingNavBar` 用 `windowInsetsPadding(navigationBars)` 本身会吃到水平 insets,这点是对的。横屏刘海在**左侧**,而 Compose 侧只用了 `statusBar`、未用 `displayCutout`。
