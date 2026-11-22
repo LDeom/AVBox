@@ -19,6 +19,9 @@ import org.json.JSONObject
 internal fun isCurrentSourceListRequest(requestId: Long, activeRequestId: Long): Boolean =
     requestId == activeRequestId
 
+internal fun isCurrentSourceSortRequest(requestId: Long, activeRequestId: Long): Boolean =
+    requestId == activeRequestId
+
 class SourceViewModel : ViewModel() {
 
     @JvmField
@@ -45,8 +48,6 @@ class SourceViewModel : ViewModel() {
     private val gson = Gson()
     private val pushDetailResolver = PushDetailResolver(gson, detailResult)
     private val resultParser = SourceResultParser(gson, searchResult, detailResult, pushDetailResolver)
-    private val homeRecListLoader = ListLoader(gson, SourceRuntimeState.extendCache, SourceChannel(), resultParser)
-    private val sortLoader = SortLoader(gson, SourceRuntimeState.extendCache, SourceRuntimeState.sortCache, sortResult, homeRecListLoader, resultParser)
     private val detailLoader = DetailLoader(gson, SourceRuntimeState.extendCache, detailResult, resultParser)
     private val searchLoader = SearchLoader(gson, SourceRuntimeState.extendCache, searchResult, resultParser)
     private val playLoader = PlayLoader(gson, SourceRuntimeState.extendCache, playResult, preloadResult)
@@ -54,6 +55,8 @@ class SourceViewModel : ViewModel() {
     private val rootJob = SupervisorJob()
     private val listRequestGeneration = AtomicLong(0)
     private var listChain = SupervisorJob(rootJob)
+    private val sortRequestGeneration = AtomicLong(0)
+    private var sortChain = SupervisorJob(rootJob)
 
     private val requestScope: CoroutineScope by lazy { CoroutineScope(rootJob + Dispatchers.Main.immediate) }
 
@@ -67,8 +70,48 @@ class SourceViewModel : ViewModel() {
         getSort(sourceKey, true)
     }
 
+    @Synchronized
     fun getSort(sourceKey: String?, withRec: Boolean) {
-        requestScope.launch { sortLoader.getSort(sourceKey, withRec) }
+        val requestId = sortRequestGeneration.incrementAndGet()
+        sortChain.cancel()
+        val chain = SupervisorJob(rootJob)
+        sortChain = chain
+        requestScope.launch(chain) {
+            val requestResult = SourceChannel<AbsSortXml?>()
+            val homeRecListLoader = ListLoader(
+                gson,
+                SourceRuntimeState.extendCache,
+                SourceChannel<AbsXml?>(),
+                resultParser,
+            )
+            val loader = SortLoader(
+                gson,
+                SourceRuntimeState.extendCache,
+                SourceRuntimeState.sortCache,
+                requestResult,
+                homeRecListLoader,
+                resultParser,
+            )
+            val forwardJob = launch {
+                requestResult.flow.collect { result ->
+                    if (isCurrentSourceSortRequest(requestId, sortRequestGeneration.get())) {
+                        sortResult.postValue(result)
+                    }
+                }
+            }
+            try {
+                loader.getSort(sourceKey, withRec)
+            } finally {
+                forwardJob.cancel()
+            }
+        }
+    }
+
+    @Synchronized
+    fun cancelSort() {
+        sortRequestGeneration.incrementAndGet()
+        sortChain.cancel()
+        sortChain = SupervisorJob(rootJob)
     }
 
     @Synchronized
