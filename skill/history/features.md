@@ -276,3 +276,9 @@
 - preloadTemplate 增加模板内容预检与无效原因日志；模板缺失时不再继续执行空模块导入，保持非致命兼容策略。导入后检查 getMubans 属性是否存在并记录不完整模板诊断。
 - 增加相对模块路径测试：多层目录、父级回退、根路径、query/fragment及空引用处理。
 - 尚未运行 Gradle、QuickJS native 或真机测试；循环/重复导入需 native 集成测试验证。
+
+
+## 2026-11-22 第3阶段 Jar Asset 路径修正
+- 修复 JarLoader.copyAsset 对路径执行全局字符串替换的问题，改为仅剥离 assets:// 或 assets/ 起始前缀，保留内部同名目录；拒绝空路径及 .. 路径段。
+- 内置 Jar 复制循环响应线程中断；增加路径单元测试。
+- 尚未运行 Gradle 或 Android 设备测试。
