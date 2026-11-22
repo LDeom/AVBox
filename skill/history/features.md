@@ -86,3 +86,8 @@
 ## 2026-11-22 第3阶段 JS API Jar缓存加固
 - 下载改为临时文件写入，校验HTTP状态、非空响应与可用的MD5，关闭响应资源后再替换缓存；失败清理临时文件并保留有效旧缓存。
 - 未执行Gradle测试或设备验证。
+
+
+## 2026-11-22 第4阶段播放线路审查
+- 初步检查 PlayUrlResolver、RetryPolicy、PlaybackAttemptState及HTTP状态测试；报告记录于 `skill/review/stage4-playback-routing-audit.md`。
+- 未发现可凭当前局部证据安全直接修改的缺陷，完整解析/嗅探/取消链路仍待深入。未运行Gradle。
