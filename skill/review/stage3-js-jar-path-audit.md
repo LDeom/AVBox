@@ -71,3 +71,8 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 缓存expires改为Long并使用UTF-8序列化，避免2038年附近的Int溢出及默认字符集差异。
 - JS API Jar下载增加线程中断检查；缓存替换统一调用已加固的 FileUtils.writeSimple，避免先删除有效Jar再写入导致下载成功但缓存损坏。
 - 新增缓存过期边界单元测试。尚未运行Gradle测试或真机验证。
+
+## 第七轮缓存字符集与失败回滚核查（2026-11-22）
+- getCache读取缓存JSON统一使用UTF-8，与setCache写入编码一致，避免依赖设备默认字符集。
+- JS API Jar下载/校验失败时不再主动删除现有缓存文件；下载失败只清理临时文件，保留旧缓存以便后续恢复或供旧配置继续使用。
+- 仍需运行测试确认文件替换与旧缓存保留行为；当前未执行Gradle或真机验证。
