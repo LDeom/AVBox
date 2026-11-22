@@ -40,6 +40,10 @@ object UriUtil {
         var reference = referenceUri ?: ""
 
         val refIndices = getUriIndices(reference)
+        if (reference.isEmpty()) {
+            val baseIndices = getUriIndices(base)
+            return base.substring(0, baseIndices[FRAGMENT])
+        }
         if (refIndices[SCHEME_COLON] != -1) {
             uri.append(reference)
             removeDotSegments(uri, refIndices[PATH], refIndices[QUERY])
