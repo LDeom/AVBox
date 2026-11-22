@@ -3,6 +3,7 @@ package com.github.avbox.osc.cloud
 import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.util.security.CloudCredentialVault
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.google.gson.annotations.SerializedName
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -172,18 +173,14 @@ object GuangYaPanClient {
 
     fun checkAccount(): GuangYaAccountState {
         val credential = loadCredential() ?: throw IOException("光鸭账号尚未登录")
-        val user = accountRequest<UserData>(
-            "/v1/user/me",
-            credential,
-            method = "GET",
-        )
-        if (user.sub.isBlank()) {
+        val user = runCatching {
+            accountRequest<UserData>("/v1/user/me", credential, method = "GET")
+        }.getOrElse {
             refreshCredential()
             val refreshed = loadCredential() ?: throw IOException("光鸭登录状态已失效")
-            val refreshedUser = accountRequest<UserData>("/v1/user/me", refreshed, method = "GET")
-            if (refreshedUser.sub.isBlank()) throw IOException("光鸭账号状态验证失败")
-            return GuangYaAccountState(refreshed.phoneNumber, true)
+            accountRequest<UserData>("/v1/user/me", refreshed, method = "GET")
         }
+        if (user.sub.isBlank()) throw IOException("光鸭账号状态验证失败")
         return GuangYaAccountState(credential.phoneNumber, true)
     }
 
@@ -251,7 +248,7 @@ object GuangYaPanClient {
         )
     }
 
-    private fun <T> postAccount(
+    private inline fun <reified T> postAccount(
         path: String,
         body: Any,
         deviceId: String,
@@ -261,17 +258,17 @@ object GuangYaPanClient {
             .post(gson.toJson(body).toRequestBody(jsonType))
             .apply { if (captchaToken.isNotBlank()) header("X-Captcha-Token", captchaToken) }
             .build()
-        return execute(request)
+        return execute(request, T::class.java)
     }
 
-    private fun <T> accountRequest(path: String, credential: GuangYaCredential, method: String): T {
+    private inline fun <reified T> accountRequest(path: String, credential: GuangYaCredential, method: String): T {
         val builder = accountBuilder(path, credential.deviceId)
-            .header("Authorization", "Bearer ${credential.accessToken}")
+            .header("Authorization", "Bearer \${credential.accessToken}")
         val request = when (method) {
             "GET" -> builder.get().build()
             else -> builder.post(ByteArray(0).toRequestBody(jsonType)).build()
         }
-        return execute(request)
+        return execute(request, T::class.java)
     }
 
     private fun accountBuilder(path: String, deviceId: String): Request.Builder =
@@ -292,24 +289,25 @@ object GuangYaPanClient {
             .header("X-Client-Version", "0.0.1")
             .header("X-Device-Id", deviceId)
 
-    private fun <T> postApi(path: String, body: Any, credential: GuangYaCredential): ApiEnvelope<T> {
+    private inline fun <reified T> postApi(path: String, body: Any, credential: GuangYaCredential): ApiEnvelope<T> {
         val request = Request.Builder()
             .url(API_BASE + path)
             .header("Accept", "application/json, text/plain, */*")
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer ${credential.accessToken}")
+            .header("Authorization", "Bearer \${credential.accessToken}")
             .header("Did", credential.deviceId)
             .header("Dt", "4")
             .post(gson.toJson(body).toRequestBody(jsonType))
             .build()
-        return execute(request)
+        val type = TypeToken.getParameterized(ApiEnvelope::class.java, T::class.java).type
+        return execute(request, type)
     }
 
-    private inline fun <reified T> execute(request: Request): T {
+    private fun <T> execute(request: Request, type: java.lang.reflect.Type): T {
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
-            if (!response.isSuccessful) throw IOException("光鸭服务请求失败（HTTP ${response.code}）")
-            val parsed = runCatching { gson.fromJson(text, T::class.java) }.getOrNull()
+            if (!response.isSuccessful) throw IOException("光鸭服务请求失败（HTTP " + response.code + "）")
+            val parsed = runCatching { gson.fromJson<T>(text, type) }.getOrNull()
                 ?: throw IOException("光鸭服务返回了无法识别的数据")
             if (parsed is ApiEnvelope<*> && parsed.error.isNotBlank()) {
                 throw IOException(parsed.errorDescription.ifBlank { parsed.error })
