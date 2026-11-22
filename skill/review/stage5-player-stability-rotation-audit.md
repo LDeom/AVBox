@@ -83,3 +83,27 @@
 - 目的：与 LivePlayActivity 的 PID/onDestroy/onCreate 日志、PlayerEngine 的 surface bind/detach 日志对齐，区分 Activity 重建、SurfaceTexture 重建和播放器内核重建。
 - 提交：`f287495b7f5bbe9d7f074e6fedbebdb794e7d706`。
 - 日志只增加诊断，不改变 SurfaceTexture 所有权及回调返回值；仍需真机旋转验证日志时序。
+
+
+## 第五轮：快速重播竞态与 TextureView 释放后回调
+### 发现一：重新播放时旧渲染宿主解绑顺序
+- `BasePlayerView.startPlay()` 原先先释放旧 KernelPlayer，再由 `addDisplay()` 移除旧 RenderView；RenderView 内部的 detach 因而可能发生在旧内核 release 之后。
+- `addDisplay()` 还会对当前 `kernelPlayer` 执行 detach，但当前 kernelPlayer 可能已经是新建内核，实际旧渲染宿主应自行解除它所绑定的旧内核。
+- 新增 `releaseActiveRenderView()` 统一执行从容器移除、调用 RenderView.release、清空引用；startPlay 在释放旧内核前调用，addDisplay 和 release 也复用此方法，移除错误的“对当前内核额外 detach”步骤。
+- 提交：`f78332a39eece6c76343f5cf222446ec06f8f628`。
+
+### 发现二：异步读取历史进度可能覆盖新播放请求
+- `startPlay()` 只有在 ProgressSink 非空时才递增 `startPlaySeq`。如果旧播放请求正在异步读取历史进度，随后新播放请求没有 ProgressSink，旧请求可能仍通过序号检查并调用 `startPrepare()`。
+- 现在每次进入 `startPlay()` 都先递增序号；`release()` 同样递增序号，使释放前未完成的进度读取结果失效。
+- 新播放请求无论是否读取历史进度，都会淘汰此前请求。
+- 提交：`00a4e8b85049bbbc72cb8579240f5715e038a935`。
+
+### 发现三：TextureView 释放后仍可能接收回调
+- `EngineSurfaceRenderView` 原有 `released` 标志保护迟到的 Surface 回调；`EngineTextureRenderView` 原先没有等效状态，release 后仍可能收到 SurfaceTexture 回调并重新创建 Surface/持有 Texture。
+- 为 TextureRenderView 增加幂等 released 标志；release 时先标记退役、解除 SurfaceTextureListener、解除播放器输出并清理 ready listener，再释放 Surface/SurfaceTexture。
+- attach、refresh、输出尺寸、回调入口均增加退役检查；迟到的 available 回调会释放交付的 SurfaceTexture，不再创建新输出。
+- 提交：`e3bbc5d539fc7341a17eb129f36f394a8acad927`。
+
+### 验证状态
+- 已静态回读三个修改文件，确认旧渲染宿主先于旧内核释放、播放请求序号在每次 startPlay 和 release 时失效、TextureView release 幂等并关闭后续回调入口。
+- 尚未运行 Gradle 编译/单元测试；未在设备上执行快速切换、释放后回调和连续旋转测试。上述修改仍需设备验证，不能据此宣称黑屏或旋转问题已解决。
