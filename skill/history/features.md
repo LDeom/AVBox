@@ -162,3 +162,9 @@
 - FileUtils.writeSimple串行化原子写入，避免固定临时文件名在并发缓存任务中产生竞争。
 - DRPY二进制缓存标记统一US-ASCII编码。
 - 新增多线程并发写入测试，尚未运行Gradle验证。
+
+## 2026-11-22 第3阶段 Jar 生命周期及中断传播
+- JarLoader 的清理与加载使用 generation + lifecycleLock 协调；parseJar将初始代际贯穿整个加载过程，防止切换/清理后旧任务重新注册 Jar。
+- Proxy、Danmaku 反射方法仅在代际校验通过后写入共享注册表。
+- JsLoader遇到线程中断时停止JS API Jar重试并保留中断标记。
+- 尚未运行 Gradle 测试或真机验证。
