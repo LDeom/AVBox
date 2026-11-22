@@ -97,6 +97,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
     }
 
     private var suggestJob: Job? = null
+    private var searchJob: Job? = null
 
     private var token = 0
     private var arriveSeq = 0
@@ -138,6 +139,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
     }
 
     override fun onCleared() {
+        searchJob?.cancel()
+        suggestJob?.cancel()
         try {
             searchCaller.cancelSearch()
         } catch (ignored: Throwable) {
@@ -243,6 +246,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         } catch (ignored: Throwable) {
             AppLog.d("SearchViewModel", "JsLoader.stopAll failed, continue new search")
         }
+        searchJob?.cancel()
+        searchJob = null
         try {
             searchCaller.cancelSearch()
         } catch (ignored: Throwable) {
@@ -265,27 +270,48 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
             return
         }
         _running.value = true
-        scope.launch {
+        searchJob = scope.launch {
             coroutineScope {
                 sources.map { bean ->
                     async {
                         semaphore.withPermit {
                             if (myToken != token) return@async
+                            val sourceKey = bean.key.orEmpty()
                             val done = kotlinx.coroutines.CompletableDeferred<Unit>()
-                            pendingSources[bean.key.orEmpty()] = done
+                            pendingSources[sourceKey] = done
                             try {
-                                withTimeoutOrNull(SEARCH_TIMEOUT_MS) {
+                                val completed = withTimeoutOrNull(SEARCH_TIMEOUT_MS) {
                                     searchCaller.getSearch(bean.key, t, tokenStr)
                                     done.await()
+                                    true
+                                } ?: false
+                                if (!completed && myToken == token) {
+                                    updateEmptyResultIfPending(sourceKey)
                                 }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                AppLog.e("SearchViewModel", e)
+                                if (myToken == token) updateEmptyResultIfPending(sourceKey)
                             } finally {
-                                pendingSources.remove(bean.key, done)
+                                pendingSources.remove(sourceKey, done)
                             }
                         }
                     }
                 }.awaitAll()
             }
             if (myToken == token) _running.value = false
+        }
+    }
+
+    private fun updateEmptyResultIfPending(sourceKey: String) {
+        if (sourceKey.isEmpty()) return
+        _results.value = _results.value.map {
+            if (it.sourceKey == sourceKey && it.state == ResultState.Pending) {
+                SourceResult(sourceKey, it.sourceName, ResultState.Done, emptyList(), ++arriveSeq)
+            } else {
+                it
+            }
         }
     }
 
