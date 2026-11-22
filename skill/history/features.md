@@ -146,3 +146,9 @@
 - JS模块缓存读取统一UTF-8，匹配缓存写入编码。
 - JS API Jar下载失败只清理临时文件，不再主动删除原有缓存，避免失败刷新破坏已有依赖文件。
 - 尚未运行Gradle测试或设备验证。
+
+## 2026-11-22 第3阶段 Spider Jar缓存与取消保护
+- SpiderLoader普通Jar下载增加线程中断及加载epoch检查，源切换后尽早停止过期下载。
+- 普通Jar与img+Jar缓存替换统一使用FileUtils.writeSimple，避免破坏已有可用Jar缓存。
+- 拒绝空Jar并保留旧缓存，失败时清理临时文件。
+- 尚未运行Gradle测试、APK构建或真机验证。
