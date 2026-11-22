@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -37,6 +38,8 @@ import com.github.avbox.osc.data.FollowDays
 import com.github.avbox.osc.ui.components.FollowReminderSheet
 
 internal val HeroScrollFadeDistance = 300.dp
+
+private val DetailContentMaxWidth = 1200.dp
 
 internal fun heroScrollProgress(firstVisibleIndex: Int, firstVisibleOffset: Int, referencePx: Int): Float = when {
     firstVisibleIndex > 0 -> 1f
@@ -71,7 +74,10 @@ internal fun DetailContent(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .widthIn(max = DetailContentMaxWidth)
+            .fillMaxHeight()
+            .align(Alignment.Center),
         contentPadding = PaddingValues(bottom = 32.dp),
     ) {
         item(key = "hero") {
