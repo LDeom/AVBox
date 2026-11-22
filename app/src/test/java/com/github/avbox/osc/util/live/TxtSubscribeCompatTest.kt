@@ -29,4 +29,15 @@ class TxtSubscribeCompatTest {
         assertEquals("Legacy", parsed.get(0).asJsonObject.get("group").asString)
         assertTrue(parsed.get(0).asJsonObject.getAsJsonArray("channels").size() > 0)
     }
+    @Test
+    fun parseMap_mergesUrlsForDuplicateChannelNames() {
+        val parsed = linkedMapOf<String, java.util.LinkedHashMap<String, java.util.ArrayList<String>>>()
+        TxtSubscribe.parse(
+            parsed,
+            """[{"group":"A","channels":[{"name":"C","urls":["http://a"]},{"name":"C","urls":["http://b","http://a"]}]}]""",
+        )
+        val urls = parsed["A"]?.get("C")
+        assertEquals(listOf("http://a", "http://b"), urls)
+    }
+
 }
