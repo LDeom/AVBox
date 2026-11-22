@@ -5,6 +5,22 @@ import com.github.avbox.osc.util.HistoryHelper
 import com.github.avbox.osc.util.KV
 import com.github.avbox.osc.util.ApiLineSignal
 
+internal fun createVodSwitchSnapshot(
+    vodUrl: String,
+    liveUrl: String,
+    vodLines: List<String>,
+    vodLineSource: String,
+    liveLines: List<String>,
+    liveLineSource: String,
+): ConfigRepository.VodSwitchSnapshot = ConfigRepository.VodSwitchSnapshot(
+    vodUrl = vodUrl,
+    liveUrl = liveUrl,
+    vodLines = vodLines.toList(),
+    vodLineSource = vodLineSource,
+    liveLines = liveLines.toList(),
+    liveLineSource = liveLineSource,
+)
+
 object ConfigRepository {
 
     data class VodSwitchSnapshot(
@@ -16,12 +32,12 @@ object ConfigRepository {
         val liveLineSource: String,
     )
 
-    fun snapshotVodSwitch(): VodSwitchSnapshot = VodSwitchSnapshot(
+    fun snapshotVodSwitch(): VodSwitchSnapshot = createVodSwitchSnapshot(
         vodUrl = vodUrl(),
         liveUrl = liveUrl(),
-        vodLines = KV.get(KVKeys.API_LINE_LIST, ArrayList<String>()).toList(),
+        vodLines = KV.get(KVKeys.API_LINE_LIST, ArrayList<String>()),
         vodLineSource = KV.get(KVKeys.API_LINE_SOURCE, ""),
-        liveLines = KV.get(KVKeys.LIVE_API_LINE_LIST, ArrayList<String>()).toList(),
+        liveLines = KV.get(KVKeys.LIVE_API_LINE_LIST, ArrayList<String>()),
         liveLineSource = KV.get(KVKeys.LIVE_API_LINE_SOURCE, ""),
     )
 
