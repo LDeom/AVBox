@@ -152,3 +152,8 @@
 - 普通Jar与img+Jar缓存替换统一使用FileUtils.writeSimple，避免破坏已有可用Jar缓存。
 - 拒绝空Jar并保留旧缓存，失败时清理临时文件。
 - 尚未运行Gradle测试、APK构建或真机验证。
+
+## 2026-11-22 第3阶段 Jar缓存与源切换并发协调
+- LoadEpoch新增受锁保护的runIfCurrent操作，协调加载取消与缓存文件提交。
+- SpiderLoader过期epoch不能提交新Jar缓存，降低快速切换点播源时旧下载覆盖新状态的风险。
+- 增加LoadEpoch当前/过期快照测试；尚未运行Gradle或真机验证。
