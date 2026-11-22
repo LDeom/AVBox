@@ -35,7 +35,6 @@
     <string name="live_need_password">需密码</string>
     <string name="live_replaying">回看中</string>
     <string name="live_on_air">直播中</string>
-    <string name="live_now_playing">正在播出</string>
     <string name="live_group_long_press_delete">%1$s（长按可删除）</string>
     <string name="player_play_pause">播放/暂停</string>
 
