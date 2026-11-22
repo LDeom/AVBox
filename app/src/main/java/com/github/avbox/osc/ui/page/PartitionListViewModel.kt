@@ -113,6 +113,7 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         }
 
         fun release() {
+            svm.cancelList()
             pending?.invoke(LoaderResult(true, null))
             pending = null
             busy = false
