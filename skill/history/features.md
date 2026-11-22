@@ -209,3 +209,10 @@
 - 新增 Global.stopAccepting，在 JsSpider 排入Context teardown前停止HTTP、stream、timer回调入队；Global.destroy在JS单线程执行器内完成资源清理。
 - Global清理增加独立幂等状态，stopAccepting与destroy分离。
 - 未运行 Gradle/设备验证。
+
+
+## 2026-11-22 第3阶段 JS模块 URI 空引用边界修复
+- 修复 UriUtil.resolve 在模块引用为空字符串或 null 时访问空字符串首字符导致越界的问题。
+- 空引用按 URI 解析语义返回基础模块地址并移除 fragment，保留 query；正常相对路径解析保持原逻辑。
+- 新增 UriUtilTest 覆盖空字符串、null 和普通相对模块路径。
+- 尚未运行 Gradle 测试或真机验证。
