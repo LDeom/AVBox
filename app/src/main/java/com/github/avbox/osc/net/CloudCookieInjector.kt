@@ -34,10 +34,26 @@ object CloudCookieInjector {
         return merge(headers, cookie)
     }
 
+    fun applyForUrl(url: String, headers: Map<String, String>): Map<String, String> {
+        val provider = providerForUrl(url) ?: return headers
+        val cookie = CloudCredentialVault.read(provider.id) ?: return headers
+        return merge(headers, cookie)
+    }
+
     internal fun matchesProvider(sourceKey: String?, api: String?, url: String?): Boolean {
         val provider = providerFor(sourceKey, api) ?: return false
         val target = url?.toHttpUrlOrNull() ?: return false
-        return provider.domains.any { target.host == it || target.host.endsWith(".$it") }
+        return target.isHttps && provider.domains.any { target.host == it || target.host.endsWith(".$it") }
+    }
+
+    internal fun matchesAnyProviderHost(url: String): Boolean = providerForUrl(url) != null
+
+    private fun providerForUrl(url: String): Provider? {
+        val target = url.toHttpUrlOrNull() ?: return null
+        if (!target.isHttps) return null
+        return providers.firstOrNull { provider ->
+            provider.domains.any { target.host == it || target.host.endsWith(".$it") }
+        }
     }
 
     private fun providerFor(sourceKey: String?, api: String?): Provider? =
