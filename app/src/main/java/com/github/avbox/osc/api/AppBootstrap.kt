@@ -49,6 +49,9 @@ object AppBootstrap {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val bootGeneration = BootGeneration()
     private val initMutex = Mutex()
+    private val vodSwitchLock = Any()
+    @Volatile
+    private var pendingVodSwitchSnapshot: ConfigRepository.VodSwitchSnapshot? = null
     private var started = false
 
     private fun installServerPorts() {
@@ -103,13 +106,14 @@ object AppBootstrap {
         }
     }
 
-    fun switchVodSubscription(url: String): Boolean {
+    fun switchVodSubscription(url: String): Boolean = synchronized(vodSwitchLock) {
         val followLive = ApiConfig.isLiveFollowVod()
-        val snapshot = ConfigRepository.snapshotVodSwitch()
+        val snapshot = pendingVodSwitchSnapshot ?: ConfigRepository.snapshotVodSwitch()
         if (ConfigRepository.switchVodSource(url)) {
             ApiConfig.get().invalidateLiveConfig()
-            return followLive
+            return@synchronized followLive
         }
+        pendingVodSwitchSnapshot = snapshot
         val generation = bootGeneration.next()
         ApiConfig.get().cancelPendingLoads()
         _state.value = Boot.Loading
@@ -125,7 +129,7 @@ object AppBootstrap {
                 rollbackSnapshot = snapshot,
             )
         }
-        return followLive
+        followLive
     }
 
     private fun startInit(
@@ -169,6 +173,13 @@ object AppBootstrap {
                     if (!err.isNullOrEmpty() && bootGeneration.isLatest(generation)) toast(err)
                 }
                 if (dataInitOk && jarInitOk && bootGeneration.isLatest(generation)) {
+                    if (rollbackSnapshot != null) {
+                        synchronized(vodSwitchLock) {
+                            if (bootGeneration.isLatest(generation) && pendingVodSwitchSnapshot == rollbackSnapshot) {
+                                pendingVodSwitchSnapshot = null
+                            }
+                        }
+                    }
                     ApiConfig.get().warmSearchSpiders()
                     SearchSourcesState.refresh()
                     _state.value = Boot.Ready(generation)
@@ -186,12 +197,23 @@ object AppBootstrap {
         generation: Long,
         switchError: String,
     ) {
-        ConfigRepository.restoreVodSwitch(snapshot)
+        val restored = synchronized(vodSwitchLock) {
+            if (!bootGeneration.isLatest(generation)) {
+                false
+            } else {
+                ConfigRepository.restoreVodSwitch(snapshot)
+                true
+            }
+        }
+        if (!restored) return
         ApiConfig.get().invalidateVodConfig()
         subscriptionCidFlow.value = CurrentSubscription.cid()
         val rollbackError = awaitLoadConfig(forceFresh = false)
         if (rollbackError != null || !bootGeneration.isLatest(generation)) {
             if (bootGeneration.isLatest(generation)) {
+                synchronized(vodSwitchLock) {
+                    if (pendingVodSwitchSnapshot == snapshot) pendingVodSwitchSnapshot = null
+                }
                 _state.value = Boot.Error(rollbackError ?: switchError)
             }
             return
@@ -201,6 +223,11 @@ object AppBootstrap {
             if (!jarError.isNullOrEmpty()) toast(jarError)
         }
         if (!bootGeneration.isLatest(generation)) return
+        synchronized(vodSwitchLock) {
+            if (bootGeneration.isLatest(generation) && pendingVodSwitchSnapshot == snapshot) {
+                pendingVodSwitchSnapshot = null
+            }
+        }
         ApiConfig.get().warmSearchSpiders()
         SearchSourcesState.refresh()
         _state.value = Boot.Ready(generation)
