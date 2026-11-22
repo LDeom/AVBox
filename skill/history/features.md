@@ -630,3 +630,9 @@
 - 当前功能分支已修复重复资源，最新修复提交为 9428ccc09881d398155867483aea97c2a467bcde。
 - 为避免再次选择旧 run 重跑，在 feature/tablet-live-immersive 的构建工作流增加该分支 push 触发；后续代码提交会直接以新分支 HEAD 编译。workflow_dispatch 仍保留。
 - 此次工作流触发配置提交会自动启动一次新构建；需要以该新 run 的实际 checkout SHA、Gradle 日志和产物状态判断结果，不能以旧 run 的失败记录代替。
+
+
+## 2026-11-22 APK 构建第二轮修复：英文字符串特殊字符
+- 新提交触发的真实构建已越过重复 key 检查，暴露下一项资源错误：`values-en/strings.xml` 的 `cloud_drive_cookie_placeholder` 包含未转义英文撇号，AAPT2 在 `:app:mergeDebugResources` 阶段报告该字符串资源无效。
+- 将文案从 “Paste this provider's cookie” 调整为 “Paste the provider cookie”，避免 Android string resource 中未转义撇号导致解析失败；不改变设置功能。
+- 当前等待该提交触发的新构建验证；尚未宣称 APK 构建成功。
