@@ -45,7 +45,7 @@ class Global {
 
     private val timer: Timer
     private val timerLock: Any = Any()
-    private val pendingTimerFunctions: MutableSet<JSFunction> = ConcurrentHashMap.newKeySet()
+    private val pendingTimerFunctions: MutableSet<PendingTimer> = ConcurrentHashMap.newKeySet()
     private val destroyed: AtomicBoolean = AtomicBoolean(false)
 
     private val httpTag: String
@@ -589,12 +589,13 @@ class Global {
                 func.release()
                 return
             }
-            pendingTimerFunctions.add(func)
+            val pending = PendingTimer(func)
+            pendingTimerFunctions.add(pending)
             try {
                 timer.schedule(object : TimerTask() {
                     override fun run() {
                         synchronized(timerLock) {
-                            if (!pendingTimerFunctions.remove(func)) return
+                            if (!pendingTimerFunctions.remove(pending)) return
                             if (destroyed.get() || executor.isShutdown) {
                                 func.release()
                                 return
@@ -614,7 +615,7 @@ class Global {
                     }
                 }, delayMs)
             } catch (th: Throwable) {
-                if (pendingTimerFunctions.remove(func)) func.release()
+                if (pendingTimerFunctions.remove(pending)) func.release()
                 throw th
             }
         }
@@ -635,8 +636,8 @@ class Global {
         if (!destroyed.compareAndSet(false, true)) return
         synchronized(timerLock) {
             timer.cancel()
-            for (func in pendingTimerFunctions) {
-                if (pendingTimerFunctions.remove(func)) func.release()
+            for (pending in pendingTimerFunctions) {
+                if (pendingTimerFunctions.remove(pending)) pending.function.release()
             }
         }
         for (token in sessions) {
@@ -701,6 +702,8 @@ class Global {
     fun setJSContext(runtime: QuickJSContext) {
         this.runtime = runtime
     }
+
+    private class PendingTimer(val function: JSFunction)
 
     private class StreamEntry(val stream: ProxyStream, val created: Long, val sessionId: Int?)
 
