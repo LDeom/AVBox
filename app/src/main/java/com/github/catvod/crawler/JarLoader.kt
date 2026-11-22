@@ -147,13 +147,15 @@ class JarLoader {
     }
 
     private fun invokeInit(loader: DexClassLoader) {
-        try {
-            val clz = loader.loadClass("com.github.catvod.spider.Init")
-            val method = clz.getMethod("init", Context::class.java)
-            method.invoke(null, AppContextHolder.context())
-        } catch (e: Throwable) {
-            AppLog.e("JarLoader", e)
+        val clz = try {
+            loader.loadClass("com.github.catvod.spider.Init")
+        } catch (e: ClassNotFoundException) {
+            AppLog.i("echo-jar-init optional class missing")
+            return
         }
+        val method = clz.getMethod("init", Context::class.java)
+        method.invoke(null, AppContextHolder.context())
+        AppLog.i("echo-jar-init success")
     }
 
     private fun findProxyMethod(loader: DexClassLoader): Method? {
