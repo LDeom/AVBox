@@ -1242,7 +1242,6 @@ class PlaybackController {
     }
 
     fun onHostDestroy() {
-        starter.cancelPendingCloudResolve()
         st = st.clearSessionFlags()
         music.resetAudioSession()
         timeouts.cancelPendingCompletionDrop()
