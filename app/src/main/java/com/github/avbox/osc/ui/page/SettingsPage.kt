@@ -50,6 +50,7 @@ import com.github.avbox.osc.ui.PlaySettingsActivity
 import com.github.avbox.osc.ui.PreferenceSettingsActivity
 import com.github.avbox.osc.ui.CloudDriveSettingsActivity
 import com.github.avbox.osc.ui.ThemeSettingsActivity
+import com.github.avbox.osc.ui.JsDanmuPluginActivity
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
 import com.github.avbox.osc.ui.components.AVBoxBottomSheet
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
@@ -212,6 +213,14 @@ fun SettingsPage(
                         subtitle = stringResource(R.string.settings_preference_subtitle),
                         iconRes = R.drawable.ic_settings_preference,
                         onClick = { PreferenceSettingsActivity.start(context) },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsRow(
+                        title = "JS 弹幕插件",
+                        subtitle = "导入和管理 JavaScript 弹幕插件",
+                        iconRes = R.drawable.ic_settings_api,
+                        onClick = { JsDanmuPluginActivity.start(context) },
                     )
                 }
                 SettingsCard(SettingsCardPosition.LAST) {

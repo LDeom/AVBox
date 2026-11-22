@@ -110,6 +110,8 @@
         <activity
             android:name=".ui.PreferenceSettingsActivity" />
         <activity
+            android:name=".ui.JsDanmuPluginActivity" />
+        <activity
             android:name=".ui.CloudDriveSettingsActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity
