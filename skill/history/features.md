@@ -328,3 +328,9 @@
 - 核实 LivePlayActivity 已声明 orientation 等 configChanges、覆写 BaseActivity 方向策略为空操作，并在非 finishing 的配置变化销毁时保留直播会话；暂未发现应盲目增加方向锁或修改 Manifest 的证据。
 - 确认 PlaybackEngine.enterLive/exitLive 会改变播放器内核生命周期，不应从普通方向变化回调重复调用。
 - 新增审查报告 skill/review/stage5-player-stability-rotation-audit.md；尚未运行 Gradle、未做真机旋转测试，本轮未修改播放器核心逻辑、未构建 APK。
+
+
+## 2026-11-22 第5阶段 BasePlayerView 渲染资源释放修复
+- 修复 BasePlayerView.release() 仅在 lastReportedPlayState 非 IDLE 时才移除并释放 activeRenderView 的问题。
+- 现在无论播放器状态如何，release() 都会移除并释放当前渲染视图、清空引用并关闭 keepScreenOn；进度保存、播放位置复位和状态派发仍保留原有 hadActiveState 条件。
+- 尚未运行 Gradle、单元测试或 SurfaceView/TextureView 真机验证。
