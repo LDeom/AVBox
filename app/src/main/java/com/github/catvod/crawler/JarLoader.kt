@@ -48,6 +48,7 @@ class JarLoader {
     private var recent: String = MAIN_KEY
 
     private val clearGeneration: AtomicLong = AtomicLong(0)
+    private val lifecycleLock: Any = Any()
 
     fun load(cache: String): Boolean {
         val success = load(MAIN_KEY, File(cache))
@@ -69,17 +70,20 @@ class JarLoader {
     }
 
     fun clear() {
-        clearGeneration.incrementAndGet()
-        val stale = ArrayList(spiders.values)
-        loaders.clear()
-        proxyMethods.clear()
-        danmuClickMethods.clear()
-        danmuLongClickMethods.clear()
-        spiders.clear()
-        siteJarKeys.clear()
-        aliases.clear()
-        liveJars.clear()
-        recent = MAIN_KEY
+        val stale: List<Spider>
+        synchronized(lifecycleLock) {
+            clearGeneration.incrementAndGet()
+            stale = ArrayList(spiders.values)
+            loaders.clear()
+            proxyMethods.clear()
+            danmuClickMethods.clear()
+            danmuLongClickMethods.clear()
+            spiders.clear()
+            siteJarKeys.clear()
+            aliases.clear()
+            liveJars.clear()
+            recent = MAIN_KEY
+        }
         for (spider in stale) {
             SpiderReaper.retire(spider)
         }
@@ -88,7 +92,8 @@ class JarLoader {
     private fun load(key: String, file: File): Boolean {
         if (Thread.interrupted()) return false
         if (!exists(file)) return false
-        if (loaders.containsKey(key)) return true
+        val generation = clearGeneration.get()
+        if (loaders.containsKey(key)) return generation == clearGeneration.get()
         if (BootGuard.isJarDisabled(file.absolutePath)) {
             AppLog.i("echo-boot-guard: blocked jar key=" + key + " file=" + file.absolutePath)
             return false
@@ -105,7 +110,15 @@ class JarLoader {
             invokeProxy(key, loader)
             invokeDanmaku(key, loader)
             injectProxyPort(loader)
-            loaders[key] = loader
+            synchronized(lifecycleLock) {
+                if (generation != clearGeneration.get()) {
+                    proxyMethods.remove(key)
+                    danmuClickMethods.remove(key)
+                    danmuLongClickMethods.remove(key)
+                    return false
+                }
+                loaders[key] = loader
+            }
             BootGuard.scheduleStableRunReset()
             AppLog.i("echo--jar-load success key=" + key + ", file=" + file.absolutePath)
             return true
