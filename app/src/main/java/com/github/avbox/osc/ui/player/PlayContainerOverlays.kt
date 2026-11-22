@@ -4,6 +4,7 @@ import android.os.Looper
 import android.widget.Toast
 import com.github.avbox.osc.R
 import com.github.avbox.osc.player.danmu.DanmuLoadController
+import com.github.avbox.osc.player.danmu.JsDanmuPluginLoader
 import com.github.avbox.osc.player.state.DanmuSearchSheetState
 import com.github.avbox.osc.util.AppLog
 import master.flame.danmaku.ui.widget.DanmakuView
@@ -11,6 +12,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 
 private const val PRELOAD_TOAST_REFRESH_DELAY_MS = 1000L
 
@@ -27,6 +30,8 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
     private var preloadReadyToast: Toast? = null
 
     private var danmuView: DanmakuView? = null
+    private var jsDanmuJob: Job? = null
+    private var jsDanmuRequestId: Long = 0L
 
     private val refreshPreloadToastRunnable: Runnable = Runnable {
         val toast = preloadReadyToast ?: return@Runnable
@@ -63,11 +68,37 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
     }
 
     fun checkDanmu(danmu: String?, callback: DanmuLoadController.LoadCallback?) {
+        jsDanmuJob?.cancel()
+        val requestId = ++jsDanmuRequestId
         host.scheduler.onDanmuChecked(danmu)
         val controller = host.danmuLoadController ?: return
         val vod = host.scheduler.vod()
+        val title = vod?.name.orEmpty()
         val series = if (vod == null) null else host.scheduler.currentSeries(vod.playFlag, vod.playIndex)
-        controller.check(danmu, vod?.name ?: "", series?.name ?: "", callback)
+        val episode = series?.name.orEmpty()
+        if (!danmu.isNullOrBlank()) {
+            controller.check(danmu, title, episode, callback)
+            return
+        }
+
+        controller.check(null, title, episode, callback)
+        if (title.isBlank()) return
+        jsDanmuJob = scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { JsDanmuPluginLoader.searchAndLoad(host.context, title, episode) }
+            }
+            if (requestId != jsDanmuRequestId || !host.isAttached()) return@launch
+            result.onSuccess { xml ->
+                if (!xml.isNullOrBlank()) {
+                    AppLog.i("echo-danmu JS plugin matched title=" + title.take(80) + ", episode=" + episode.take(80))
+                    controller.check(xml, title, episode, callback)
+                } else {
+                    AppLog.i("echo-danmu JS plugin no unambiguous match")
+                }
+            }.onFailure {
+                AppLog.e("echo-danmu JS plugin load failed: " + (it.message ?: it.javaClass.simpleName))
+            }
+        }
     }
 
     fun startDanmuIfReady() {
@@ -75,6 +106,9 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
     }
 
     fun resetDanmuState() {
+        jsDanmuRequestId++
+        jsDanmuJob?.cancel()
+        jsDanmuJob = null
         host.danmuLoadController?.reset()
     }
 

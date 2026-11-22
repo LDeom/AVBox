@@ -55,6 +55,10 @@ class JsDanmuPluginRuntime(
     }
 
     fun search(query: String): JSONArray = invokeArray("search", JSONObject().put("query", query))
+
+    fun search(title: String, episode: String): JSONArray = invokeArray(
+        "search", JSONObject().put("title", title).put("episode", episode).put("query", listOf(title, episode).filter { it.isNotBlank() }.joinToString(" "))
+    )
     fun load(pluginResult: JSONObject): JSONArray = invokeArray("load", pluginResult)
 
     private fun invokeArray(method: String, argument: JSONObject): JSONArray = submit {
