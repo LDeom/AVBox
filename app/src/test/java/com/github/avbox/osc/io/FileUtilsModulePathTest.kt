@@ -27,4 +27,16 @@ class FileUtilsModulePathTest {
             FileUtils.clanModuleUrl("clan://192.168.1.8:9978/")
         )
     }
+    @Test
+    fun normalizesFileModuleUris() {
+        assertEquals("modules/helper.js", FileUtils.fileModulePath("file:///modules/helper.js"))
+        assertEquals("modules/helper.js", FileUtils.fileModulePath("file://modules/helper.js"))
+    }
+
+    @Test
+    fun rejectsEmptyOrUnrelatedFileUris() {
+        assertNull(FileUtils.fileModulePath("file://"))
+        assertNull(FileUtils.fileModulePath("https://example.com/helper.js"))
+    }
+
 }
