@@ -83,6 +83,13 @@ enum class TmdbTest { None, Api, Image }
 internal fun sanitizeConfigText(value: String): String =
     value.filterNot { it.isISOControl() }.trim()
 
+internal fun normalizedSubscribe(name: String, url: String): SubscribeSource? {
+    val normalizedUrl = sanitizeConfigText(url)
+    if (normalizedUrl.isEmpty()) return null
+    val normalizedName = sanitizeConfigText(name).ifEmpty { normalizedUrl }
+    return SubscribeSource(normalizedName, normalizedUrl)
+}
+
 internal fun parseSubscribe(value: String): SubscribeSource {
     val index = value.indexOf(SUBSCRIBE_SPLIT)
     return if (index < 0) {
@@ -427,6 +434,7 @@ class ConfigManageViewModel(
     }
 
     fun commitAdd(vod: Boolean, name: String, url: String) {
+        if (normalizedSubscribe(name, url) == null) return
         val mode = if (vod) SubscribeMode.Vod else SubscribeMode.Live
         val newItems = saveSubscribe(mode, name, url)
         if (vod) _vodItems.value = newItems else _liveItems.value = newItems
@@ -437,17 +445,18 @@ class ConfigManageViewModel(
     }
 
     fun addLocalSource(name: String, url: String): Boolean {
-        val existed = loadSubscribes(SubscribeMode.Vod).any { parseSubscribe(it).url == url }
-        _vodItems.value = saveSubscribe(SubscribeMode.Vod, name, url)
+        val source = normalizedSubscribe(name, url) ?: return false
+        val existed = loadSubscribes(SubscribeMode.Vod).any { parseSubscribe(it).url == source.url }
+        _vodItems.value = saveSubscribe(SubscribeMode.Vod, source.name, source.url)
         return existed
     }
 
     fun commitEdit(vod: Boolean, target: SubscribeSource, name: String, url: String) {
-        if (url.isEmpty()) return
+        val source = normalizedSubscribe(name, url) ?: return
         val mode = if (vod) SubscribeMode.Vod else SubscribeMode.Live
-        val newValue = (name.ifEmpty { url }) + SUBSCRIBE_SPLIT + url
+        val newValue = source.name + SUBSCRIBE_SPLIT + source.url
         val oldValue = _selected.value.firstOrNull { parseSubscribe(it).url == target.url }
-        val updated = updateSubscribe(mode, target, name, url)
+        val updated = updateSubscribe(mode, target, source.name, source.url)
         if (vod) _vodItems.value = updated else _liveItems.value = updated
         if (oldValue != null) _selected.value = _selected.value - oldValue + newValue
         closeEdit()
@@ -479,7 +488,8 @@ class ConfigManageViewModel(
         KV.get(subscribeKeyOf(mode), ArrayList<String>()).toList()
 
     private fun saveSubscribe(mode: SubscribeMode, name: String, url: String): List<String> {
-        val value = (name.ifEmpty { url }) + SUBSCRIBE_SPLIT + url
+        val source = requireNotNull(normalizedSubscribe(name, url)) { "subscribe url missing" }
+        val value = source.name + SUBSCRIBE_SPLIT + source.url
         val list = ArrayList(loadSubscribes(mode))
         val existIndex = list.indexOfFirst { parseSubscribe(it).url == url }
         if (existIndex >= 0) list[existIndex] = value else list.add(value)
@@ -488,7 +498,8 @@ class ConfigManageViewModel(
     }
 
     private fun updateSubscribe(mode: SubscribeMode, original: SubscribeSource, name: String, url: String): List<String> {
-        val value = (name.ifEmpty { url }) + SUBSCRIBE_SPLIT + url
+        val source = requireNotNull(normalizedSubscribe(name, url)) { "subscribe url missing" }
+        val value = source.name + SUBSCRIBE_SPLIT + source.url
         val list = ArrayList(loadSubscribes(mode))
         val index = list.indexOfFirst { parseSubscribe(it).url == original.url }
         if (index < 0) return list
