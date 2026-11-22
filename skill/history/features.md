@@ -259,3 +259,8 @@
 - 抽离纯 Kotlin JS 模块内容错误响应判定，使用 Locale.ROOT 保证语言环境无关。
 - 新增测试覆盖空内容、HTML错误页、404/Not Found、JSON 404、BOM及正常 JS/JSON内容。
 - 尚未执行 Gradle；未完成真实 QuickJS ModuleLoader 和 AssetManager 集成验证。
+
+
+## 2026-11-22 第3阶段 JS 模块错误响应识别补充
+- JS 模块响应识别支持带空白的 JSON 404 code 字段，并增加系统 Locale（土耳其语）回归测试。
+- 尚未执行 Gradle，新增测试结果待 CI/本地构建验证。
