@@ -64,11 +64,31 @@ class JsSpider : Spider {
         } catch (th: Throwable) {
             destroyed.set(true)
             try {
-                ctx?.destroy()
+                global?.stopAccepting()
             } catch (ignored: Throwable) {
-                AppLog.d("JsSpider", "cleanup ctx after init failure failed")
+                AppLog.d("JsSpider", "stop callbacks after init failure failed")
             }
-            executor.shutdownNow()
+            try {
+                executor.submit(Runnable {
+                    try {
+                        global?.destroy()
+                    } catch (ignored: Throwable) {
+                        AppLog.d("JsSpider", "cleanup global after init failure failed")
+                    }
+                    try {
+                        jsObject = null
+                        ctx?.destroy()
+                    } catch (ignored: Throwable) {
+                        AppLog.d("JsSpider", "cleanup ctx after init failure failed")
+                    } finally {
+                        executor.shutdown()
+                    }
+                })
+                executor.shutdown()
+            } catch (cleanupError: Throwable) {
+                AppLog.d("JsSpider", "schedule cleanup after init failure failed")
+                executor.shutdownNow()
+            }
             throw th
         }
     }
@@ -402,6 +422,7 @@ class JsSpider : Spider {
         } catch (e: TimeoutException) {
             AppLog.i("echo-js-init-timeout " + api)
             init.cancel(true)
+            throw e
         }
     }
 
