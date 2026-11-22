@@ -15,10 +15,13 @@ object ConfigApplier {
 
     @JvmStatic
     fun applyHostRules(infoJson: JsonObject) {
-        if (infoJson.has("rules")) {
+        val rulesValue = infoJson.get("rules")
+        if (rulesValue != null && rulesValue.isJsonArray) {
             VideoParseRuler.clearRule()
-            for (oneHostRule in infoJson.getAsJsonArray("rules")) {
-                val obj = oneHostRule as JsonObject
+            for (oneHostRule in rulesValue.asJsonArray) {
+                if (!oneHostRule.isJsonObject) continue
+                val obj = oneHostRule.asJsonObject
+                try {
                 if (obj.has("host")) {
                     val host = obj.get("host").asString
                     if (obj.has("rule")) {
@@ -84,6 +87,9 @@ object ConfigApplier {
                         }
                     }
                 }
+                } catch (th: Throwable) {
+                    AppLog.e("ConfigApplier", th)
+                }
             }
         }
     }
@@ -103,11 +109,13 @@ object ConfigApplier {
 
     @JvmStatic
     fun applyAds(infoJson: JsonObject) {
-        if (infoJson.has("ads")) {
-            for (host in infoJson.getAsJsonArray("ads")) {
-                if (!AdBlocker.hasHost(host.asString)) {
-                    AdBlocker.addAdHost(host.asString)
-                }
+        val ads = infoJson.get("ads")
+        if (ads == null || !ads.isJsonArray) return
+        for (host in ads.asJsonArray) {
+            if (!host.isJsonPrimitive || !host.asJsonPrimitive.isString) continue
+            val value = host.asString.trim { it <= ' ' }
+            if (value.isNotEmpty() && !AdBlocker.hasHost(value)) {
+                AdBlocker.addAdHost(value)
             }
         }
     }
@@ -115,17 +123,28 @@ object ConfigApplier {
     @JvmStatic
     fun parseParseBeans(infoJson: JsonObject): List<ParseBean> {
         val parseBeans: MutableList<ParseBean> = ArrayList()
-        if (infoJson.has("parses")) {
-            val parses = infoJson.get("parses").asJsonArray
-            for (opt in parses) {
-                val obj = opt as JsonObject
+        val parses = infoJson.get("parses")
+        if (parses == null || !parses.isJsonArray) return parseBeans
+        for (opt in parses.asJsonArray) {
+            if (!opt.isJsonObject) continue
+            try {
+                val obj = opt.asJsonObject
+                val nameValue = obj.get("name")
+                val urlValue = obj.get("url")
+                if (nameValue == null || !nameValue.isJsonPrimitive || !nameValue.asJsonPrimitive.isString
+                    || urlValue == null || !urlValue.isJsonPrimitive || !urlValue.asJsonPrimitive.isString) continue
+                val name = nameValue.asString.trim { it <= ' ' }
+                val url = urlValue.asString.trim { it <= ' ' }
+                if (name.isEmpty() || url.isEmpty()) continue
                 val pb = ParseBean()
-                pb.name = obj.get("name").asString.trim { it <= ' ' }
-                pb.url = obj.get("url").asString.trim { it <= ' ' }
-                val ext = if (obj.has("ext")) obj.get("ext").asJsonObject.toString() else ""
-                pb.ext = ext
+                pb.name = name
+                pb.url = url
+                val extValue = obj.get("ext")
+                pb.ext = if (extValue != null && extValue.isJsonObject) extValue.asJsonObject.toString() else ""
                 pb.type = DefaultConfig.safeJsonInt(obj, "type", 0)
                 parseBeans.add(pb)
+            } catch (th: Throwable) {
+                AppLog.e("ConfigApplier", th)
             }
         }
         return parseBeans
