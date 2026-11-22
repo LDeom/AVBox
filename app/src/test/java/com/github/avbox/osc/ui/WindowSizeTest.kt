@@ -38,6 +38,31 @@ class WindowSizeTest {
     }
 
     @Test
+    fun gridMinColumns_adaptsToNarrowSplitWindows() {
+        assertEquals(1, WindowSize.gridMinColumns(200))
+        assertEquals(1, WindowSize.gridMinColumns(251))
+        assertEquals(2, WindowSize.gridMinColumns(252))
+        assertEquals(2, WindowSize.gridMinColumns(327))
+        assertEquals(3, WindowSize.gridMinColumns(328))
+        assertEquals(3, WindowSize.gridMinColumns(600))
+    }
+
+    @Test
+    fun gridColumns_keepsCardsUsableInNarrowSplitWindows() {
+        fun cardWidth(availableWidthDp: Int): Int {
+            val columns = WindowSize.gridColumns(
+                availableWidthDp,
+                minColumns = WindowSize.gridMinColumns(availableWidthDp),
+            )
+            return (availableWidthDp - (columns - 1) * WindowSize.GRID_COLUMN_SPACING_DP) / columns
+        }
+
+        assertEquals(138, cardWidth(288))
+        assertEquals(120, cardWidth(252))
+        assertEquals(101, cardWidth(328))
+    }
+
+    @Test
     fun gridColumns_keepsPhoneAtThreeColumns() {
         assertEquals(3, WindowSize.gridColumns(328, minColumns = 3))
         assertEquals(2, WindowSize.gridColumns(328, minColumns = 2))
