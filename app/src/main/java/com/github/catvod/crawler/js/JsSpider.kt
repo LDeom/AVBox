@@ -194,7 +194,7 @@ class JsSpider : Spider {
             ?: return null
         return try {
             val result = pending.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            return result.get(CALL_TIMEOUT_MS)
+            result.get(CALL_TIMEOUT_MS)
         } catch (e: InterruptedException) {
             pending.cancel(true)
             Thread.currentThread().interrupt()
