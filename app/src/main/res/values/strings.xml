@@ -658,4 +658,6 @@
     <string name="cloud_drive_login_cookie_missing">未检测到该网盘支持域名的 Cookie，请确认已完成登录。</string>
     <string name="cloud_drive_cookie_save_failed">登录状态保存失败</string>
     <string name="cloud_drive_cookie_cleared">登录状态已清除</string>
+    <string name="cloud_drive_cookie_copy">复制 Cookie</string>
+    <string name="cloud_drive_cookie_copied">Cookie 已复制到剪贴板，请注意隐私安全。</string>
 </resources>

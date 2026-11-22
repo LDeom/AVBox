@@ -1,6 +1,8 @@
 package com.github.avbox.osc.ui
 
 import android.content.Context
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.webkit.CookieManager
@@ -104,6 +106,20 @@ class CloudDriveLoginActivity : BaseActivity() {
                     )
                     if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            val manager = CookieManager.getInstance()
+                            manager.flush()
+                            val cookieText = provider.cookieHosts.mapNotNull { host ->
+                                manager.getCookie("https://$host/").orEmpty().takeIf { it.isNotBlank() }?.let { "$host\\n$it" }
+                            }.joinToString("\\n\\n")
+                            if (cookieText.isBlank()) {
+                                message = context.getString(R.string.cloud_drive_login_cookie_missing)
+                            } else {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(provider.id, cookieText))
+                                message = context.getString(R.string.cloud_drive_cookie_copied)
+                            }
+                        }) { Text(stringResource(R.string.cloud_drive_cookie_copy)) }
                         Button(modifier = Modifier.weight(1f), onClick = {
                             val manager = CookieManager.getInstance()
                             manager.flush()
