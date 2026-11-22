@@ -47,3 +47,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 ## 模块缺失容错策略核对（2026-11-22）
 - `JsSpider`模块加载器在内容为空、404/Not Found、错误JSON、Base64 bytecode解码失败或编译异常时回退至空模块bytecode；该策略避免QuickJS加载直接崩溃，但会使依赖模块缺失在运行期表现为功能缺失而非明确模块错误。
 - 已有空模块日志包含模块名称，可作为定位线索。改变回退策略会影响旧站点兼容，需先建立站点模块加载集成测试，当前不贸然抛出异常。
+
+
+## 第四轮缓存读写审查（2026-11-22）
+- 发现 `saveCache` 仍采用先删除目标文件再直接写入的旧逻辑，与已修复的 `writeSimple` 不一致；现已改为统一调用 `writeSimple`，确保JSON缓存覆盖失败时保留旧文件。
+- `readSimple` 原先使用 `available()` 预分配并单次 `read()`，现改为 `FileInputStream.use { readBytes() }`，保证读取完整文件并自动关闭流。
+- 原子写入测试增加 `saveCache` 替换及 `readSimple` 大文件完整读取用例。
+- 本轮未运行Gradle测试或设备验证；需在后续完整构建中确认。
