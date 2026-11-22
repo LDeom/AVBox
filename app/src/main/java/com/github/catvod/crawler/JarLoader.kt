@@ -265,8 +265,11 @@ class JarLoader {
         val lock = locks.computeIfAbsent(spKey) { Any() }
         val generation = snapshot.first
         synchronized(lock) {
-            val cachedAgain = spiders[spKey]
+            val cachedAgain = synchronized(lifecycleLock) {
+                if (generation == clearGeneration.get()) spiders[spKey] else null
+            }
             if (cachedAgain != null) return cachedAgain
+            if (generation != clearGeneration.get()) return SpiderNull()
             try {
                 if (MAIN_KEY != jaKey) parseJar(jaKey, spiderJar, generation)
                 val loader = loaders[jaKey]
@@ -280,8 +283,18 @@ class JarLoader {
                 } finally {
                     SpiderInitWatch.end()
                 }
-                if (generation != clearGeneration.get()) return SpiderNull()
-                spiders[spKey] = spider
+                val registered = synchronized(lifecycleLock) {
+                    if (generation != clearGeneration.get()) {
+                        false
+                    } else {
+                        spiders[spKey] = spider
+                        true
+                    }
+                }
+                if (!registered) {
+                    SpiderReaper.retire(spider)
+                    return SpiderNull()
+                }
                 Log.i(TAG, "getSpider success key=" + spKey)
                 return spider
             } catch (e: Throwable) {
