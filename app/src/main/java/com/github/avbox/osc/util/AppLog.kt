@@ -93,7 +93,8 @@ object AppLog {
             }
         }
         if (!match) return
-        val line = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date()) + " " + level + " " + msg
+        val safeMessage = sanitizeLogLine(msg)
+        val line = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date()) + " " + level + " " + safeMessage
         synchronized(AppLog::class.java) {
             if (fileLogExecutor == null) fileLogExecutor = Executors.newSingleThreadExecutor()
         }
@@ -120,14 +121,16 @@ object AppLog {
 
     @JvmStatic
     fun e(msg: String?) {
-        Log.e(TAG, "" + msg)
-        fileLog("E", msg.toString())
+        val safe = sanitizeLogLine(msg.orEmpty())
+        Log.e(TAG, safe)
+        fileLog("E", safe)
     }
 
     @JvmStatic
     fun i(msg: String?) {
-        fileLog("I", msg.toString())
-        if (BuildConfig.DEBUG) Log.i(TAG, "" + msg)
+        val safe = sanitizeLogLine(msg.orEmpty())
+        fileLog("I", safe)
+        if (BuildConfig.DEBUG) Log.i(TAG, safe)
     }
 
     @JvmStatic
@@ -138,15 +141,16 @@ object AppLog {
 
     @JvmStatic
     fun d(tag: String?, msg: String?) {
-        fileLog("D", msg.toString())
-        if (BuildConfig.DEBUG) Log.d(TAG, tag + ": " + msg)
+        val safe = sanitizeLogLine(msg.orEmpty())
+        fileLog("D", safe)
+        if (BuildConfig.DEBUG) Log.d(TAG, tag + ": " + safe)
     }
 
     @JvmStatic
     fun e(tag: String?, msg: String?, tr: Throwable?) {
-        Log.e(TAG, tag + ": " + msg, tr)
-        fileLog("E", msg.toString())
-        if (tr != null) tr.printStackTrace()
+        val safe = sanitizeLogLine(msg.orEmpty())
+        Log.e(TAG, tag + ": " + safe + if (tr == null) "" else " (" + tr.javaClass.simpleName + ")")
+        fileLog("E", tag + ": " + safe)
     }
 
     @JvmStatic
@@ -166,7 +170,7 @@ object AppLog {
     }
 
     private fun longLog(priority: Int, prefix: String?, msg: String?) {
-        val text = msg ?: "null"
+        val text = sanitizeLogLine(msg ?: "null")
         val title = prefix ?: ""
         fileLog(if (priority == Log.ERROR) "E" else "I", title + text)
         val length = text.length
