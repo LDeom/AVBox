@@ -32,6 +32,17 @@ object WindowSize {
 
     const val GRID_COLUMN_SPACING_DP = 12
 
+    const val GRID_TWO_COLUMN_MIN_WIDTH_DP = 252
+
+    const val GRID_THREE_COLUMN_MIN_WIDTH_DP = 328
+
+    @JvmStatic
+    fun gridMinColumns(availableWidthDp: Int): Int = when {
+        availableWidthDp >= GRID_THREE_COLUMN_MIN_WIDTH_DP -> 3
+        availableWidthDp >= GRID_TWO_COLUMN_MIN_WIDTH_DP -> 2
+        else -> 1
+    }
+
     @JvmStatic
     fun gridColumns(availableWidthDp: Int, minColumns: Int): Int {
         if (availableWidthDp <= 0) return minColumns
