@@ -2,11 +2,11 @@ package com.github.avbox.osc.util.security
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Base64
-import com.github.avbox.osc.util.KV
-import com.github.avbox.osc.util.KVKeys
+import android.util.AtomicFile
+import com.github.avbox.osc.util.AppContextHolder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
 import javax.crypto.KeyGenerator
@@ -44,20 +44,16 @@ object CloudCredentialVault {
 
     @JvmStatic
     fun clear() = synchronized(lock) {
-        KV.delete(KVKeys.CLOUD_DRIVE_CREDENTIALS)
+        credentialFile().delete()
         val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
         keyStore.load(null)
         if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS)
     }
 
     private fun readEntries(): LinkedHashMap<String, String> {
-        val stored = KV.get(KVKeys.CLOUD_DRIVE_CREDENTIALS, "")
-        if (stored.isEmpty()) return LinkedHashMap()
-        val encrypted = try {
-            Base64.decode(stored, Base64.NO_WRAP)
-        } catch (error: IllegalArgumentException) {
-            throw IllegalStateException("Cloud credential data is invalid", error)
-        }
+        val file = credentialFile()
+        if (!file.baseFile.exists()) return LinkedHashMap()
+        val encrypted = file.openRead().use { it.readBytes() }
         val plain = AesGcmEnvelope.decrypt(encrypted, existingKey())
         val decoded = gson.fromJson<LinkedHashMap<String, String>>(String(plain, StandardCharsets.UTF_8), entriesType)
             ?: throw IllegalStateException("Cloud credential data is empty")
@@ -65,14 +61,27 @@ object CloudCredentialVault {
     }
 
     private fun persist(entries: LinkedHashMap<String, String>) {
+        val file = credentialFile()
         if (entries.isEmpty()) {
-            KV.delete(KVKeys.CLOUD_DRIVE_CREDENTIALS)
+            file.delete()
             return
         }
         val plain = gson.toJson(entries).toByteArray(StandardCharsets.UTF_8)
         val encrypted = AesGcmEnvelope.encrypt(plain, getOrCreateKey())
-        val encoded = Base64.encodeToString(encrypted, Base64.NO_WRAP)
-        check(KV.put(KVKeys.CLOUD_DRIVE_CREDENTIALS, encoded)) { "Unable to persist cloud credentials" }
+        val output = file.startWrite()
+        try {
+            output.write(encrypted)
+            output.fd.sync()
+            file.finishWrite(output)
+        } catch (error: Throwable) {
+            file.failWrite(output)
+            throw error
+        }
+    }
+
+    private fun credentialFile(): AtomicFile {
+        val context = requireNotNull(AppContextHolder.context()) { "Application context is unavailable" }
+        return AtomicFile(File(context.filesDir, "cloud_credentials.enc"))
     }
 
     private fun existingKey(): SecretKey {
