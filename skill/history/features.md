@@ -316,3 +316,8 @@
 - 修复 JarLoader.invokeInit() 吞掉 Init.init(Context) 异常后仍将 DexClassLoader 注册为成功的问题。
 - 仅当 Jar 不包含可选 Init 类时兼容跳过；若 Init 类存在但方法缺失、签名不兼容、依赖缺失或执行失败，则阻止该 Jar 注册。
 - 增加成功/可选缺失诊断日志；尚未运行 Gradle、DexClassLoader 集成测试或真机验证。
+
+
+## 2026-11-22 第3阶段 已配置 JS API Jar 加载失败阻断
+- 当 TVBox/AVBox 配置显式提供 JS API Jar，但下载、校验或 Function/Method 类加载失败时，JsLoader 不再以 null dex 继续创建 Spider，而是返回 SpiderNull 并记录诊断；未配置 Jar 的旧源兼容行为不变。
+- 尚未运行 Gradle、真实 Jar 集成或真机测试。
