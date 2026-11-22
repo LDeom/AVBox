@@ -442,6 +442,11 @@
 - **文案**:新增 `following_week` / `following_section_week` / `following_section_day` / `following_day_empty` / `following_view_week` / `following_no_schedule` / `following_delete_selected_message` / `toast_follow_saved`(简体 / 英语 / 繁體台灣 三份齐全;HK 差异层只覆盖 `following_empty`),复用既有 `follow_summary` / `follow_days_separator` / `weekday_*` / `history_episode_progress` / `history_watched_percent` / `source_unavailable` / `common_edit` / `common_done` / `common_delete_selected`。
 - **接入新功能时**:沿用 tab 页的三条既有约定 —— ①flow 一律 `collectAsStateWithLifecycle`(见 §6.20);②`contentPadding: PaddingValues` 由 `MainScreen` 统一算,页内不出现 `if (isRail)`;③新增 UI 文案走四语 `strings.xml`(i18n 硬闸门见 `avbox-i18n-spec.md`)。
 
+### 4.13 平板设置页面内容宽度（2026-11-22）
+
+- 设置主页、偏好设置、播放设置、主题设置与配置管理页在宽屏窗口中，主要纵向内容列统一最大宽度 **840dp** 并水平居中；小于该宽度时按可用宽度铺满，保留原有 16dp 页面边距。
+- 此限制只作用于设置/配置内容列，不限制顶栏、弹层、播放器、直播画面或详情页全屏 Hero。宽屏下避免设置项横向拉伸过长，手机端布局不变。
+
 ## 5. 视觉与组件约定
 
 - 卡片触摸反馈:ripple + 按压缩放(0.96~0.98)。**涟漪透明度全局 = M3 默认 2 倍**(2026-09-13,沿用参考实现的 `Theme.kt`):`AVBoxTheme` 用 `LocalRippleConfiguration` 下发 `RippleConfiguration(rippleAlpha = …)`,pressed 0.20 / hovered 0.16 / focused 0.20 / dragged 0.32 —— M3 默认 pressed 仅 10%,首页海报卡是深色图片 + 黑色渐变 scrim,几乎看不出"点到了"。走全局配置而不是逐卡传 `indication`:`clickable`/`combinedClickable`/`Surface(onClick)`/`ToggleButton` 一次覆盖。⚠️ `RippleConfiguration` 已 deprecated 但官方无替代入口,必须 `@Suppress("DEPRECATION")`。圆角卡必须 **先 `.clip(shape)` 再挂 `clickable`**,否则涟漪与长按激活区会溢出圆角变成矩形(`PressableCard` 已是此顺序)。参考项目的按压缩放目标是 **0.94**(经 `Modifier.scale` + `spring(dampingRatio=0.6f, stiffness=800f)`),本项目沿用自定的 0.96~0.98 不改。
