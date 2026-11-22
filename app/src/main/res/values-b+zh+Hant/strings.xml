@@ -635,4 +635,5 @@
     <string name="osd_tunnel">隧道</string>
     <string name="osd_preload">預載</string>
     <string name="osd_cache">快取</string>
+    <string name="settings_group_runtime_log">執行記錄</string><string name="settings_runtime_log_enabled">啟用執行記錄</string><string name="settings_runtime_log_enabled_subtitle">開啟後記錄應用診斷資訊，關閉後停止寫入記錄檔</string><string name="settings_runtime_log_export">匯出執行記錄</string><string name="settings_runtime_log_export_subtitle">儲存記錄檔，方便排查播放或設定問題</string><string name="toast_runtime_log_exported">執行記錄已匯出</string><string name="toast_runtime_log_export_failed">匯出執行記錄失敗</string>
 </resources>
