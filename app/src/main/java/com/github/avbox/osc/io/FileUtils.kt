@@ -36,6 +36,7 @@ import java.util.regex.Pattern
 object FileUtils {
 
     @JvmStatic
+    @Synchronized
     fun writeSimple(data: ByteArray, dst: File): Boolean {
         val parent = dst.parentFile
         if (parent != null && !parent.exists() && !parent.mkdirs()) return false
@@ -597,7 +598,7 @@ object FileUtils {
     @JvmStatic
     fun setCacheByte(name: String, data: ByteArray) {
         try {
-            writeSimple(byteMerger("//DRPY".toByteArray(Charset.defaultCharset()), Base64.encode(data, Base64.URL_SAFE)), open("B_" + name))
+            writeSimple(byteMerger("//DRPY".toByteArray(Charsets.US_ASCII), Base64.encode(data, Base64.URL_SAFE)), open("B_" + name))
         } catch (e: Exception) {
             AppLog.e("FileUtils", e)
         }
