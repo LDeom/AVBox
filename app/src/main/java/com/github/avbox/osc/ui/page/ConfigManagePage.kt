@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.WindowSize
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.ui.ConfigManageActivity
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
@@ -227,7 +229,10 @@ fun ConfigManageScreen(onNavigateBack: () -> Unit) {
     ) { topPad, _ ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.TopCenter)
+                .widthIn(max = WindowSize.CONTENT_MAX_WIDTH_DP.dp)
+                .fillMaxWidth()
+                .fillMaxHeight()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = { focusManager.clearFocus() })
                 },
