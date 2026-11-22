@@ -132,5 +132,4 @@ object KVKeys {
     const val TMDB_IMAGE_BASE = "tmdb_image_base"
     const val TMDB_API_BASE_DEFAULT = "https://api.tmdb.org"
     const val TMDB_IMAGE_BASE_DEFAULT = "https://images.tmdb.org/t/p"
-    const val CLOUD_DRIVE_CREDENTIALS = "cloud_drive_credentials"
 }
