@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
 import com.github.avbox.osc.ui.WindowSize
+import com.github.avbox.osc.ui.CloudDriveSettingsActivity
 import com.github.avbox.osc.player.state.PlaybackSettingsState
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
 import com.github.avbox.osc.ui.components.AppTopBarScaffold
@@ -119,6 +120,19 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
                     CollectColumnsRow(
                         columns = uiConfig.collectColumns,
                         onSelect = { columns -> UiSettingsState.collectColumns = columns },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            SettingsGroup(title = stringResource(R.string.settings_group_cloud_drive)) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_cloud_drive),
+                        subtitle = stringResource(R.string.settings_cloud_drive_subtitle),
+                        leadingIconRes = R.drawable.ic_settings_preference,
+                        onClick = { CloudDriveSettingsActivity.start(context) },
                     )
                 }
             }
