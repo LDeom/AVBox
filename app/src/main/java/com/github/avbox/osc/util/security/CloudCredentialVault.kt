@@ -7,6 +7,7 @@ import com.github.avbox.osc.util.AppContextHolder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
+import java.io.FileNotFoundException
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
 import javax.crypto.KeyGenerator
@@ -52,8 +53,11 @@ object CloudCredentialVault {
 
     private fun readEntries(): LinkedHashMap<String, String> {
         val file = credentialFile()
-        if (!file.baseFile.exists()) return LinkedHashMap()
-        val encrypted = file.openRead().use { it.readBytes() }
+        val encrypted = try {
+            file.openRead().use { it.readBytes() }
+        } catch (error: FileNotFoundException) {
+            return LinkedHashMap()
+        }
         val plain = AesGcmEnvelope.decrypt(encrypted, existingKey())
         val decoded = gson.fromJson<LinkedHashMap<String, String>>(String(plain, StandardCharsets.UTF_8), entriesType)
             ?: throw IllegalStateException("Cloud credential data is empty")
