@@ -687,6 +687,11 @@ class Global {
         }
         sessions.clear()
         httpGate.clear()
+        try {
+            Connect.cancelByTag(httpTag)
+        } catch (th: Throwable) {
+            AppLog.d("Global", "cancel HTTP requests during destroy failed")
+        }
         for (stream in streams) stream.close()
         streams.clear()
         for (entry in proxyStreams.values) entry.stream.close()
