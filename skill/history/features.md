@@ -125,3 +125,10 @@
 - `FileUtils.readSimple` 改为完整流读取，避免依赖 `InputStream.available()` 作为文件长度并忽略短读结果。
 - `FileUtilsAtomicWriteTest` 增加缓存覆盖写入与完整读取用例。
 - 尚未执行 Gradle/单元测试；后续继续审查 Jar/JS 下载缓存与路径加载边界。
+
+
+## 2026-11-22 第3阶段 Jar缓存下载与内置依赖复制加固
+- `JarLoader.download` 下载远程 Jar 时先写入同目录临时文件，检查 HTTP 成功状态、响应体和非空文件，并在完成后通过备份替换缓存。
+- `JarLoader.copyAsset` 复制内置 Jar 时采用相同临时文件与备份替换策略，避免复制中断先删除原缓存。
+- 下载失败清理临时文件并返回不可加载的临时路径，避免误把旧的过期/校验不符缓存当成本次下载结果加载。
+- 尚未运行 Gradle 或真机测试；需重点验证 HTTP 错误、取消下载、文件替换失败和 assets Jar 加载。
