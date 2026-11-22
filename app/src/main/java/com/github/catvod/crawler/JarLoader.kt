@@ -406,7 +406,8 @@ class JarLoader {
     private fun copyAsset(url: String, file: File): File {
         val temp = File(file.absolutePath + ".tmp")
         try {
-            val path = url.replace("assets://", "").replace("assets/", "")
+            val path = assetJarPath(url)
+                    ?: throw IllegalArgumentException("Invalid asset Jar path")
             val input = requireNotNull(AppContextHolder.context()) { "app context not ready" }.assets.open(path)
             input.use { source ->
                 FileOutputStream(temp).use { output ->
@@ -497,6 +498,16 @@ class JarLoader {
             if (index > 0) return "http://" + text.substring(0, index) + "/file/" + text.substring(index + 1)
         }
         return url
+    }
+
+    internal fun assetJarPath(url: String): String? {
+        val path = when {
+            url.startsWith("assets://") -> url.removePrefix("assets://")
+            url.startsWith("assets/") -> url.removePrefix("assets/")
+            else -> return null
+        }
+        if (path.isEmpty() || path.split('/').any { it == ".." }) return null
+        return path
     }
 
     private fun injectProxyPort(loader: DexClassLoader?) {
