@@ -384,7 +384,10 @@ class Global {
             val req = Req.objectFrom(JSUtils.toJsonObject(options).toString())
             requireSession(req)
             synchronized(callbackLock) {
-                if (destroyed.get()) return null
+                if (destroyed.get()) {
+                    reply.release()
+                    return null
+                }
                 httpGate.dispatch(HttpGate.Request(
                     start = Runnable {
                         try {
