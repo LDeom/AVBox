@@ -446,18 +446,6 @@ class JarLoader {
         return dir
     }
 
-    @Throws(Exception::class)
-    private fun create(file: File): File {
-        val parent = file.parentFile
-        if (parent != null && !parent.exists()) parent.mkdirs()
-        if (file.exists()) file.delete()
-        file.createNewFile()
-        file.setReadable(true)
-        file.setWritable(true)
-        file.setExecutable(true)
-        return file
-    }
-
     private fun exists(file: File?): Boolean {
         return file != null && file.exists() && file.length() > 0
     }
