@@ -474,3 +474,5 @@
 - 扩展 SourceListRequestGateTest，覆盖排序请求代际。
 - 提交：`c40a7837aa9fb8355a1f0c4a8237b1cc442fb422`、`4d7e211b58a31ed5db02972a65e29f8672740e43`、`8e4cabed92158fb4e39514bbda46347dca5d673d`。
 - 尚未运行 Gradle/单测或真机验证。
+
+- 回读时补齐 SourceViewModel 独立结果通道所需的 Flow collect 导入。提交：`b93638eb0338d424d8f63a2be1127b6132401168`。
