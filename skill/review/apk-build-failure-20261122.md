@@ -57,3 +57,9 @@ Gradle 日志报告 Android 资源合并时出现重复资源项：
 - 之前的新 SHA 构建已经通过 Android 资源合并并进入 Kotlin 编译阶段，暴露上述编译错误。
 - 第二批修复已推送，push 触发的新构建正在执行/等待确认。
 - APK 尚未成功生成；签名验证与 artifact 上传仍未执行。
+
+
+### ConfigRepository 末尾括号二次校正
+- 最新构建 `45029397617` 已通过资源合并，Kotlin 编译报告 `ConfigRepository.kt:88` 多余的顶层右括号。
+- 对照实际提交 diff 与源码重新核算后，将文件恢复为 9 对 9 的花括号；保留函数 lambda 与 object 各自唯一闭合。
+- 修复提交：`0144f797eed92b77d739869fe69aeff88e716880`。等待下一次新 SHA 构建验证。
