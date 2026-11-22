@@ -153,6 +153,23 @@ class LocalConfigPathTest {
     }
 
     @Test
+    fun relativeRefsAllowNamesContainingTwoDots() {
+        assertEquals(
+            listOf("plugin..backup.jar", "sub/a..b.js"),
+            relativeRefs("""{"./plugin..backup.jar","./sub/a..b.js"}"""),
+        )
+    }
+
+    @Test
+    fun relativeRefsRejectTraversalSegmentsAndUnsafeSeparators() {
+        assertFalse(isSafeRelativeRef("../outside.jar"))
+        assertFalse(isSafeRelativeRef("sub/../outside.jar"))
+        assertFalse(isSafeRelativeRef("/absolute.jar"))
+        assertFalse(isSafeRelativeRef("sub\\\\outside.jar"))
+        assertTrue(isSafeRelativeRef("sub/plugin..backup.jar"))
+    }
+
+    @Test
     fun relativeRefsIgnoreNonRelativeValues() {
         assertTrue(relativeRefs("""{"http://a.com/./x"}""").isEmpty())
         assertTrue(relativeRefs("""{"clan://localhost/jar/1.jar"}""").isEmpty())
