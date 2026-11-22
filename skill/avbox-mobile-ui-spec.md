@@ -456,6 +456,13 @@
 - 居中对话框最大宽度仍为 560dp；水平外边距随窗口宽度缩小，最小宽度不超过扣除边距后的可用宽度，确保窄分屏窗口内不横向溢出。高度继续限制在窗口高度的 90%，内容可滚动。
 - 底部与侧边 Sheet 的既有最大宽度和形态不因本条改变。
 
+### 4.15 平板方向切换与分屏网格（2026-11-22）
+
+- 手机方向策略不变：`smallestScreenWidthDp < 600` 锁定传感器竖屏；平板/大屏（≥600dp）不锁方向。测试手机旋转时应验证策略仍保持竖屏锁定，不把手机横屏当作本产品支持的主界面形态。
+- `PartitionListActivity` 与主界面一样在 Activity 级处理 `orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize`，由 `BaseActivity.onConfigurationChanged()` 重新应用方向策略，避免平板旋转/折叠和窗口尺寸变化时重复执行入口加载。
+- 首页与栏目网格列数依据 Compose 当前容器可用宽度。可用网格宽度 `<252dp` 时最低 1 列，`252–327dp` 最低 2 列，`≥328dp` 最低 3 列；超过最低列数后仍按 130dp 目标卡宽及 12dp 间距增加列数。正常 360dp 手机仍保持三列；窄分屏/自由窗口自动降低列数，避免卡片被压窄。
+- 首页网格与栏目列表使用同一列数策略；窗口尺寸变化后由 `BoxWithConstraints` 重算，不以设备物理屏幕宽度代替当前窗口宽度。
+
 ## 5. 视觉与组件约定
 
 - 卡片触摸反馈:ripple + 按压缩放(0.96~0.98)。**涟漪透明度全局 = M3 默认 2 倍**(2026-09-13,沿用参考实现的 `Theme.kt`):`AVBoxTheme` 用 `LocalRippleConfiguration` 下发 `RippleConfiguration(rippleAlpha = …)`,pressed 0.20 / hovered 0.16 / focused 0.20 / dragged 0.32 —— M3 默认 pressed 仅 10%,首页海报卡是深色图片 + 黑色渐变 scrim,几乎看不出"点到了"。走全局配置而不是逐卡传 `indication`:`clickable`/`combinedClickable`/`Surface(onClick)`/`ToggleButton` 一次覆盖。⚠️ `RippleConfiguration` 已 deprecated 但官方无替代入口,必须 `@Suppress("DEPRECATION")`。圆角卡必须 **先 `.clip(shape)` 再挂 `clickable`**,否则涟漪与长按激活区会溢出圆角变成矩形(`PressableCard` 已是此顺序)。参考项目的按压缩放目标是 **0.94**(经 `Modifier.scale` + `spring(dampingRatio=0.6f, stiffness=800f)`),本项目沿用自定的 0.96~0.98 不改。
