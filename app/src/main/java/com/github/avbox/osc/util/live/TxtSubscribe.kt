@@ -35,22 +35,26 @@ object TxtSubscribe {
         val array = parseToJsonArray(str)
         if (array == null) return
         for (groupElement in array) {
+            if (!groupElement.isJsonObject) continue
             val groupObj = groupElement.asJsonObject
             val groupName = normalizeGroupName(DefaultConfig.safeJsonString(groupObj, "group", DEFAULT_GROUP_NAME))
             val channelMap = LinkedHashMap<String, ArrayList<String>>()
-            if (groupObj.has("channels")) {
-                for (channelElement in groupObj.getAsJsonArray("channels")) {
-                    val channelObj = channelElement.asJsonObject
-                    val channelName = DefaultConfig.safeJsonString(channelObj, "name", "Unnamed")
-                    val urls = ArrayList<String>()
-                    if (channelObj.has("urls")) {
-                        for (urlElement in channelObj.getAsJsonArray("urls")) {
-                            val url = urlElement.asString.trim { it <= ' ' }
-                            if (isUrl(url) && !urls.contains(url)) urls.add(url)
-                        }
+            val channelElements = groupObj.get("channels")
+            if (channelElements == null || !channelElements.isJsonArray) continue
+            for (channelElement in channelElements.asJsonArray) {
+                if (!channelElement.isJsonObject) continue
+                val channelObj = channelElement.asJsonObject
+                val channelName = DefaultConfig.safeJsonString(channelObj, "name", "Unnamed")
+                val urls = ArrayList<String>()
+                val urlElements = channelObj.get("urls")
+                if (urlElements != null && urlElements.isJsonArray) {
+                    for (urlElement in urlElements.asJsonArray) {
+                        if (!urlElement.isJsonPrimitive || !urlElement.asJsonPrimitive.isString) continue
+                        val url = urlElement.asString.trim { it <= ' ' }
+                        if (isUrl(url) && !urls.contains(url)) urls.add(url)
                     }
-                    if (!urls.isEmpty()) channelMap[channelName] = urls
                 }
+                if (!urls.isEmpty()) channelMap[channelName] = urls
             }
             if (!channelMap.isEmpty()) linkedHashMap[groupName] = channelMap
         }
@@ -74,6 +78,7 @@ object TxtSubscribe {
     private fun normalizeJsonArray(groups: JsonArray): JsonArray {
         val result = JsonArray()
         for (groupElement in groups) {
+            if (!groupElement.isJsonObject) continue
             val groupObj = groupElement.asJsonObject
             var groupName = DefaultConfig.safeJsonString(groupObj, "group", "")
             if (groupName.isEmpty()) groupName = DefaultConfig.safeJsonString(groupObj, "name", DEFAULT_GROUP_NAME)
@@ -86,6 +91,7 @@ object TxtSubscribe {
             }
             if (channels != null) {
                 for (channelElement in channels) {
+                    if (!channelElement.isJsonObject) continue
                     val channelObj = channelElement.asJsonObject
                     val outChannel = JsonObject()
                     copyIfExists(channelObj, outChannel, "name")
