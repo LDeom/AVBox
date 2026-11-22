@@ -243,3 +243,7 @@
 - JS Spider 初始化超过等待时限时不再只取消任务后返回半初始化实例，而是抛出初始化失败，阻止 JsLoader 缓存无效 Spider。
 - 初始化失败时停止 Global 接收回调，并将 Global 与 QuickJSContext 清理排入同一单线程 Executor，避免从构造调用线程并发销毁仍在执行的 Context。
 - 尚未运行 Gradle、QuickJS native 压力测试或真机验证。
+
+
+## 2026-11-22 第3阶段 JS 初始化中断传播补充
+- 初始化等待被中断时取消 Future、恢复线程中断标记并向上传播，触发同线程队列清理，避免吞掉调用方中断状态。
