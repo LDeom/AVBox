@@ -46,6 +46,7 @@ import kotlinx.coroutines.sync.withPermit
 import com.github.avbox.osc.data.AppGraph
 import com.github.avbox.osc.ui.components.toVodInfo
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class HomeViewModel : ViewModel(), TmdbPosterCache {
 
@@ -123,7 +124,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     private var loadGeneration = 0
     private var loadingSourceKey: String? = null
     private var configReloading = false
-    private var watchdogJob: Job? = null
+    private var sortWatchdogJob: Job? = null
 
     private val _activeSortId = MutableStateFlow<String?>(null)
     val activeSortId: StateFlow<String?> = _activeSortId.asStateFlow()
@@ -204,7 +205,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     }
 
     override fun onCleared() {
-        watchdogJob?.cancel()
+        sortWatchdogJob?.cancel()
         sortViewModel.cancelSort()
         recViewModel.cancelSort()
         val staleLoaders = ArrayList(loaders.values)
@@ -258,26 +259,21 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         loaders.clear()
         staleLoaders.forEach { it.release() }
         loadGeneration++
-        armWatchdog()
+        armSortWatchdog(loadGeneration)
         sortViewModel.getSort(loadingSourceKey, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
     }
 
-    private fun onHomeLoadTimeout() {
-        val recLoading = _rec.value.state == PartitionState.Loading
-        val partitionLoading = _partitions.value.any { it.state == PartitionState.Loading }
-        if (!recLoading && !partitionLoading) return
-        if (recLoading) {
-            _rec.value = Rec(PartitionState.Error, emptyList())
+    private fun onHomeLoadTimeout(generation: Int) {
+        if (generation != loadGeneration || sortsLoaded.value) return
+        sortViewModel.cancelSort()
+        recViewModel.cancelSort()
+        _sortLoadFailed.value = true
+        _rec.value = Rec(PartitionState.Error, emptyList())
+        _partitions.value = _partitions.value.map { p ->
+            if (p.state == PartitionState.Loading) p.copy(state = PartitionState.Error) else p
         }
-        if (partitionLoading) {
-            _partitions.value = _partitions.value.map { p ->
-                if (p.state == PartitionState.Loading) p.copy(state = PartitionState.Error) else p
-            }
-        }
-        _pageErrorEvents.tryEmit(
-            if (recLoading) str(R.string.home_load_failed)
-            else str(R.string.home_load_partial_timeout)
-        )
+        sortsLoaded.value = true
+        _pageErrorEvents.tryEmit(str(R.string.home_load_failed))
         _pageLoading.value = false
     }
 
@@ -298,7 +294,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         _rec.value = Rec(PartitionState.Loading, emptyList())
         sortsLoaded.value = false
         _pageLoading.value = true
-        armWatchdog()
+        armSortWatchdog(loadGeneration)
         sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
     }
 
@@ -334,6 +330,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
     private fun onSortResult(absXml: AbsSortXml?) {
         val key = loadingSourceKey
         if (key == null) {
+            sortWatchdogJob?.cancel()
+            sortWatchdogJob = null
             AppLog.i("echo--sort-null-key: srcName=${_currentSource.value?.name} srcCount=${_sources.value.size} absXml=${absXml != null} reloading=$configReloading")
             if (configReloading) return
             _rec.value = Rec(PartitionState.Empty, emptyList())
@@ -365,6 +363,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             return
         }
 
+        sortWatchdogJob?.cancel()
+        sortWatchdogJob = null
         AppLog.i("echo--sort-result: src=$key hasClasses=${absXml?.classes?.sortList != null} sortSize=${absXml?.classes?.sortList?.size}")
         val sortList = absXml?.classes?.sortList
         val adjusted = if (sortList != null) {
@@ -436,11 +436,11 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     private class LoaderResult(val stale: Boolean, val absXml: AbsXml?)
 
-    private fun armWatchdog() {
-        watchdogJob?.cancel()
-        watchdogJob = scope.launch {
+    private fun armSortWatchdog(generation: Int) {
+        sortWatchdogJob?.cancel()
+        sortWatchdogJob = scope.launch {
             delay(20_000)
-            onHomeLoadTimeout()
+            onHomeLoadTimeout(generation)
         }
     }
 
@@ -451,14 +451,39 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         scope.launch {
             loadSemaphore.withPermit {
                 if (generation != loadGeneration || loader.released || loader.sourceKey != loadingSourceKey) return@withPermit
-                armWatchdog()
-                val result = suspendCancellableCoroutine<LoaderResult> { cont ->
-                    loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
+                val sortId = current.sort.id.orEmpty()
+                val result = withTimeoutOrNull(20_000) {
+                    suspendCancellableCoroutine<LoaderResult> { cont ->
+                        loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
+                    }
                 }
-                if (!result.stale) {
-                    applyPartitionResult(current.sort.id.orEmpty(), page, result.absXml)
+                if (result == null) {
+                    loader.release()
+                    if (loaders[sortId] === loader) loaders.remove(sortId)
+                    applyPartitionTimeout(sortId, page, generation, sourceKey)
+                } else if (!result.stale) {
+                    applyPartitionResult(sortId, page, result.absXml)
                 }
             }
+        }
+    }
+
+    private fun applyPartitionTimeout(sortId: String, page: Int, generation: Int, sourceKey: String?) {
+        if (generation != loadGeneration || sourceKey != loadingSourceKey) return
+        if (page == Partition.FIRST_PAGE) {
+            _partitions.value = _partitions.value.map { partition ->
+                if (partition.sort.id == sortId && partition.state == PartitionState.Loading) {
+                    partition.copy(state = PartitionState.Error)
+                } else {
+                    partition
+                }
+            }
+        }
+        _pageErrorEvents.tryEmit(str(R.string.home_load_partial_timeout))
+        if (_partitions.value.none { it.state == PartitionState.Loading } &&
+            _rec.value.state != PartitionState.Loading
+        ) {
+            _pageLoading.value = false
         }
     }
 
