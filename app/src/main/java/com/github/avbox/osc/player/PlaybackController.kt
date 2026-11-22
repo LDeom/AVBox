@@ -1230,7 +1230,7 @@ class PlaybackController {
         music.resetAudioSession()
         timeouts.cancelPendingCompletionDrop()
         cancelInFlight()
-        ApiConfig.get().setCurrentPlaySourceKey("")
+        if (!sourceKey.startsWith("cloud:")) ApiConfig.get().setCurrentPlaySourceKey("")
         music.stopMusicSession()
     }
 
@@ -1243,6 +1243,7 @@ class PlaybackController {
     }
 
     fun onHostDestroy() {
+        starter.cancelPendingCloudResolve()
         st = st.clearSessionFlags()
         music.resetAudioSession()
         timeouts.cancelPendingCompletionDrop()
