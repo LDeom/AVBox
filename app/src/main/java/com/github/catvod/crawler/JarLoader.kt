@@ -51,8 +51,15 @@ class JarLoader {
     private val lifecycleLock: Any = Any()
 
     fun load(cache: String): Boolean {
-        val success = load(MAIN_KEY, File(cache))
-        if (success) recent = MAIN_KEY
+        val generation = clearGeneration.get()
+        val success = load(MAIN_KEY, File(cache), generation)
+        if (success) {
+            synchronized(lifecycleLock) {
+                if (generation == clearGeneration.get() && loaders.containsKey(MAIN_KEY)) {
+                    recent = MAIN_KEY
+                }
+            }
+        }
         return success
     }
 
@@ -261,7 +268,7 @@ class JarLoader {
             val cachedAgain = spiders[spKey]
             if (cachedAgain != null) return cachedAgain
             try {
-                if (MAIN_KEY != jaKey) parseJar(jaKey, spiderJar)
+                if (MAIN_KEY != jaKey) parseJar(jaKey, spiderJar, generation)
                 val loader = loaders[jaKey]
                 if (loader == null) return SpiderNull()
                 val spider = loader.loadClass("com.github.catvod.spider." + className(spiderApi)).newInstance() as Spider
