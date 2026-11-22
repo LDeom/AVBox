@@ -908,3 +908,9 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 - DetailActivity 的方向/屏幕尺寸配置变化处理覆盖 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize、density、uiMode、colorMode，避免平板窗口/显示配置变化时不必要地重建详情宿主。
 - 该声明用于保留播放器宿主和播放会话；Activity 仍需自行更新布局、窗口与方向状态，不能将 configChanges 视为自动适配。
 - 未进行真机验证，厂商系统旋转与 Surface 生命周期仍需设备日志确认。
+
+
+## 4.20 手势调节诊断增强
+- 在方向/位移达到手势判定阈值后记录选定模式（进度、亮度、音量或 NONE）及方向、左右半区和相关启用状态；触摸会话结束时记录是否移动、取消与长按状态。
+- 日志不记录敏感信息，便于用户启用运行日志复现左右滑动不生效的问题并导出。
+- 未进行设备测试；此轮增加诊断，不宣称手势已在设备上修复。

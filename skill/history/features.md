@@ -732,3 +732,8 @@
 - DetailActivity Manifest 配置变化范围扩展至 orientation、screenSize、keyboardHidden、screenLayout、smallestScreenSize、density、uiMode、colorMode，降低配置变化引发 Activity 重建的风险。
 - 方向状态继续由 DetailViewModel 全屏状态与 DetailActivity 的视频尺寸回调统一驱动；不增加额外方向锁或重复 hostResume。
 - 本次为源码调整和静态审查；跳过真机验证及 APK 构建。
+
+
+## 2026-11-22 第四阶段：播放器手势判定日志
+- VideoGestureHandler 在确定手势模式时输出模式、方向位移、左右分区及开关/预览条件；会话结束记录取消、移动与长按状态，方便区分手势层未接触、阈值未达到、条件禁用和动作执行阶段。
+- 尚未真机验证；日志辅助诊断，不代表已确认亮度/音量系统调节链路有效。
