@@ -7,7 +7,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -16,7 +15,6 @@ import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.VodInfo
 import com.github.avbox.osc.player.PageHost
 import com.github.avbox.osc.player.PlaybackSession
-import com.github.avbox.osc.player.PlaybackService
 import com.github.avbox.osc.ui.base.BaseActivity
 import com.github.avbox.osc.ui.components.SheetHostScaffold
 import com.github.avbox.osc.ui.player.PlayContainer
@@ -88,7 +86,7 @@ class CloudDrivePlaybackActivity : BaseActivity(), PageHost {
                     container.post {
                         if (isPageAlive()) {
                             container.hostResume()
-                            session?.let(container::setData)
+                            session?.let { container.setData(it) }
                         }
                     }
                 }
