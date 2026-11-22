@@ -695,7 +695,7 @@ private fun AddSubscribeDialog(
             val dismissThen = LocalSheetDismissThen.current
             TextButton(
                 onClick = { dismissThen { onSave(name.trim(), url.trim()) } },
-                enabled = url.isNotBlank(),
+                enabled = normalizedSubscribe(name, url) != null,
             ) { Text(stringResource(R.string.common_save)) }
         },
     )
