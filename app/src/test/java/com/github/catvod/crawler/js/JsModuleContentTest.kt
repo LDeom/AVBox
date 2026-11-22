@@ -3,6 +3,7 @@ package com.github.catvod.crawler.js
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class JsModuleContentTest {
 
@@ -24,6 +25,7 @@ class JsModuleContentTest {
     @Test
     fun rejectsJsonNotFoundPayloads() {
         assertTrue(JsModuleContent.isInvalid("""{"code":404,"message":"not found"}"""))
+        assertTrue(JsModuleContent.isInvalid("""{ "code" : 404, "message" : "not found" }"""))
     }
 
     @Test
@@ -32,6 +34,18 @@ class JsModuleContentTest {
     }
 
     @Test
+    @Test
+    fun errorDetectionDoesNotDependOnDeviceLocale() {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale("tr", "TR"))
+            assertTrue(JsModuleContent.isInvalid("NOT FOUND"))
+            assertTrue(JsModuleContent.isInvalid("""{ "code" : 404 }"""))
+        } finally {
+            Locale.setDefault(previous)
+        }
+    }
+
     fun acceptsValidJavaScriptAndJsonText() {
         assertFalse(JsModuleContent.isInvalid("export default { home: () => [] }"))
         assertFalse(JsModuleContent.isInvalid("""{"code":200,"data":[]}"""))
