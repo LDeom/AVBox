@@ -50,6 +50,7 @@ class CloudCookieInjectorTest {
         assertEquals(true, CloudCookieInjector.matchesAnyProviderHost("https://drive.quark.cn/api"))
         assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("http://drive.quark.cn/api"))
         assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("https://example.com/api"))
+        assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("https://mail.quark.cn/api"))
     }
 
 }
