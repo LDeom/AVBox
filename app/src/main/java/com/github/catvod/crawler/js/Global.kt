@@ -392,7 +392,7 @@ class Global {
                 httpGate.dispatch(HttpGate.Request(
                     start = Runnable {
                         try {
-                            Connect.to(url, req, httpTag).enqueue(getCallback(reply, req, ctx))
+                            Connect.to(url, req, httpTag, siteKey).enqueue(getCallback(reply, req, ctx))
                         } catch (th: Throwable) {
                             httpGate.finish()
                             deliver(ctx, reply, req, null, th.message.orEmpty())
@@ -417,7 +417,7 @@ class Global {
         return try {
             val req = Req.objectFrom(JSUtils.toJsonObject(options).toString())
             requireSession(req)
-            val call = Connect.to(url, req, httpTag)
+            val call = Connect.to(url, req, httpTag, siteKey)
             val response = call.execute()
             val stream = OpenStream(call, response, req.getSessionId())
             opened = stream
@@ -470,7 +470,7 @@ class Global {
         }
         try {
             requireSession(req)
-            val call = Connect.to(url, req, httpTag)
+            val call = Connect.to(url, req, httpTag, siteKey)
             synchronized(callbackLock) {
                 if (destroyed.get()) {
                     settleStream(reply, null, "spider destroyed")
