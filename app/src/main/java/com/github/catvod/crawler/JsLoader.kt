@@ -120,6 +120,9 @@ class JsLoader {
                     FileOutputStream(temp).use { outputStream ->
                         val buffer = ByteArray(8192)
                         while (true) {
+                            if (Thread.currentThread().isInterrupted) {
+                                throw InterruptedException("JS API Jar download interrupted")
+                            }
                             val length = inputStream.read(buffer)
                             if (length < 0) break
                             outputStream.write(buffer, 0, length)
@@ -132,11 +135,12 @@ class JsLoader {
             if (!md5.isEmpty() && !MD5.fileMd5(temp).equals(md5, ignoreCase = true)) {
                 throw IllegalStateException("JS API Jar MD5 mismatch")
             }
-            if (cache.exists() && !cache.delete()) throw IllegalStateException("Cannot replace JS API Jar cache")
-            if (!temp.renameTo(cache)) {
-                FileUtils.copyFile(temp, cache)
-                temp.delete()
+            val downloaded = FileUtils.readSimple(temp)
+                    ?: throw IllegalStateException("Cannot read downloaded JS API Jar")
+            if (!FileUtils.writeSimple(downloaded, cache)) {
+                throw IllegalStateException("Cannot safely replace JS API Jar cache")
             }
+            temp.delete()
             loadClassLoader(cache.absolutePath, key)
             return classes[key]
         } catch (e: Throwable) {
