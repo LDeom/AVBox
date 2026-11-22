@@ -228,12 +228,15 @@ object GuangYaPanClient {
     }
 
     fun logout() {
-        CloudCredentialVault.remove(CREDENTIAL_ID)
-        CloudCredentialVault.remove("$CREDENTIAL_ID-pending")
+        CloudCredentialVault.clear()
     }
 
     private fun refreshCredential() = synchronized(refreshLock) {
         val current = loadCredential() ?: throw IOException("光鸭账号尚未登录")
+        val stillValid = runCatching {
+            accountRequest<UserData>("/v1/user/me", current, method = "GET").sub.isNotBlank()
+        }.getOrDefault(false)
+        if (stillValid) return@synchronized
         val refreshed = postAccount<TokenData>(
             "/v1/auth/token",
             mapOf(
@@ -332,13 +335,13 @@ object GuangYaPanClient {
 
     private fun loadPending(phone: String): PendingLogin? {
         val raw = CloudCredentialVault.read("$CREDENTIAL_ID-pending") ?: return null
-        val pending = gson.fromJson(raw, PendingLogin::class.java)
+        val pending = gson.fromJson(raw, PendingLogin::class.java) ?: throw IOException("短信登录会话无效，请重新发送验证码")
         return pending.takeIf { it.phoneNumber == phone }
     }
 
     private fun loadCredential(): GuangYaCredential? {
         val raw = CloudCredentialVault.read(CREDENTIAL_ID) ?: return null
-        return gson.fromJson(raw, GuangYaCredential::class.java)
+        return gson.fromJson(raw, GuangYaCredential::class.java) ?: throw IOException("保存的光鸭账号信息无效")
     }
 
     private fun normalizePhone(value: String): String {
