@@ -38,14 +38,16 @@ class ConfigLoader(private val owner: ApiConfig) {
     private val activeFetches = ConcurrentHashMap<String, okhttp3.Call>()
 
     suspend fun loadConfig(useCache: Boolean): String? = suspendCancellableCoroutine { cont ->
+        cont.invokeOnCancellation { cancelFetch(KIND_VOD) }
         configLoadExecutor.execute(Runnable {
+            if (!cont.isActive) return@Runnable
             runLoadConfig(useCache, object : ApiConfig.LoadConfigCallback {
                 override fun success() {
-                    cont.resume(null)
+                    if (cont.isActive) cont.resume(null)
                 }
 
                 override fun error(msg: String?) {
-                    cont.resume(msg)
+                    if (cont.isActive) cont.resume(msg)
                 }
             })
         })
@@ -272,14 +274,16 @@ class ConfigLoader(private val owner: ApiConfig) {
     }
 
     suspend fun loadLiveConfig(useCache: Boolean): String? = suspendCancellableCoroutine { cont ->
+        cont.invokeOnCancellation { cancelFetch(KIND_LIVE) }
         configLoadExecutor.execute(Runnable {
+            if (!cont.isActive) return@Runnable
             runLoadLiveConfig(useCache, object : ApiConfig.LoadConfigCallback {
                 override fun success() {
-                    cont.resume(null)
+                    if (cont.isActive) cont.resume(null)
                 }
 
                 override fun error(msg: String?) {
-                    cont.resume(msg)
+                    if (cont.isActive) cont.resume(msg)
                 }
             })
         })
