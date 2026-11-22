@@ -223,3 +223,10 @@
 - 保持有效 clan://host/ 空路径及原有本地/远程文件映射语义。
 - 新增 FileUtilsModulePathTest 覆盖正常路径、无效路径和空路径。
 - 尚未运行 Gradle 测试或真机验证。
+
+
+## 2026-11-22 第3阶段 file:// 模块 URI 规范化
+- 抽离 fileModulePath，精确移除 file:// scheme 和可选前导斜杠，不再对整个 URI 执行连续宽泛替换。
+- 兼容 file:///path 与 file://path，拒绝空路径及非 file:// 地址；本地代理地址拼接规则保持不变。
+- 扩展 FileUtilsModulePathTest 覆盖有效及无效 URI。
+- 尚未运行 Gradle 测试或真机验证。
