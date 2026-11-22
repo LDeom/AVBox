@@ -3,14 +3,17 @@ package com.github.avbox.osc.ui
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.view.InputDevice
+import android.view.MotionEvent
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceResponse
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,26 +25,30 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import android.view.ViewGroup
-import androidx.compose.ui.res.stringResource
 import com.github.avbox.osc.R
 import com.github.avbox.osc.net.CloudDriveProviderCatalog
 import com.github.avbox.osc.ui.base.BaseActivity
 import com.github.avbox.osc.ui.theme.AVBoxTheme
 import com.github.avbox.osc.ui.theme.enableTransparentEdgeToEdge
-import com.github.avbox.osc.util.AppLog\nimport com.github.avbox.osc.util.security.CloudCredentialVault
+import com.github.avbox.osc.util.AppLog
+import com.github.avbox.osc.util.security.CloudCredentialVault
 import org.json.JSONObject
+import kotlin.math.roundToInt
 
 class CloudDriveLoginActivity : BaseActivity() {
-    private var loginWebView: WebView? = null\n    private var lastLoggedProgressBucket = -1
+    private var loginWebView: WebView? = null
+    private var lastLoggedProgressBucket = -1
 
     companion object {
         private const val EXTRA_PROVIDER_ID = "cloud_provider_id"
@@ -52,7 +59,7 @@ class CloudDriveLoginActivity : BaseActivity() {
         }
     }
 
-    override fun hideSysBar() {}
+    override fun hideSysBar() = Unit
 
     override fun init() {
         val provider = CloudDriveProviderCatalog.find(intent.getStringExtra(EXTRA_PROVIDER_ID).orEmpty())
@@ -67,18 +74,87 @@ class CloudDriveLoginActivity : BaseActivity() {
                 var pageTitle by remember { mutableStateOf("") }
                 var message by remember { mutableStateOf("") }
                 var loading by remember { mutableStateOf(false) }
-                var progress by remember { mutableStateOf(0) }\n                LaunchedEffect(provider.id) { AppLog.i("echo-webview-login provider=${provider.id} login=started") }
-                Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(provider.title) + " · " + stringResource(R.string.cloud_drive_browser_login), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.cloud_drive_login_instruction), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (pageTitle.isNotBlank()) Text(pageTitle, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    if (loading) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { CircularProgressIndicator(progress = { progress / 100f }, modifier = Modifier.padding(2.dp), strokeWidth = 2.dp); Text(stringResource(R.string.cloud_drive_login_loading, progress)) }
+                var progress by remember { mutableStateOf(0) }
+                var zoomPercent by remember { mutableStateOf(100) }
 
-                    if (message.isNotBlank()) TextButton(onClick = { loginWebView?.reload() }) { Text(stringResource(R.string.common_retry)) }
+                LaunchedEffect(provider.id) {
+                    AppLog.i("echo-webview-login provider=${provider.id} login=started")
+                }
+
+                Column(
+                    Modifier.fillMaxSize().padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        stringResource(provider.title) + " · " + stringResource(R.string.cloud_drive_browser_login),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        stringResource(R.string.cloud_drive_login_instruction),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (pageTitle.isNotBlank()) {
+                        Text(pageTitle, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    }
+                    if (loading) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            CircularProgressIndicator(
+                                progress = { progress / 100f },
+                                modifier = Modifier.padding(2.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Text(stringResource(R.string.cloud_drive_login_loading, progress))
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        TextButton(onClick = {
+                            loginWebView?.let { view ->
+                                val currentScale = view.scale.takeIf { it > 0f } ?: 1f
+                                val target = (currentScale * 0.9f).coerceIn(0.5f, 3f)
+                                view.zoomBy(target / currentScale)
+                                zoomPercent = (target * 100).roundToInt()
+                            }
+                        }) { Text("−") }
+                        Text("${zoomPercent}% ", style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = {
+                            loginWebView?.let { view ->
+                                val currentScale = view.scale.takeIf { it > 0f } ?: 1f
+                                val target = (currentScale * 1.1f).coerceIn(0.5f, 3f)
+                                view.zoomBy(target / currentScale)
+                                zoomPercent = (target * 100).roundToInt()
+                            }
+                        }) { Text("+") }
+                        TextButton(onClick = {
+                            loginWebView?.let { view ->
+                                val scale = view.scale
+                                if (scale > 0f) view.zoomBy(1f / scale)
+                                zoomPercent = 100
+                            }
+                        }) { Text("重置") }
+                        TextButton(onClick = { loginWebView?.goBack() }, enabled = loginWebView?.canGoBack() == true) { Text("后退") }
+                        TextButton(onClick = { loginWebView?.goForward() }, enabled = loginWebView?.canGoForward() == true) { Text("前进") }
+                        TextButton(onClick = { loginWebView?.reload() }) { Text("刷新") }
+                    }
+
+                    if (message.isNotBlank()) {
+                        TextButton(onClick = { loginWebView?.reload() }) {
+                            Text(stringResource(R.string.common_retry))
+                        }
+                    }
+
                     AndroidView(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         factory = { viewContext ->
-                            WebView(viewContext).apply {
+                            DesktopPanWebView(viewContext).apply {
                                 settings.apply {
                                     javaScriptEnabled = true
                                     domStorageEnabled = true
@@ -94,48 +170,134 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     userAgentString = DESKTOP_UA
                                 }
-                                CookieManager.getInstance().setAcceptCookie(true)
-                                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                                isVerticalScrollBarEnabled = true
+                                isHorizontalScrollBarEnabled = true
+                                isFocusable = true
+                                isFocusableInTouchMode = true
+
+                                val cookieManager = CookieManager.getInstance()
+                                cookieManager.setAcceptCookie(true)
+                                cookieManager.setAcceptThirdPartyCookies(this, true)
+
                                 webChromeClient = object : WebChromeClient() {
-                                    override fun onReceivedTitle(view: WebView?, title: String?) { pageTitle = title.orEmpty() }
-                                    override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress; loading = newProgress < 100; val bucket = newProgress / 25; if (bucket != lastLoggedProgressBucket) { lastLoggedProgressBucket = bucket; AppLog.i("echo-webview-login provider=${provider.id} progress=${bucket * 25}%") } }
+                                    override fun onReceivedTitle(view: WebView?, title: String?) {
+                                        pageTitle = title.orEmpty()
+                                    }
+
+                                    override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                        progress = newProgress
+                                        loading = newProgress < 100
+                                        val bucket = newProgress / 25
+                                        if (bucket != lastLoggedProgressBucket) {
+                                            lastLoggedProgressBucket = bucket
+                                            AppLog.i("echo-webview-login provider=${provider.id} progress=${bucket * 25}%")
+                                        }
+                                    }
                                 }
+
                                 webViewClient = object : WebViewClient() {
                                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                                        val scheme = request?.url?.scheme?.lowercase().orEmpty()\n                                        val allowed = scheme in setOf("https", "http")\n                                        if (!allowed) AppLog.i("echo-webview-login provider=${provider.id} navigation=blocked scheme=$scheme")\n                                        return !allowed
+                                        val scheme = request?.url?.scheme?.lowercase().orEmpty()
+                                        val allowed = scheme == "https" || scheme == "http"
+                                        if (!allowed) {
+                                            AppLog.i("echo-webview-login provider=${provider.id} navigation=blocked scheme=$scheme")
+                                        }
+                                        return !allowed
                                     }
-                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) { message = ""; loading = true; progress = 0; lastLoggedProgressBucket = -1; val host = runCatching { android.net.Uri.parse(url).host.orEmpty() }.getOrDefault(""); AppLog.i("echo-webview-login provider=${provider.id} page=start host=$host") }
-                                    override fun onPageFinished(view: WebView?, url: String?) { loading = false; progress = 100; val host = runCatching { android.net.Uri.parse(url).host.orEmpty() }.getOrDefault(""); AppLog.i("echo-webview-login provider=${provider.id} page=finished host=$host") }
-                                    override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                                        if (request?.isForMainFrame == true) { loading = false; message = context.getString(R.string.cloud_drive_login_page_error, error?.errorCode ?: -1); val host = request.url.host.orEmpty(); AppLog.i("echo-webview-login provider=${provider.id} page=error host=$host code=${error?.errorCode ?: -1}") }
+
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                        message = ""
+                                        loading = true
+                                        progress = 0
+                                        lastLoggedProgressBucket = -1
+                                        val host = runCatching { android.net.Uri.parse(url).host.orEmpty() }.getOrDefault("")
+                                        AppLog.i("echo-webview-login provider=${provider.id} page=start host=$host")
                                     }
-                                    override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, response: WebResourceResponse?) {
-                                        if (request?.isForMainFrame == true && (response?.statusCode ?: 0) >= 400) { loading = false; message = context.getString(R.string.cloud_drive_login_http_error, response?.statusCode ?: -1); AppLog.i("echo-webview-login provider=${provider.id} page=http-error host=${request.url.host.orEmpty()} status=${response?.statusCode ?: -1}") }
+
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        loading = false
+                                        progress = 100
+                                        val host = runCatching { android.net.Uri.parse(url).host.orEmpty() }.getOrDefault("")
+                                        AppLog.i("echo-webview-login provider=${provider.id} page=finished host=$host")
+                                    }
+
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                        error: WebResourceError?,
+                                    ) {
+                                        if (request?.isForMainFrame == true) {
+                                            loading = false
+                                            message = context.getString(
+                                                R.string.cloud_drive_login_page_error,
+                                                error?.errorCode ?: -1,
+                                            )
+                                            AppLog.i(
+                                                "echo-webview-login provider=${provider.id} page=error host=${request.url.host.orEmpty()} code=${error?.errorCode ?: -1}",
+                                            )
+                                        }
+                                    }
+
+                                    override fun onReceivedHttpError(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                        response: WebResourceResponse?,
+                                    ) {
+                                        if (request?.isForMainFrame == true && (response?.statusCode ?: 0) >= 400) {
+                                            loading = false
+                                            message = context.getString(
+                                                R.string.cloud_drive_login_http_error,
+                                                response?.statusCode ?: -1,
+                                            )
+                                            AppLog.i(
+                                                "echo-webview-login provider=${provider.id} page=http-error host=${request.url.host.orEmpty()} status=${response?.statusCode ?: -1}",
+                                            )
+                                        }
                                     }
                                 }
-                                loadUrl(provider.loginUrl)
                                 loginWebView = this
+                                loadUrl(provider.loginUrl)
                             }
                         },
                     )
-                    if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+
+                    if (message.isNotBlank()) {
+                        Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(modifier = Modifier.weight(1f), onClick = {
-                            val manager = CookieManager.getInstance()
-                            manager.flush()
-                            val cookiesByHost = JSONObject()\n                            var totalCookieCount = 0
-                            provider.cookieHosts.forEach { host ->
-                                manager.getCookie("https://$host/").orEmpty().takeIf { it.isNotBlank() }?.let { raw -> cookiesByHost.put(host, raw); totalCookieCount += raw.split(";").count { it.trim().contains("=") } }
-                            }
-                            if (cookiesByHost.length() == 0) {
-                                message = context.getString(R.string.cloud_drive_login_cookie_missing)
-                            } else {
-                                runCatching { CloudCredentialVault.write(provider.id, cookiesByHost.toString()) }
-                                    .onSuccess { setResult(RESULT_OK); finish() }
-                                    .onFailure { message = context.getString(R.string.cloud_drive_cookie_save_failed) }
-                            }
-                        }) { Text(stringResource(R.string.cloud_drive_login_save)) }
-                        TextButton(onClick = { finish() }) { Text(stringResource(R.string.common_cancel)) }
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                val manager = CookieManager.getInstance()
+                                manager.flush()
+                                val cookiesByHost = JSONObject()
+                                provider.cookieHosts.forEach { host ->
+                                    manager.getCookie("https://$host/")
+                                        .orEmpty()
+                                        .takeIf { it.isNotBlank() }
+                                        ?.let { raw -> cookiesByHost.put(host, raw) }
+                                }
+                                if (cookiesByHost.length() == 0) {
+                                    message = context.getString(R.string.cloud_drive_login_cookie_missing)
+                                } else {
+                                    runCatching { CloudCredentialVault.write(provider.id, cookiesByHost.toString()) }
+                                        .onSuccess {
+                                            AppLog.i("echo-webview-login provider=${provider.id} cookie-save=success hosts=${cookiesByHost.length()}")
+                                            setResult(RESULT_OK)
+                                            finish()
+                                        }
+                                        .onFailure {
+                                            AppLog.i("echo-webview-login provider=${provider.id} cookie-save=failed")
+                                            message = context.getString(R.string.cloud_drive_cookie_save_failed)
+                                        }
+                                }
+                            },
+                        ) {
+                            Text(stringResource(R.string.cloud_drive_login_save))
+                        }
+                        TextButton(onClick = { finish() }) {
+                            Text(stringResource(R.string.common_cancel))
+                        }
                     }
                 }
             }
@@ -143,7 +305,8 @@ class CloudDriveLoginActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        AppLog.i("echo-webview-login activity=destroy")\n        loginWebView?.let { view ->
+        AppLog.i("echo-webview-login activity=destroy")
+        loginWebView?.let { view ->
             view.stopLoading()
             view.clearHistory()
             view.removeAllViews()
@@ -152,5 +315,62 @@ class CloudDriveLoginActivity : BaseActivity() {
         }
         loginWebView = null
         super.onDestroy()
+    }
+}
+
+private class DesktopPanWebView(context: Context) : WebView(context) {
+    private var mouseDragging = false
+    private var lastMouseX = 0f
+    private var lastMouseY = 0f
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (event.buttonState and MotionEvent.BUTTON_PRIMARY != 0) {
+                        mouseDragging = true
+                        lastMouseX = event.x
+                        lastMouseY = event.y
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                        return true
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (mouseDragging) {
+                        val dx = (lastMouseX - event.x).roundToInt()
+                        val dy = (lastMouseY - event.y).roundToInt()
+                        if (dx != 0 || dy != 0) scrollBy(dx, dy)
+                        lastMouseX = event.x
+                        lastMouseY = event.y
+                        return true
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (mouseDragging) {
+                        mouseDragging = false
+                        parent?.requestDisallowInterceptTouchEvent(false)
+                        return true
+                    }
+                }
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+            val vertical = event.getAxisValue(MotionEvent.AXIS_VSCROLL)
+            val horizontal = event.getAxisValue(MotionEvent.AXIS_HSCROLL)
+            if (event.metaState and android.view.KeyEvent.META_CTRL_ON != 0 && vertical != 0f) {
+                val factor = if (vertical > 0f) 1.1f else 0.9f
+                zoomBy(factor)
+            } else if (vertical != 0f || horizontal != 0f) {
+                scrollBy((-horizontal * 64f).roundToInt(), (-vertical * 64f).roundToInt())
+            } else {
+                return super.onGenericMotionEvent(event)
+            }
+            return true
+        }
+        return super.onGenericMotionEvent(event)
     }
 }

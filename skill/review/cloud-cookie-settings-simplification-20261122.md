@@ -63,3 +63,40 @@
 - 复制与保存分离；复制未发现 Cookie 时显示现有提示，复制成功提示提醒剪贴板敏感信息。
 - 新增四语资源。剪贴板内容在用户主动点击后产生，系统剪贴板可能被其他应用读取，使用者需自行清除。
 - 未进行真机验证。
+
+
+# 第4项：云盘 Cookie 与内置浏览器专项优化（桌面交互补充）
+
+## 本轮范围
+- 分支：feature/tablet-live-immersive
+- 基线：b4fdc7229af5513c4a2481dc26e461ea6738d601
+- 用户新增问题：内置浏览器使用电脑/桌面网页 UI 时，鼠标无法拖动页面，缩放操作不方便。
+- 用户约束：未经明确允许不构建 APK。
+
+## 代码检查发现
+- 当前登录入口为 CloudDriveLoginActivity，使用 Android WebView 和桌面 Chrome User-Agent。
+- 原代码虽然开启 setSupportZoom、builtInZoomControls、useWideViewPort 和 loadWithOverviewMode，但隐藏了系统缩放控件；桌面鼠标滚轮和按住鼠标拖动平移没有专门处理。
+- Cookie 按 provider 的 host allowlist 收集并写入 CloudCredentialVault；请求注入限定 HTTPS 与精确 host，不能扩大到任意域名。
+- 设置页已有独立 Cookie 复制/清除入口，复制入口不放回浏览器内部。
+
+## 本轮实现
+- 增加桌面浏览器工具栏：缩小、放大、缩放比例、重置、后退、前进、刷新。
+- 增加 DesktopPanWebView：鼠标左键按住拖动页面时执行滚动平移；鼠标滚轮滚动页面；Ctrl+滚轮缩放。
+- 保留 WebView 原生双指缩放、JavaScript/DOM Storage、桌面 User-Agent 和现有 HTTP/HTTPS 导航策略。
+- 打开水平/垂直滚动条，允许 WebView 获取焦点，提升桌面网页大页面的可操作性。
+- Cookie 保存仍由用户主动点击；日志只记录 provider、host、进度和保存状态，不输出 Cookie 内容。
+
+## 日志安全提醒
+- 用户上传的运行日志中出现了包含 Cookie、认证 token/auth_key 的请求信息。不要继续传播原始日志；建议在相关网盘退出并重新登录/刷新会话，避免把有效凭据长期留在共享日志中。
+- 后续运行日志应统一对 Cookie、Authorization、token、auth_key、签名 URL 和含凭据的请求头做脱敏，不能只依赖导出时脱敏。
+
+## 尚未完成
+- 需要继续检查 Cookie 清理是否覆盖 host-only/domain/path 不同范围的 Cookie，及多次登录后的 CookieManager 与加密 Vault 同步。
+- 需要逐家核对 provider 登录跳转 host 与真实 JAR 请求 host，当前 allowlist 不能凭猜测扩大。
+- 需要检查 Cookie 注入是否覆盖自带 HTTP 客户端的 JAR，以及 WebView 登录空白页的控制台/资源错误。
+- 鼠标拖动、滚轮缩放、Ctrl+滚轮和触屏双指缩放均未进行设备验证。
+
+## 验证状态
+- 完成源码静态审查与修改。
+- 未运行 Gradle 编译、单元测试、静态门禁或真机验证。
+- 未构建 APK，未发布 Release。
