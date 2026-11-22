@@ -264,3 +264,9 @@
 ## 2026-11-22 第3阶段 JS 模块错误响应识别补充
 - JS 模块响应识别支持带空白的 JSON 404 code 字段，并增加系统 Locale（土耳其语）回归测试。
 - 尚未执行 Gradle，新增测试结果待 CI/本地构建验证。
+
+
+## 2026-11-22 第3阶段 JS 依赖回退诊断
+- 为 JS ModuleLoader 的空模块回退增加明确原因日志，区分缺失/错误响应、DRPY/BB bytecode解码失败及 JS 编译失败；保持原有回退语义，避免未经源兼容回归直接改变配置行为。
+- 新增 JsModuleContent.invalidReason 分类测试。
+- 尚未运行 Gradle、QuickJS native 或真机测试。
