@@ -83,3 +83,24 @@
 ### 验证与限制
 - 已回读布局代码和资源文件，静态检查主分类、子频道、锁定与空状态分支。
 - 尚未运行 Gradle 编译、单元测试或真机验证；需重点检查长分类名、频道号、多语言、超大字体和低分辨率平板。
+
+
+## 第四轮：折叠屏配置变化与窄窗口对话框
+
+### 发现
+- BaseActivity 已实现 onConfigurationChanged() 并按 smallestScreenWidthDp 更新方向策略，但启动页 MainActivity 未在 Activity 节点声明配置变更处理；此前仅在 application 节点出现 configChanges，不能替代 Activity 级声明。折叠/展开、旋转或窗口尺寸变化仍可能触发主 Activity 重建。
+- 居中对话框固定最小宽度 280dp、左右各留 24dp；窗口宽度小于 328dp 时，最小宽度与外边距之和超过可用窗口，存在窄分屏溢出风险。
+
+### 调整
+- MainActivity 增加 orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize 配置变更声明；交由既有 BaseActivity.onConfigurationChanged() 重算方向策略，Compose 根据新窗口配置更新布局，保留现有 Activity/ViewModel 状态。
+- 居中对话框的水平边距改为随窗口宽度收缩；最大宽度继续为 560dp，最小宽度动态收敛到扣除边距后的实际可用宽度，高度与滚动行为不变。
+- 首页和栏目网格列数逻辑保持既有 WindowSize.gridColumns 规则；手机三列行为由现有 WindowSizeTest 明确锁定，本轮不擅自改变用户已定布局。
+
+### 提交
+- 9b1f2b5caa60197dd5d8ae9cb619369941776c00（MainActivity 配置变更）
+- a93bceec580e397516b235350c465679051ec36d（对话框自适应宽度）
+
+### 验证与限制
+- 已回读 Manifest、BaseActivity、MainScreen、WindowSize、首页/栏目网格及弹层实现，确认方向策略继续使用 smallestScreenWidthDp、布局继续使用当前窗口宽度。
+- 已静态核对对话框动态宽度上下界：最小宽度不会大于扣除水平边距后的最大可用宽度。
+- 尚未运行 Gradle 编译、单元测试或折叠屏/分屏真机测试；未构建 APK、未发布 Release。
