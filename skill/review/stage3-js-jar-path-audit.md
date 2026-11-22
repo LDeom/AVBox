@@ -64,3 +64,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 该改动目前只完成源码静态核对，未运行 Gradle/单测或设备验证；仍需验证取消/中断和不同文件系统的 rename 行为。
 
 - Jar缓存改造后已移除旧 `create(file)` 破坏性覆盖辅助方法，避免后续调用重新引入先删缓存再下载的行为。
+
+## 第六轮 JS依赖与缓存有效期修复（2026-11-22）
+- FileUtils.asOpen 改为通过 use { readBytes() } 完整读取并关闭assets输入流，不再把 available() 当作资源总长度。
+- 修复远程JS模块缓存过期后仍返回旧data的问题：过期时删除缓存并立即返回空值，交由调用方重新请求；同时对缺失/错误的expires和data字段做安全处理。
+- 缓存expires改为Long并使用UTF-8序列化，避免2038年附近的Int溢出及默认字符集差异。
+- JS API Jar下载增加线程中断检查；缓存替换统一调用已加固的 FileUtils.writeSimple，避免先删除有效Jar再写入导致下载成功但缓存损坏。
+- 新增缓存过期边界单元测试。尚未运行Gradle测试或真机验证。
