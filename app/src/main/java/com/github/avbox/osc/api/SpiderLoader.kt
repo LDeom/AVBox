@@ -162,13 +162,14 @@ class SpiderLoader {
                     if (imgJar == null || imgJar.size == 0) {
                         error = "empty img jar"
                     } else {
+                        if (isJarLoadStale(epoch)) throw InterruptedException("Jar download became stale")
                         val output = FileOutputStream(temp)
                         outputStream = output
                         output.write(imgJar)
                         output.flush()
                         closeQuietly(output)
                         outputStream = null
-                        result = replaceCache(temp, cache)
+                        result = replaceCache(temp, cache, epoch)
                     }
                 } else {
                     val input = response.body.byteStream()
@@ -176,10 +177,13 @@ class SpiderLoader {
                     val output = FileOutputStream(temp)
                     outputStream = output
                     val buffer = ByteArray(16384)
-                    var bytesRead = input.read(buffer)
-                    while (bytesRead != -1) {
+                    while (true) {
+                        if (Thread.currentThread().isInterrupted || isJarLoadStale(epoch)) {
+                            throw InterruptedException("Jar download interrupted")
+                        }
+                        val bytesRead = input.read(buffer)
+                        if (bytesRead < 0) break
                         output.write(buffer, 0, bytesRead)
-                        bytesRead = input.read(buffer)
                     }
                     output.flush()
                     closeQuietly(output)
@@ -208,14 +212,20 @@ class SpiderLoader {
         })
     }
 
-    private fun replaceCache(temp: File, cache: File): File {
-        if (cache.exists() && !cache.delete()) {
-            AppLog.i("echo---delete old jar cache failed:" + cache.absolutePath)
+    private fun replaceCache(temp: File, cache: File, epoch: Long): File {
+        if (isJarLoadStale(epoch) || Thread.currentThread().isInterrupted) {
+            throw InterruptedException("Jar download became stale before cache replacement")
         }
-        if (!temp.renameTo(cache)) {
-            FileUtils.copyFile(temp, cache)
-            temp.delete()
+        val downloaded = FileUtils.readSimple(temp)
+                ?: throw IllegalStateException("Cannot read downloaded Jar")
+        if (downloaded.isEmpty()) throw IllegalStateException("Downloaded Jar is empty")
+        if (!FileUtils.writeSimple(downloaded, cache)) {
+            throw IllegalStateException("Cannot safely replace Jar cache")
         }
+        if (isJarLoadStale(epoch)) {
+            AppLog.debugI("echo-switch: Jar cache updated after epoch changed")
+        }
+        temp.delete()
         return cache
     }
 
