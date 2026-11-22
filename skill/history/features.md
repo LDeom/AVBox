@@ -118,3 +118,10 @@
 ## 2026-11-22 第3阶段 JS模块缺失回退策略审查
 - 审查JS模块内容缺失、404、错误JSON、bytecode解码及编译失败的空模块回退机制；记录模块名日志及兼容性风险，不贸然改变旧站点行为。
 - 审查更新至 `skill/review/stage3-js-jar-path-audit.md`。
+
+
+## 2026-11-22 第3阶段缓存读写链路第二批加固
+- `FileUtils.saveCache` 不再先删除旧缓存再直接写入，统一复用临时文件、备份与失败恢复机制。
+- `FileUtils.readSimple` 改为完整流读取，避免依赖 `InputStream.available()` 作为文件长度并忽略短读结果。
+- `FileUtilsAtomicWriteTest` 增加缓存覆盖写入与完整读取用例。
+- 尚未执行 Gradle/单元测试；后续继续审查 Jar/JS 下载缓存与路径加载边界。
