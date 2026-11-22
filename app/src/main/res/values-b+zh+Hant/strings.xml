@@ -29,6 +29,7 @@
     <string name="live_epg_of">節目表 · %1$s</string>
     <string name="live_epg_empty">暫無節目表</string>
     <string name="live_settings">直播設定</string>
+    <string name="live_channel_list">頻道列表</string>
     <string name="live_need_password">需密碼</string>
     <string name="live_replaying">回看中</string>
     <string name="live_on_air">直播中</string>
