@@ -90,6 +90,8 @@ object GuangYaPanClient {
 
     fun isLoggedIn(): Boolean = runCatching { loadCredential() != null }.getOrDefault(false)
 
+    fun accountPhone(): String = runCatching { loadCredential()?.phoneNumber.orEmpty() }.getOrDefault("")
+
     fun sendSmsCode(phoneNumber: String): String {
         val phone = normalizePhone(phoneNumber)
         require(phone.isNotBlank()) { "请输入手机号" }
@@ -263,7 +265,7 @@ object GuangYaPanClient {
 
     private inline fun <reified T> accountRequest(path: String, credential: GuangYaCredential, method: String): T {
         val builder = accountBuilder(path, credential.deviceId)
-            .header("Authorization", "Bearer \${credential.accessToken}")
+            .header("Authorization", "Bearer ${credential.accessToken}")
         val request = when (method) {
             "GET" -> builder.get().build()
             else -> builder.post(ByteArray(0).toRequestBody(jsonType)).build()
@@ -294,7 +296,7 @@ object GuangYaPanClient {
             .url(API_BASE + path)
             .header("Accept", "application/json, text/plain, */*")
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer \${credential.accessToken}")
+            .header("Authorization", "Bearer ${credential.accessToken}")
             .header("Did", credential.deviceId)
             .header("Dt", "4")
             .post(gson.toJson(body).toRequestBody(jsonType))
