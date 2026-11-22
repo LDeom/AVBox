@@ -298,7 +298,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         .fillMaxWidth(0.38f)
                         .widthIn(min = 280.dp, max = 420.dp),
                     shape = RoundedCornerShape(22.dp),
-                    color = Color.Black.copy(alpha = 0.48f),
+                    color = Color.Black.copy(alpha = 0.24f),
                     shadowElevation = 24.dp,
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
