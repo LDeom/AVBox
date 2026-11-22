@@ -8,6 +8,24 @@ import org.junit.Test
 class LoadEpochTest {
 
     @Test
+    fun runIfCurrentExecutesForCurrentSnapshot() {
+        val epoch = LoadEpoch()
+        var executed = false
+        assertTrue(epoch.runIfCurrent(epoch.current()) { executed = true })
+        assertTrue(executed)
+    }
+
+    @Test
+    fun runIfCurrentRejectsStaleSnapshot() {
+        val epoch = LoadEpoch()
+        val snapshot = epoch.current()
+        epoch.next()
+        var executed = false
+        assertFalse(epoch.runIfCurrent(snapshot) { executed = true })
+        assertFalse(executed)
+    }
+
+    @Test
     fun snapshotOfCurrentEpochIsNotStale() {
         val epoch = LoadEpoch()
         val snapshot = epoch.current()
