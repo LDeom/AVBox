@@ -302,13 +302,13 @@ open class BasePlayerView @JvmOverloads constructor(
         audioFocusHelper = null
         kernelPlayer?.release()
         kernelPlayer = null
+        activeRenderView?.let { render ->
+            playerFrame.removeView(render.getView())
+            render.release()
+        }
+        activeRenderView = null
+        playerFrame.keepScreenOn = false
         if (hadActiveState) {
-            activeRenderView?.let { render ->
-                playerFrame.removeView(render.getView())
-                render.release()
-            }
-            activeRenderView = null
-            playerFrame.keepScreenOn = false
             saveProgress()
             playbackPosition = 0
             reportPlayState()
