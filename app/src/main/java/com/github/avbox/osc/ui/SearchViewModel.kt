@@ -241,11 +241,6 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         HistoryHelper.setSearchHistory(t)
         _searchHistory.value = readSearchHistory()
         clearSuggest()
-        try {
-            JsLoader.stopAll()
-        } catch (ignored: Throwable) {
-            AppLog.d("SearchViewModel", "JsLoader.stopAll failed, continue new search")
-        }
         searchJob?.cancel()
         searchJob = null
         try {
@@ -262,6 +257,9 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         val sources = ApiConfig.get().getSourceBeanList()
             .filter { it.isSearchable() && picked.contains(it.key) }
             .sortedBy { it.key != home.key }
+        sources.filter { it.type == 3 }.forEach { bean ->
+            JsLoader.stop(bean.key)
+        }
         arriveSeq = 0
         _results.value = sources.map { SourceResult(it.key.orEmpty(), it.name.orEmpty(), ResultState.Pending, emptyList()) }
         _sitesEmpty.value = sources.isEmpty()
