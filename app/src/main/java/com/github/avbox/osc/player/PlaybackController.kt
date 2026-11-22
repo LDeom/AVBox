@@ -1225,6 +1225,7 @@ class PlaybackController {
     }
 
     fun stopPlaybackForPageExit() {
+        starter.cancelPendingCloudResolve()
         st = st.clearSessionFlags()
         music.resetAudioSession()
         timeouts.cancelPendingCompletionDrop()
