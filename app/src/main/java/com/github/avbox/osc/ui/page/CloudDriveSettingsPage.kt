@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -243,7 +242,7 @@ fun CloudDriveSettingsScreen(onNavigateBack: () -> Unit) {
 
             if (loggedIn) {
                 SettingsGroup(title = stringResource(R.string.cloud_drive_files)) {
-                    SettingsCard(SettingsCardPosition.FIRST) {
+                    SettingsCard(SettingsCardPosition.SINGLE) {
                         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
