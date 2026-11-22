@@ -334,7 +334,11 @@ class DanmuLoadController(
 
     private fun sourceSummary(danmu: String?): String {
         if (danmu.isNullOrEmpty()) return ""
-        if (danmu.startsWith("http") || danmu.startsWith("file")) return danmu
+        if (danmu.startsWith("http", ignoreCase = true)) {
+            val host = runCatching { okhttp3.HttpUrl.parse(danmu)?.host }.getOrNull()
+            return if (host.isNullOrBlank()) "remote source" else "remote host=" + host
+        }
+        if (danmu.startsWith("file", ignoreCase = true)) return "file source"
         return "inline xml length=" + danmu.length
     }
 
