@@ -113,3 +113,8 @@
 - `FileUtils.writeSimple` 采用同目录临时文件、备份及失败恢复策略，避免覆盖缓存前先删除有效旧文件；检查写入长度并清理临时文件。
 - 新增 `FileUtilsAtomicWriteTest` 覆盖首次写入及替换路径。
 - 尚未运行Gradle/测试或设备验证；持续推进第3阶段。
+
+
+## 2026-11-22 第3阶段 JS模块缺失回退策略审查
+- 审查JS模块内容缺失、404、错误JSON、bytecode解码及编译失败的空模块回退机制；记录模块名日志及兼容性风险，不贸然改变旧站点行为。
+- 审查更新至 `skill/review/stage3-js-jar-path-audit.md`。
