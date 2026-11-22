@@ -107,3 +107,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - JsSpider.call() 与 callConverted() 对执行器拒绝、等待超时和线程中断分别处理；超时/中断会请求取消任务，避免已排队任务在调用方放弃后继续执行。
 - 本轮没有改动 QuickJS native Context 的线程归属和销毁顺序；Future.cancel(true) 不能保证中断正在执行的 native QuickJS 代码，后续仍需审查 Async 内部任务及 Context 生命周期。
 - 未运行 Gradle 测试、设备验证或 QuickJS native 压力测试。
+
+## 第十三轮 JsLoader 清理与创建竞态（2026-11-22）
+- JsLoader.clear() 的代际递增、Spider/Class 缓存清理和 recentKey 重置在 lifecycleLock 内原子执行。
+- JS API Jar 的 Class 缓存注册需在同一锁内确认 generation 仍有效，避免清理完成后旧 Jar 加载任务重新写入 classes。
+- getSpider() 创建完成后的 Spider 注册同样在 lifecycleLock 内完成代际校验，清理与注册不能交错产生清理后残留的旧 Spider。
+- loadClassLoader/loadJarInternal 显式携带创建代际；清理后开始或完成的旧代际加载不再注册 Class 缓存。
+- 未运行 Gradle、Android 设备或 JS API Jar 动态集成测试。
