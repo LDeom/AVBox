@@ -19,14 +19,16 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 object AppLog {
     private var TAG = "TVBox-runtime"
     private const val MAX_LOG_LENGTH = 3000
+    private val operationSequence = AtomicLong(0L)
 
     @Volatile
     private var fileLogEnabled = false
-    private val FILE_LOG_PREFIXES = arrayOf("echo-preload", "echo-setDataSource", "echo-play-cache", "echo-kv", "echo-progress", "echo-bar-draw", "echo-exo", "echo-music", "echo-lyric", "echo-sub", "echo-danmu", "echo-p2", "echo-p3", "echo-p4", "echo-p5", "clearCache", "echo--jar", "echo-local-src", "echo-setTrack", "echo-autoRetry", "echo-player", "echo-switch", "echo-goPlayUrl", "echo-history", "echo-iso", "echo-render", "echo-surface", "echo-output-size", "echo-picture", "echo-anime4k", "echo--list", "echo--getList", "echo--parse", "echo--getSort", "echo--sort", "echo-detail", "echo-thunder", "echo-proxy", "echo-home-backdrop", "echo-cast", "echo-resolvePlayUrl", "echo-playM3u8", "echo-tmdb", "echo-live", "echo-load", "echo-zero-start", "echo-storage", "echo-config-refresh", "echo-boot", "echo-webview-login")
+    private val FILE_LOG_PREFIXES = arrayOf("echo-preload", "echo-setDataSource", "echo-play-cache", "echo-kv", "echo-progress", "echo-bar-draw", "echo-exo", "echo-music", "echo-lyric", "echo-sub", "echo-danmu", "echo-p2", "echo-p3", "echo-p4", "echo-p5", "clearCache", "echo--jar", "echo-local-src", "echo-setTrack", "echo-autoRetry", "echo-player", "echo-switch", "echo-goPlayUrl", "echo-history", "echo-iso", "echo-render", "echo-surface", "echo-output-size", "echo-picture", "echo-anime4k", "echo--list", "echo--getList", "echo--parse", "echo--getSort", "echo--sort", "echo-detail", "echo-thunder", "echo-proxy", "echo-home-backdrop", "echo-cast", "echo-resolvePlayUrl", "echo-playM3u8", "echo-tmdb", "echo-live", "echo-load", "echo-zero-start", "echo-storage", "echo-config-refresh", "echo-boot", "echo-webview-login", "event:")
     private const val FILE_LOG_NAME = "preload_debug.log"
     private const val FILE_LOG_BACKUP = ".1"
     internal const val FILE_LOG_MAX_BYTES = 8L * 1024 * 1024
@@ -51,6 +53,21 @@ object AppLog {
             Regex("""(?i)(token|access[_-]?token|refresh[_-]?token|api[_-]?key|auth[_-]?key|password|passwd|secret|imei|mac)(\s*[=:]\s*)([^\s&,;]+)"""),
             "$1$2[REDACTED]",
         )
+
+    /**
+     * Creates a process-local operation id so related feature events can be correlated.
+     * Do not place credentials, user queries, or full request URLs in event details.
+     */
+    fun newOperationId(): Long = operationSequence.incrementAndGet()
+
+    @JvmStatic
+    fun operationEvent(operationId: Long, feature: String, phase: String, detail: String = "") {
+        val safeFeature = feature.replace(Regex("[^A-Za-z0-9_.-]"), "_").take(64)
+        val safePhase = phase.replace(Regex("[^A-Za-z0-9_.-]"), "_").take(32)
+        val safeDetail = sanitizeLogLine(detail).take(1200)
+        i("event: op=$operationId feature=$safeFeature phase=$safePhase" +
+            if (safeDetail.isBlank()) "" else " $safeDetail")
+    }
 
     fun setFileLoggingEnabled(enabled: Boolean) {
         fileLogEnabled = enabled

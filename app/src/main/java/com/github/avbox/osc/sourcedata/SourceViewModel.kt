@@ -73,6 +73,8 @@ class SourceViewModel : ViewModel() {
 
     @Synchronized
     fun getSort(sourceKey: String?, withRec: Boolean) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.sort", "start", "source=${sourceKey.orEmpty()} withRecommendations=$withRec")
         val requestId = sortRequestGeneration.incrementAndGet()
         sortChain.cancel()
         val chain = SupervisorJob(rootJob)
@@ -110,6 +112,7 @@ class SourceViewModel : ViewModel() {
 
     @Synchronized
     fun cancelSort() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.sort", "cancel")
         sortRequestGeneration.incrementAndGet()
         sortChain.cancel()
         sortChain = SupervisorJob(rootJob)
@@ -117,6 +120,8 @@ class SourceViewModel : ViewModel() {
 
     @Synchronized
     fun getList(sourceKey: String?, sortData: MovieSort.SortData?, page: Int) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.list", "start", "source=${sourceKey.orEmpty()} page=$page category=${sortData?.id.orEmpty()}")
         val requestId = listRequestGeneration.incrementAndGet()
         listChain.cancel()
         val chain = SupervisorJob(rootJob)
@@ -141,6 +146,7 @@ class SourceViewModel : ViewModel() {
 
     @Synchronized
     fun cancelList() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.list", "cancel")
         listRequestGeneration.incrementAndGet()
         listChain.cancel()
         listChain = SupervisorJob(rootJob)
@@ -155,15 +161,20 @@ class SourceViewModel : ViewModel() {
     }
 
     fun getDetail(sourceKey: String?, urlid: String, fallback: Boolean, requestToken: Int?) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.detail", "start", "source=${sourceKey.orEmpty()} fallback=$fallback hasItemId=${urlid.isNotBlank()} requestToken=${requestToken ?: -1}")
         requestScope.launch(detailChain) { detailLoader.getDetail(sourceKey, urlid, fallback, requestToken) }
     }
 
     fun cancelDetail() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.detail", "cancel")
         detailChain.cancel()
         detailChain = SupervisorJob(rootJob)
     }
 
     fun action(sourceKey: String?, action: String?) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.action", "start", "source=${sourceKey.orEmpty()} actionPresent=${!action.isNullOrBlank()}")
         val sourceBean = ApiConfig.get().getSource(sourceKey)
         if (sourceBean == null || action == null) {
             actionResult.postValue(null)
@@ -175,8 +186,10 @@ class SourceViewModel : ViewModel() {
                     val sp = ApiConfig.get().getCSP(sourceBean)
                     val json = SpiderReaper.track(sp) { sp.action(action) }
                     actionResult.postValue(if (TextUtils.isEmpty(json)) null else JSONObject(json))
+                    AppLog.operationEvent(operationId, "source.action", if (TextUtils.isEmpty(json)) "empty" else "success")
                 } catch (th: Throwable) {
                     AppLog.e("SourceViewModel", th)
+                    AppLog.operationEvent(operationId, "source.action", "failure", "error=${th.javaClass.simpleName}")
                     actionResult.postValue(null)
                 }
             }
@@ -190,23 +203,30 @@ class SourceViewModel : ViewModel() {
     }
 
     fun getSearch(sourceKey: String?, wd: String?, searchToken: String?) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.search", "start", "source=${sourceKey.orEmpty()} queryLength=${wd?.length ?: 0}")
         requestScope.launch(searchChain) { searchLoader.getSearch(sourceKey, wd, searchToken) }
     }
 
     fun cancelSearch() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.search", "cancel")
         searchChain.cancel()
         searchChain = SupervisorJob(rootJob)
     }
 
     fun getPlay(sourceKey: String?, playFlag: String?, progressKey: String?, url: String?, subtitleKey: String?) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "source.play.resolve", "start", "source=${sourceKey.orEmpty()} flagPresent=${!playFlag.isNullOrBlank()} hasUrl=${!url.isNullOrBlank()} subtitlePresent=${!subtitleKey.isNullOrBlank()}")
         playLoader.getPlay(sourceKey, playFlag, progressKey, url, subtitleKey)
     }
 
     fun getPlayForPreload(sourceKey: String?, playFlag: String?, progressKey: String?, url: String?, subtitleKey: String?) {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.play.preload", "start", "source=${sourceKey.orEmpty()} hasUrl=${!url.isNullOrBlank()}")
         playLoader.getPlayForPreload(sourceKey, playFlag, progressKey, url, subtitleKey)
     }
 
     fun cancelPlayRequest() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.play.resolve", "cancel")
         playLoader.cancelPlayRequest()
     }
 
@@ -215,6 +235,7 @@ class SourceViewModel : ViewModel() {
     }
 
     override fun onCleared() {
+        AppLog.operationEvent(AppLog.newOperationId(), "source.viewmodel", "cleared")
         rootJob.cancel()
         super.onCleared()
     }

@@ -12,10 +12,13 @@ import org.json.JSONObject
 object JsDanmuPluginLoader {
     fun searchAndLoad(context: Context, title: String, episode: String): String? {
         val plugins = JsDanmuPluginStore.list(context).filter { it.enabled }
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "danmu.plugin", "start", "enabledCount=${plugins.size}")
         for (plugin in plugins) {
             try {
                 JsDanmuPluginStore.readSource(context, plugin.id).let { source ->
                     JsDanmuPluginRuntime(source).use { runtime ->
+                        AppLog.operationEvent(operationId, "danmu.plugin", "attempt", "plugin=${plugin.id}")
                         val meta = runtime.initialize()
                         if (!meta.optBoolean("hasSearch") || !meta.optBoolean("hasLoad")) {
                             AppLog.i("echo-danmu JS plugin skipped: missing search/load " + plugin.id)
@@ -31,13 +34,18 @@ object JsDanmuPluginLoader {
                         }
                         val comments = runtime.load(selected)
                         val xml = JsDanmuPluginResultAdapter.toDanmakuXml(comments)
-                        if (xml != "<i></i>") return xml
+                        if (xml != "<i></i>") {
+                            AppLog.operationEvent(operationId, "danmu.plugin", "success", "plugin=${plugin.id}")
+                            return xml
+                        }
                     }
                 }
             } catch (error: Throwable) {
                 AppLog.e("echo-danmu JS plugin error id=" + plugin.id + ": " + (error.message ?: error.javaClass.simpleName))
+                AppLog.operationEvent(operationId, "danmu.plugin", "failure", "plugin=${plugin.id} error=${error.javaClass.simpleName}")
             }
         }
+        AppLog.operationEvent(operationId, "danmu.plugin", "empty")
         return null
     }
 
