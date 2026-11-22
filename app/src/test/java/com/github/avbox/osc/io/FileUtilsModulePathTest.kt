@@ -1,9 +1,9 @@
 package com.github.avbox.osc.io
 
+import com.github.catvod.crawler.JarLoader
+import com.whl.quickjs.wrapper.UriUtil
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import com.whl.quickjs.wrapper.UriUtil
-import com.github.catvod.crawler.JarLoader
 import org.junit.Test
 
 class FileUtilsModulePathTest {
@@ -29,6 +29,7 @@ class FileUtilsModulePathTest {
             FileUtils.clanModuleUrl("clan://192.168.1.8:9978/")
         )
     }
+
     @Test
     fun normalizesFileModuleUris() {
         assertEquals("modules/helper.js", FileUtils.fileModulePath("file:///modules/helper.js"))
