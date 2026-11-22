@@ -241,3 +241,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - 模板预检会额外读取一次模板资源；常见 assets 路径读取成本低，但真实资源加载与 QuickJS 导入仍需设备验证。
 - QuickJS 的循环导入/重复导入缓存由底层模块引擎管理，本仓库没有 native 可执行测试入口；本轮仅覆盖 URI 规范化，不宣称循环导入验证通过。
 - 未运行 Gradle、QuickJS native 或真机测试。
+
+
+## 第二十七轮 Jar Asset 路径与取消检查（2026-11-22）
+- JarLoader.copyAsset 原先通过连续 String.replace 删除 "assets://" 和所有 "assets/" 子串，可能误改合法嵌套目录名，例如 nested/assets/source.jar 会变成 nested/source.jar。
+- 新增 assetJarPath，分别兼容 assets://path 与旧式 assets/path，只移除开头前缀；拒绝空路径、非目标前缀及包含 .. 路径段的输入，避免目录逃逸。
+- copyAsset 读取循环增加线程中断检查，避免切源/取消后仍持续复制较大的内置 Jar。
+- 新增测试覆盖两种前缀、嵌套 assets 目录、空路径、非法前缀及父目录回退。
+- 仍未运行 Gradle；AssetManager 实际路径、Jar 解包/类加载和中断行为需设备验证。
