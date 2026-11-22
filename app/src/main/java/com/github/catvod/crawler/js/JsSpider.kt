@@ -378,9 +378,9 @@ class JsSpider : Spider {
 
             val loaded = FileUtils.loadModule(api)
             if (isInvalidModuleContent(loaded)) {
-                return@Callable null
+                throw IllegalStateException("JS spider API module is empty or unavailable: " + api)
             }
-            var content: String = loaded ?: return@Callable null
+            var content: String = loaded ?: throw IllegalStateException("JS spider API module is unavailable: " + api)
 
             if (content.startsWith("//bb")) {
                 cat = true
@@ -390,7 +390,7 @@ class JsSpider : Spider {
                     requireNotNull(ctx) { "js context not ready" }.evaluateModule(String.format(SPIDER_STRING_CODE, key + ".js") + "globalThis." + key + " = globalThis.__JS_SPIDER__;", "tv_box_root.js")
                 } catch (th: Throwable) {
                     AppLog.i("echo-bytecode-execute-error " + api + ", msg=" + th.message)
-                    return@Callable null
+                    throw th
                 }
             } else {
                 if (content.contains("__JS_SPIDER__")) {
@@ -406,11 +406,13 @@ class JsSpider : Spider {
                     requireNotNull(ctx) { "js context not ready" }.evaluateModule(String.format(SPIDER_STRING_CODE, api) + "globalThis." + key + " = globalThis.__JS_SPIDER__;", "tv_box_root.js")
                 } catch (th: Throwable) {
                     AppLog.i("echo-evaluateModule-error " + api + ", msg=" + th.message)
-                    return@Callable null
+                    throw th
                 }
             }
-            jsObject = get(requireNotNull(ctx) { "js context not ready" }.globalObject, key) as JSObject?
-            jsObject?.hold()
+            jsObject = get(requireNotNull(ctx) { "js context not ready" }.globalObject, key) as? JSObject
+            val spiderObject = jsObject
+                    ?: throw IllegalStateException("JS spider API did not create a spider object: " + api)
+            spiderObject.hold()
             return@Callable null
         })
         try {
