@@ -149,3 +149,11 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - HttpGate.finish() 在 Executor 已关闭时不再静默清空待处理请求，而是逐个调用 fail("executor shutdown")；shutdown 状态在 gate lock 内读取。
 - 新增 HttpGateTest.finish_failsQueuedRequestsWhenExecutorIsShutdown。
 - 未运行 Gradle、QuickJS native 测试或设备验证。
+
+## 第十八轮 QuickJS Context 销毁与任务队列提交顺序（2026-11-22）
+- JsSpider 新增 taskLock，统一保护普通 Runnable/Callable、同步等待任务、Async 调用任务的提交与销毁状态检查。
+- destroy() 在 taskLock 内原子设置 destroyed 并排入 Context teardown；任何后续任务提交均被拒绝，避免“调用线程先通过 destroyed 检查、销毁任务先入队、旧任务后入队并在 Context 销毁后执行”的竞态。
+- Global.stopAccepting() 将回调停止接收与资源清理拆开：JsSpider.destroy() 在排入 teardown 前先调用 stopAccepting()；该方法分别同步 callbackLock 与 timerLock，阻止 HTTP/stream/timer 在 teardown 后再向单线程 Executor 排入 QuickJS 任务。
+- Global.destroy() 使用独立 cleanupStarted 保证清理仅执行一次；在 executor 所属线程中释放定时器、HTTP、stream及Context关联资源。
+- 该顺序保证已排入任务先于 teardown 执行，销毁标记后不再产生新 QuickJS 任务；已排入回调检测 destroyed 后跳过 JS 调用并释放持有引用。
+- 未运行 Gradle、QuickJS native 测试或设备验证。
