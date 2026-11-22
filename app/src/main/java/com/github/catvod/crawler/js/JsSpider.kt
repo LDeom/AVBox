@@ -419,6 +419,11 @@ class JsSpider : Spider {
             val cause = e.cause
             if (cause is Exception) throw cause
             throw Exception(cause)
+        } catch (e: InterruptedException) {
+            init.cancel(true)
+            Thread.currentThread().interrupt()
+            AppLog.i("echo-js-init-interrupted " + api)
+            throw e
         } catch (e: TimeoutException) {
             AppLog.i("echo-js-init-timeout " + api)
             init.cancel(true)
