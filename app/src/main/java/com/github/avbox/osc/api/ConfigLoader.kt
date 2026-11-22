@@ -34,6 +34,13 @@ import java.util.function.Supplier
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
+internal fun isCurrentLiveConfigRequest(
+    requestId: Long,
+    activeRequestId: Long,
+    requestUrl: String,
+    activeUrl: String,
+): Boolean = requestId == activeRequestId && requestUrl == activeUrl
+
 class ConfigLoader(private val owner: ApiConfig) {
     private val configLoadExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val activeFetches = ConcurrentHashMap<String, okhttp3.Call>()
@@ -301,7 +308,12 @@ class ConfigLoader(private val owner: ApiConfig) {
     }
 
     private fun isCurrentLiveLoad(requestId: Long, apiUrl: String): Boolean =
-        liveLoadGeneration.get() == requestId && apiUrl == ApiConfig.effectiveLiveUrl()
+        isCurrentLiveConfigRequest(
+            requestId,
+            liveLoadGeneration.get(),
+            apiUrl,
+            ApiConfig.effectiveLiveUrl(),
+        )
 
     private fun runLoadLiveConfig(
         useCache: Boolean,
