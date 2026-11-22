@@ -1,5 +1,6 @@
 package com.github.avbox.osc.net
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,5 +33,15 @@ class SearchSettingsTest {
         assertFalse(SearchSettings.isExactMatch(null, "庆余年"))
         assertFalse(SearchSettings.isExactMatch("庆余年", null))
         assertFalse(SearchSettings.isExactMatch("", ""))
+    }
+
+    @Test
+    fun searchThreads_areClampedToSafeRange() {
+        assertEquals(1, SearchSettings.normalizeSearchThreads(Int.MIN_VALUE))
+        assertEquals(1, SearchSettings.normalizeSearchThreads(0))
+        assertEquals(1, SearchSettings.normalizeSearchThreads(1))
+        assertEquals(32, SearchSettings.normalizeSearchThreads(32))
+        assertEquals(64, SearchSettings.normalizeSearchThreads(64))
+        assertEquals(64, SearchSettings.normalizeSearchThreads(Int.MAX_VALUE))
     }
 }
