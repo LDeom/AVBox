@@ -107,3 +107,9 @@
 - 追踪 `FileUtils.loadModule` 的特殊模块名映射、URL_JOIN远程模块、MD5缓存、assets/js-lib/file/clan路径处理及 `setCache`/`getCache` 写入恢复链。
 - 识别缓存直接覆盖写入的中断风险及assets读取使用available()的通用性限制；目前未验证为实际故障，不改变加载语义。
 - 记录更新到 `skill/review/stage3-js-jar-path-audit.md`，等待后续测试基线与针对性修复。
+
+
+## 2026-11-22 第3阶段缓存写入可靠性修复
+- `FileUtils.writeSimple` 采用同目录临时文件、备份及失败恢复策略，避免覆盖缓存前先删除有效旧文件；检查写入长度并清理临时文件。
+- 新增 `FileUtilsAtomicWriteTest` 覆盖首次写入及替换路径。
+- 尚未运行Gradle/测试或设备验证；持续推进第3阶段。
