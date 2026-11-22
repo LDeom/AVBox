@@ -44,11 +44,6 @@ class Connect {
 
         @JvmStatic
         fun to(url: String, req: Req, tag: Any?): Call {
-            return to(url, req, tag, null)
-        }
-
-        @JvmStatic
-        fun to(url: String, req: Req, tag: Any?, sourceKey: String?): Call {
             val session = req.getSessionId()?.let { JsSession.find(it) ?: throw IllegalStateException("session closed") }
             val base = when {
                 session != null -> session.client(req.isRedirect())
@@ -58,7 +53,7 @@ class Connect {
             }
             val okHttpClient = withTimeout(req, base)
             client = okHttpClient
-            val headers = CloudCookieInjector.apply(sourceKey, null, url, req.getHeader()).toHeaders()
+            val headers = CloudCookieInjector.applyForUrl(url, req.getHeader()).toHeaders()
             return okHttpClient.newCall(getRequest(url, req, headers, session?.tag ?: tag))
         }
 
