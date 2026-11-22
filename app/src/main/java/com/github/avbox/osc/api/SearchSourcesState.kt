@@ -24,7 +24,7 @@ object SearchSourcesState {
 
     fun applySelection(next: Set<String>) {
         val searchable = currentSearchableSources()
-            .map { it.key }
+            .mapNotNull { it.key?.takeIf(String::isNotBlank) }
             .toSet()
         SearchSettingsState.putSourcesForSearch(next, searchable)
         refresh()
@@ -32,7 +32,7 @@ object SearchSourcesState {
 
     private fun build(): Ui {
         val sources = currentSearchableSources()
-        val keys = sources.map { it.key }.toSet()
+        val keys = sources.mapNotNull { it.key?.takeIf(String::isNotBlank) }.toSet()
         val stored = SearchSettingsState.currentSelection()
         val picked = when {
             stored == null -> keys
@@ -48,4 +48,4 @@ object SearchSourcesState {
 
 
 internal fun normalizeSearchableSources(sources: List<SourceBean>): List<SourceBean> =
-    sources.filter { it.isSearchable() && it.key.isNotBlank() }.distinctBy { it.key }
+    sources.filter { it.isSearchable() && it.key?.isNotBlank() == true }.distinctBy { it.key.orEmpty() }
