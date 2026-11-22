@@ -465,9 +465,10 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                         requestId = loader.request(page) { r -> if (cont.isActive) cont.resume(r) }
                     }
                 }
-                if (result == null && loader.cancelRequest(requestId)) {
+                if (result == null) {
+                    loader.cancelRequest(requestId)
                     applyPartitionTimeout(sortId, page, generation, sourceKey)
-                } else if (result != null && !result.stale) {
+                } else if (!result.stale) {
                     applyPartitionResult(sortId, page, result.absXml)
                 }
             }
