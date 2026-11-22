@@ -310,3 +310,9 @@
 ## 2026-11-22 第3阶段 Jar 下载失败路径
 - JarLoader 的远程下载和 Asset 复制失败现在返回 null，parseJar 不再将失败/部分临时文件传给 DexClassLoader；仅成功完成原子缓存替换的文件才进入 load。
 - 尚未运行 Gradle 或设备测试。
+
+
+## 2026-11-22 第3阶段 Jar Init 初始化失败传播
+- 修复 JarLoader.invokeInit() 吞掉 Init.init(Context) 异常后仍将 DexClassLoader 注册为成功的问题。
+- 仅当 Jar 不包含可选 Init 类时兼容跳过；若 Init 类存在但方法缺失、签名不兼容、依赖缺失或执行失败，则阻止该 Jar 注册。
+- 增加成功/可选缺失诊断日志；尚未运行 Gradle、DexClassLoader 集成测试或真机验证。
