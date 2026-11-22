@@ -589,3 +589,15 @@
 - 本轮仅建立安全存储底座，尚未接入网盘登录 UI、短信/扫码流程、文件浏览或播放接口；Keystore 设备兼容、备份恢复及真实账号测试仍待验证。
 - 最终代码提交：14ccbd1d2baf99ab55ccba444aeb936c67061ea8；加密测试：79a0c1f26f3b862dca57010e72885b67dbd39482。
 - 尚未运行 Gradle 编译、单元测试或 Android Keystore 真机验证；未构建 APK。
+
+
+
+## 2026-11-22 网盘账号接入第二轮：光鸭短信登录与文件浏览
+- 偏好设置新增「网盘账号管理」入口，集中展示阿里、夸克、百度、115、UC、光鸭六家 provider；当前仅光鸭进入实现，其他五家明确显示尚未接入。
+- 新增 GuangYaPanClient：手机号规范化、captcha 初始化/挑战提示、两阶段短信验证码、signin 换取 access/refresh token、账号状态检查、refresh token 串行刷新与轮换持久化。
+- 登录会话与 access/refresh token 均经 CloudCredentialVault 加密保存；短信验证码不持久化、不写日志；不记录请求头或响应体。
+- 新增光鸭个人文件列表分页接口与目录进入/返回 UI；仅展示个人文件元信息，不生成公开分享链接。
+- 新增 Android full backup 与 device transfer 排除规则，避免加密凭据文件被备份而 Keystore 密钥未迁移。
+- CloudCredentialVault 改为依赖 AtomicFile.openRead() 恢复备份文件，避免中断写入后仅检查 base 文件存在而误判凭据为空。
+- 尚未实现下载 URL 到 ExoPlayer 的应用内播放桥；尚未实现其他五家网盘；光鸭短信服务端可能要求官方人机验证或调整登录方式。
+- 尚未运行 Gradle 编译、单元测试、Android Keystore 真机登录、文件列表联调或播放验证；未构建 APK。
