@@ -3,7 +3,6 @@ package com.github.avbox.osc.ui
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.os.Message
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -27,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import android.view.ViewGroup
 import androidx.compose.ui.res.stringResource
 import com.github.avbox.osc.R
 import com.github.avbox.osc.net.CloudDriveProviderCatalog
@@ -37,6 +37,8 @@ import com.github.avbox.osc.util.security.CloudCredentialVault
 import org.json.JSONObject
 
 class CloudDriveLoginActivity : BaseActivity() {
+
+    private var loginWebView: WebView? = null
 
     companion object {
         private const val EXTRA_PROVIDER_ID = "cloud_provider_id"
@@ -59,7 +61,6 @@ class CloudDriveLoginActivity : BaseActivity() {
         findViewById<androidx.compose.ui.platform.ComposeView>(R.id.compose_view).setContent {
             AVBoxTheme {
                 val context = LocalContext.current
-                var webView by remember { mutableStateOf<WebView?>(null) }
                 var pageTitle by remember { mutableStateOf("") }
                 var message by remember { mutableStateOf("") }
                 Column(
@@ -92,7 +93,6 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     override fun onReceivedTitle(view: WebView?, title: String?) {
                                         pageTitle = title.orEmpty()
                                     }
-                                    override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean = false
                                 }
                                 webViewClient = object : WebViewClient() {
                                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -103,10 +103,9 @@ class CloudDriveLoginActivity : BaseActivity() {
                                     }
                                 }
                                 loadUrl(provider.loginUrl)
-                                webView = this
+                                loginWebView = this
                             }
                         },
-                        update = { webView = it },
                     )
                     if (message.isNotBlank()) {
                         Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -116,6 +115,7 @@ class CloudDriveLoginActivity : BaseActivity() {
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 val manager = CookieManager.getInstance()
+                                manager.flush()
                                 val cookiesByHost = JSONObject()
                                 provider.cookieHosts.forEach { host ->
                                     val cookie = manager.getCookie("https://$host/").orEmpty()
@@ -147,6 +147,14 @@ class CloudDriveLoginActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        loginWebView?.let { view ->
+            view.stopLoading()
+            view.clearHistory()
+            view.removeAllViews()
+            (view.parent as? ViewGroup)?.removeView(view)
+            view.destroy()
+        }
+        loginWebView = null
         super.onDestroy()
     }
 }

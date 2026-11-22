@@ -673,3 +673,11 @@
 - CloudCookieInjector 对 host-map 凭据按请求精确 host 读取，避免跨 host 广播；旧版单行 Cookie 仍兼容读取。
 - 新增 CloudDriveProviderCatalog 统一维护 provider 登录入口与 Cookie host allowlist；Manifest 注册非导出的登录 Activity。
 - 尚未运行 Gradle 编译、单元测试或真机网页登录；登录 URL、OAuth 重定向、验证码、Token-only provider 和配置中心 JAR 内部凭据同步仍待逐家验证；未构建 APK。
+
+
+## 2026-11-22 网盘浏览器登录页面资源清理
+- 删除 WebView 登录页未使用的 Compose WebView 状态引用与无效 popup 拒绝覆盖，减少无效状态和回调代码。
+- 用户点击保存前显式 flush WebView CookieManager，降低 Cookie 尚未持久化时读取为空的风险。
+- Activity 销毁时停止 WebView 加载、清理历史与子视图并销毁 WebView，避免登录页面退出后继续占用资源。
+- 仅清理可确认无用的页面代码；保留凭据保险库兼容读取与清理接口、请求注入匹配函数，因其仍承担兼容或代理路径职责。
+- 待本次 CI Debug APK 构建与验证。

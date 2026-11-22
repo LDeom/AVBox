@@ -43,3 +43,10 @@
 - CookieManager 读取范围仅限每家 provider 的 host allowlist；持久化结构为加密 JSON host map。请求端只向 URL 精确 host 注入对应条目；保留旧版纯 Cookie 字符串读取兼容。
 - 首轮入口 URL 采用 provider 官方站点主域名，实际认证可能跳转到其他子域名；若 Cookie 仅存在于未列出的认证 host，保存时会提示未检测到 Cookie。应依据真实 WebView 跳转和 JAR 请求再扩展 allowlist，不能放宽到任意站点。
 - 本轮尚未编译、测试或真机验证。不能宣称八家登录均已成功；Token-only 驱动与独立网络栈 JAR 仍需适配。
+
+
+## 2026-11-22 第二轮清理核对
+- 删除 CloudDriveLoginActivity 中从未参与 UI 的 WebView Compose 状态变量、空 onDestroy 覆盖以及默认行为已是拒绝的 onCreateWindow 空实现。
+- 将 WebView 实例改由 Activity 生命周期持有；销毁时停止加载、清理并 destroy，保存前调用 CookieManager.flush()。
+- 检查 CloudCookieInjector 的 provider 匹配方法仍由 ProxyEntry type-3 路径使用；凭据 vault 的清理/旧凭据兼容逻辑保留，不作未经调用关系证明的删除。
+- 本轮构建结果以对应 GitHub Actions run 为准；WebView 登录和真实驱动认证仍需真机验证。
