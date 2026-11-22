@@ -18,4 +18,16 @@ class AppLogRotationTest {
         assertTrue(AppLog.shouldRotateLog(AppLog.FILE_LOG_MAX_BYTES))
         assertTrue(AppLog.shouldRotateLog(AppLog.FILE_LOG_MAX_BYTES + 1024))
     }
+
+    @Test
+    fun sanitizesSensitiveLogFieldsBeforeExport() {
+        val line = "request token=abc123 api_key:secret password=hunter2 keep=value"
+        val sanitized = AppLog.sanitizeLogLine(line)
+        assertTrue(sanitized.contains("token=[REDACTED]"))
+        assertTrue(sanitized.contains("api_key:[REDACTED]"))
+        assertTrue(sanitized.contains("password=[REDACTED]"))
+        assertTrue(sanitized.contains("keep=value"))
+        assertFalse(sanitized.contains("abc123"))
+        assertFalse(sanitized.contains("hunter2"))
+    }
 }
