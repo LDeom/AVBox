@@ -73,6 +73,7 @@ class JarLoader {
     }
 
     fun loadLiveJar(jar: String?) {
+        if (jar.isNullOrEmpty()) return
         val key = jarKey(jar)
         val generation = clearGeneration.get()
         synchronized(lifecycleLock) {
