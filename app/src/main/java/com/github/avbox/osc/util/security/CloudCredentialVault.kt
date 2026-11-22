@@ -16,8 +16,7 @@ object CloudCredentialVault {
     private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
     private const val KEY_ALIAS_PREFIX = "avbox_cloud_credentials_"
     private const val KEY_ALIAS_SUFFIX = "_v1"
-    private const val FILE_PREFIX = "cloud_credentials_"
-    private const val FILE_SUFFIX = ".enc"
+    private const val CREDENTIAL_DIRECTORY = "cloud_credentials"
     private const val LEGACY_FILE_NAME = "cloud_credentials.enc"
     private const val LEGACY_KEY_ALIAS = "avbox_cloud_credentials_v1"
     private val lock = Any()
@@ -64,11 +63,10 @@ object CloudCredentialVault {
     @JvmStatic
     fun clear() = synchronized(lock) {
         val context = requireNotNull(AppContextHolder.context()) { "Application context is unavailable" }
-        val files = context.filesDir.listFiles().orEmpty()
-        files.filter {
-            (it.name.startsWith(FILE_PREFIX) && it.name.endsWith(FILE_SUFFIX)) ||
-                it.name == LEGACY_FILE_NAME
-        }.forEach { AtomicFile(it).delete() }
+        val directory = File(context.filesDir, CREDENTIAL_DIRECTORY)
+        directory.listFiles().orEmpty().forEach { AtomicFile(it).delete() }
+        directory.delete()
+        AtomicFile(File(context.filesDir, LEGACY_FILE_NAME)).delete()
         val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
         keyStore.load(null)
         val aliases = keyStore.aliases()
@@ -82,7 +80,9 @@ object CloudCredentialVault {
 
     private fun credentialFile(providerId: String): AtomicFile {
         val context = requireNotNull(AppContextHolder.context()) { "Application context is unavailable" }
-        return AtomicFile(File(context.filesDir, FILE_PREFIX + providerId + FILE_SUFFIX))
+        val directory = File(context.filesDir, CREDENTIAL_DIRECTORY)
+        check(directory.exists() || directory.mkdirs()) { "Unable to create cloud credential directory" }
+        return AtomicFile(File(directory, "$providerId.enc"))
     }
 
     private fun existingKey(providerId: String): SecretKey {
