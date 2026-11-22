@@ -143,7 +143,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
                     + (videoView.mediaPlayer?.javaClass?.simpleName ?: "null")
                     + " pos=" + videoView.currentPosition
                     + " started=" + controller.isPlaybackStarted()
-                    + " url=" + controller.webPlayUrl()
+                    + " url=" + PlaybackUrlLog.safe(controller.webPlayUrl())
             )
         }
         if (playState == PlayState.PLAYING) {
