@@ -101,6 +101,11 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         @Volatile
         private var pending: ((LoaderResult) -> Unit)? = null
 
+        private var requestSequence = 0L
+
+        @Volatile
+        private var pendingRequestId = 0L
+
         @Volatile
         var busy: Boolean = false
             private set
@@ -108,34 +113,50 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
         init {
             loaderScope.launch {
                 svm.listResult.flow.collect { abs ->
-                    val current = pending
-                    pending = null
-                    busy = false
-                    current?.invoke(LoaderResult(false, abs))
+                    deliverResult(abs)
                 }
             }
         }
 
         @Synchronized
-        fun cancelRequest() {
-            svm.cancelList()
+        private fun deliverResult(abs: AbsXml?) {
+            val current = pending
+            pending = null
+            pendingRequestId = 0L
+            busy = false
+            current?.invoke(LoaderResult(false, abs))
+        }
+
+        @Synchronized
+        fun cancelRequest(requestId: Long): Boolean {
+            if (requestId == 0L || pendingRequestId != requestId || pending == null) return false
             pending?.invoke(LoaderResult(true, null))
             pending = null
+            pendingRequestId = 0L
             busy = false
+            svm.cancelList()
+            return true
         }
 
         @Synchronized
         fun release() {
-            cancelRequest()
+            svm.cancelList()
+            pending?.invoke(LoaderResult(true, null))
+            pending = null
+            pendingRequestId = 0L
+            busy = false
             loaderScope.cancel()
         }
 
         @Synchronized
-        fun request(page: Int, data: MovieSort.SortData, sourceKey: String?, onDone: (LoaderResult) -> Unit) {
+        fun request(page: Int, data: MovieSort.SortData, sourceKey: String?, onDone: (LoaderResult) -> Unit): Long {
             pending?.invoke(LoaderResult(true, null))
+            requestSequence += 1
+            pendingRequestId = requestSequence
             pending = onDone
             busy = true
             svm.getList(sourceKey, data, page)
+            return requestSequence
         }
     }
 
@@ -229,18 +250,18 @@ class PartitionListViewModel : ViewModel(), TmdbPosterCache {
             _ui.value = _ui.value.copy(loadingMore = true, loadMoreError = false)
         }
         scope.launch {
+            var requestId = 0L
             val result = withTimeoutOrNull(20_000) {
                 suspendCancellableCoroutine<LoaderResult> { cont ->
-                    requestLoader.request(page, data, requestSourceKey) { r ->
+                    requestId = requestLoader.request(page, data, requestSourceKey) { r ->
                         if (cont.isActive) cont.resume(r)
                     }
                 }
             }
             if (requestLevel != _level.value || requestLoader !== loader) return@launch
-            if (result == null) {
-                requestLoader.cancelRequest()
+            if (result == null && requestLoader.cancelRequest(requestId)) {
                 applyTimeout(page)
-            } else if (!result.stale) {
+            } else if (result != null && !result.stale) {
                 applyResult(page, result.absXml)
             }
         }
