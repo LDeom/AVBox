@@ -70,10 +70,9 @@ class JarLoader {
     }
 
     fun clear() {
-        val stale: List<Spider>
-        synchronized(lifecycleLock) {
+        val stale = synchronized(lifecycleLock) {
             clearGeneration.incrementAndGet()
-            stale = ArrayList(spiders.values)
+            val current = ArrayList(spiders.values)
             loaders.clear()
             proxyMethods.clear()
             danmuClickMethods.clear()
@@ -83,16 +82,16 @@ class JarLoader {
             aliases.clear()
             liveJars.clear()
             recent = MAIN_KEY
+            current
         }
         for (spider in stale) {
             SpiderReaper.retire(spider)
         }
     }
 
-    private fun load(key: String, file: File): Boolean {
+    private fun load(key: String, file: File, generation: Long = clearGeneration.get()): Boolean {
         if (Thread.interrupted()) return false
-        if (!exists(file)) return false
-        val generation = clearGeneration.get()
+        if (!exists(file) || generation != clearGeneration.get()) return false
         if (loaders.containsKey(key)) return generation == clearGeneration.get()
         if (BootGuard.isJarDisabled(file.absolutePath)) {
             AppLog.i("echo-boot-guard: blocked jar key=" + key + " file=" + file.absolutePath)
@@ -169,10 +168,11 @@ class JarLoader {
 
     fun parseJar(key: String?, jar: String?) {
         if (key.isNullOrEmpty() || jar.isNullOrEmpty()) return
+        val generation = clearGeneration.get()
         if (loaders.containsKey(key)) return
         val lock = lock(key)
         synchronized(lock) {
-            if (loaders.containsKey(key)) return
+            if (generation != clearGeneration.get() || loaders.containsKey(key)) return
             var source = jar
             var md5 = ""
             val texts = RegexUtils.getPattern(";md5;").split(source)
@@ -187,17 +187,17 @@ class JarLoader {
             }
             val file = fileForJar(source)
             if (!TextUtils.isEmpty(md5) && exists(file) && MD5.fileMd5(file).equals(md5, ignoreCase = true)) {
-                load(key, file)
+                load(key, file, generation)
             } else if (TextUtils.isEmpty(md5) && exists(file) && !FileUtils.isWeekAgo(file)) {
                 load(key, file)
             } else if (source.startsWith("http")) {
-                load(key, download(source, file))
+                load(key, download(source, file), generation)
             } else if (source.startsWith("assets")) {
-                load(key, copyAsset(source, file))
+                load(key, copyAsset(source, file), generation)
             } else if (source.startsWith("file")) {
-                load(key, local(source))
+                load(key, local(source), generation)
             } else if (source.startsWith("clan://")) {
-                load(key, download(clanToAddress(source), file))
+                load(key, download(clanToAddress(source), file), generation)
             }
         }
     }
