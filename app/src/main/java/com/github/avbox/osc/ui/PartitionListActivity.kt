@@ -387,7 +387,7 @@ private fun VideoGrid(
                 when {
                     loadingMore -> Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -395,7 +395,7 @@ private fun VideoGrid(
                     }
                     loadMoreError -> TextButton(
                         onClick = onRetryLoadMore,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.common_retry))
                     }
