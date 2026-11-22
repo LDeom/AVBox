@@ -513,9 +513,11 @@ object FileUtils {
                     AppLog.i("echo-loadModule invalid assets url " + name)
                 }
             } else if (name.startsWith("js/lib/")) {
-                rel = asOpen(name)
+                val assetPath = jsLibAssetPath(name)
+                if (assetPath != null) rel = asOpen(assetPath)
             } else if (isAsFile(name, "js/lib")) {
-                rel = asOpen("js/lib/" + name)
+                val assetPath = jsLibAssetPath(name)
+                if (assetPath != null) rel = asOpen(assetPath)
             } else if (name.startsWith("file://")) {
                 val modulePath = fileModulePath(name)
                 if (modulePath != null) {
@@ -537,6 +539,13 @@ object FileUtils {
             AppLog.e("FileUtils", e)
         }
         return rel
+    }
+
+    internal fun jsLibAssetPath(name: String): String? {
+        if (name.isEmpty()) return null
+        if (name.startsWith("js/lib/")) return name
+        if (name.contains('/')) return null
+        return "js/lib/" + name
     }
 
     internal fun assetsModulePath(name: String): String? {
