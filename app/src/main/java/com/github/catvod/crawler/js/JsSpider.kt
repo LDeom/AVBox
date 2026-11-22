@@ -39,6 +39,20 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
+internal object JsModuleContent {
+
+    fun isInvalid(content: String?): Boolean {
+        if (content.isNullOrEmpty()) return true
+        var normalized = content.trim { it <= ' ' }
+        if (normalized.startsWith("\uFEFF")) normalized = normalized.substring(1).trim { it <= ' ' }
+        val lower = normalized.lowercase(Locale.ROOT)
+        return lower.startsWith("<")
+                || lower.startsWith("{\"code\":404")
+                || lower.startsWith("404")
+                || lower.startsWith("not found")
+    }
+}
+
 class JsSpider : Spider {
 
     private val executor: ExecutorService
@@ -537,14 +551,7 @@ class JsSpider : Spider {
     }
 
     private fun isInvalidModuleContent(content: String?): Boolean {
-        if (content.isNullOrEmpty()) return true
-        var trim = content.trim { it <= ' ' }
-        if (trim.startsWith("\uFEFF")) trim = trim.substring(1).trim { it <= ' ' }
-        val lower = trim.lowercase(Locale.getDefault())
-        return lower.startsWith("<")
-                || lower.startsWith("{\"code\":404")
-                || lower.startsWith("404")
-                || lower.startsWith("not found")
+        return JsModuleContent.isInvalid(content)
     }
 
     private fun preloadTemplate() {
