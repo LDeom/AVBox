@@ -286,7 +286,7 @@ class PlaybackStarter(private val host: Host) {
             goPlayUrl(target, headers)
             return
         }
-        AppLog.i("echo-playM3u8:" + target)
+        AppLog.i("echo-playM3u8:" + PlaybackUrlLog.safe(target))
         host.view()?.playM3u8(target, headers, playUrlGeneration)
         host.setWebPlayUrl(target)
     }
@@ -298,7 +298,7 @@ class PlaybackStarter(private val host: Host) {
             host.cancelPlayTimeout()
             return
         }
-        AppLog.i("echo-goPlayUrl:" + url)
+        AppLog.i("echo-goPlayUrl:" + PlaybackUrlLog.safe(url))
         if (TextUtils.isEmpty(url)) {
             host.handleResolvePlayUrlFailed(PlaybackController.str(R.string.player_play_url_empty))
             return
