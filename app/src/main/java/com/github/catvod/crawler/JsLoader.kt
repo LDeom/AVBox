@@ -110,28 +110,39 @@ class JsLoader {
                 }
             }
         }
+        val temp = File(cache.absolutePath + ".tmp")
         try {
-            val response = Http.getSync(jar)
-            val inputStream = response.body.byteStream()
-            val outputStream = FileOutputStream(cache)
-            try {
-                val buffer = ByteArray(2048)
-                var length = 0
-                while (inputStream.read(buffer).also { length = it } > 0) {
-                    outputStream.write(buffer, 0, length)
+            if (temp.exists()) temp.delete()
+            Http.getSync(jar).use { response ->
+                if (!response.isSuccessful) throw IllegalStateException("JS API Jar HTTP ${response.code}")
+                val body = response.body ?: throw IllegalStateException("JS API Jar body is empty")
+                body.byteStream().use { inputStream ->
+                    FileOutputStream(temp).use { outputStream ->
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val length = inputStream.read(buffer)
+                            if (length < 0) break
+                            outputStream.write(buffer, 0, length)
+                        }
+                        outputStream.flush()
+                    }
                 }
-            } finally {
-                try {
-                    inputStream.close()
-                    outputStream.close()
-                } catch (e: Exception) {
-                    AppLog.e("JsLoader", e)
-                }
+            }
+            if (temp.length() <= 0L) throw IllegalStateException("JS API Jar download is empty")
+            if (!md5.isEmpty() && !MD5.fileMd5(temp).equals(md5, ignoreCase = true)) {
+                throw IllegalStateException("JS API Jar MD5 mismatch")
+            }
+            if (cache.exists() && !cache.delete()) throw IllegalStateException("Cannot replace JS API Jar cache")
+            if (!temp.renameTo(cache)) {
+                FileUtils.copyFile(temp, cache)
+                temp.delete()
             }
             loadClassLoader(cache.absolutePath, key)
             return classes[key]
         } catch (e: Throwable) {
             AppLog.e("JsLoader", e)
+            if (temp.exists()) temp.delete()
+            if (cache.exists() && !md5.isEmpty() && !MD5.fileMd5(cache).equals(md5, ignoreCase = true)) cache.delete()
         }
         return null
     }
