@@ -93,9 +93,12 @@ class ConfigLoader(private val owner: ApiConfig) {
     }
 
     private fun runLoadConfig(useCache: Boolean, callback: ApiConfig.LoadConfigCallback) {
+        val operationId = AppLog.newOperationId()
+        AppLog.operationEvent(operationId, "config.vod.load", "start", "useCache=$useCache")
         val apiUrl = guarded(callback, R.string.toast_config_parse_failed) { KV.get(KVKeys.API_URL, "") } ?: return
         if (apiUrl.isEmpty()) {
-            callback.error("-1")
+            AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
+                    callback.error("-1")
             return
         }
         val cache = guarded(callback, R.string.toast_config_parse_failed) {
@@ -110,7 +113,8 @@ class ConfigLoader(private val owner: ApiConfig) {
                 }
                 clearApiLinesIfUnmatched(apiUrl)
                 owner.parseJson(apiUrl, json)
-                callback.success()
+                AppLog.operationEvent(operationId, "config.vod.load", "success")
+                    callback.success()
                 return
             } catch (th: Throwable) {
                 AppLog.e("ApiConfig", th)
@@ -126,6 +130,7 @@ class ConfigLoader(private val owner: ApiConfig) {
             override fun success(body: String) {
                 if (isStaleFetch(apiUrl)) {
                     AppLog.debugI("echo-switch: drop stale config fetch")
+                    AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error("stale")
                     return
                 }
@@ -138,9 +143,11 @@ class ConfigLoader(private val owner: ApiConfig) {
                     clearApiLinesIfUnmatched(apiUrl)
                     owner.parseJson(apiUrl, body)
                     FileUtils.saveCache(cache, body)
+                    AppLog.operationEvent(operationId, "config.vod.load", "success")
                     callback.success()
                 } catch (th: Throwable) {
                     AppLog.e("ApiConfig", th)
+                    AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error(ApiConfig.str(R.string.toast_config_parse_failed))
                 }
             }
@@ -148,14 +155,17 @@ class ConfigLoader(private val owner: ApiConfig) {
             override fun error(error: String?) {
                 if (isStaleFetch(apiUrl)) {
                     AppLog.debugI("echo-switch: drop stale config fetch")
+                    AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error("stale")
                     return
                 }
                 if (isLocalSourceUnreadable(apiUrl)) {
+                    AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error(localSourceUnreadableMsg())
                     return
                 }
                 if (isLocalSourceMissing(apiUrl)) {
+                    AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error(localSourceMissingMsg())
                     return
                 }
@@ -168,13 +178,15 @@ class ConfigLoader(private val owner: ApiConfig) {
                         }
                         clearApiLinesIfUnmatched(apiUrl)
                         owner.parseJson(apiUrl, json)
-                        callback.success()
+                        AppLog.operationEvent(operationId, "config.vod.load", "success")
+                    callback.success()
                         return
                     } catch (th: Throwable) {
                         AppLog.e("ApiConfig", th)
                     }
                 }
-                callback.error(ApiConfig.str(R.string.toast_config_fetch_failed, error))
+                AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
+                    callback.error(ApiConfig.str(R.string.toast_config_fetch_failed, error))
             }
         })
     }
