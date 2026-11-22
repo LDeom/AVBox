@@ -7,6 +7,7 @@ import com.whl.quickjs.wrapper.JSObject
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 
 class Async private constructor(private val converter: ((Any?) -> Any?)? = null) {
 
@@ -78,15 +79,22 @@ class Async private constructor(private val converter: ((Any?) -> Any?)? = null)
     class Result {
 
         private val latch: CountDownLatch = CountDownLatch(1)
+        @Volatile
         private var value: Any? = null
+
+        @Volatile
         private var error: Throwable? = null
 
+        private val completed: AtomicBoolean = AtomicBoolean(false)
+
         fun complete(value: Any?) {
+            if (!completed.compareAndSet(false, true)) return
             this.value = value
             latch.countDown()
         }
 
         fun completeExceptionally(error: Throwable) {
+            if (!completed.compareAndSet(false, true)) return
             this.error = error
             latch.countDown()
         }
