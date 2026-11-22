@@ -350,6 +350,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             if (!sortRetried) {
                 sortRetried = true
                 AppLog.i("echo--sort-retry: src=$key")
+                armSortWatchdog(loadGeneration)
                 sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
                 return
             }
@@ -365,8 +366,6 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             return
         }
 
-        sortWatchdogJob?.cancel()
-        sortWatchdogJob = null
         AppLog.i("echo--sort-result: src=$key hasClasses=${absXml?.classes?.sortList != null} sortSize=${absXml?.classes?.sortList?.size}")
         val sortList = absXml?.classes?.sortList
         val adjusted = if (sortList != null) {
@@ -392,6 +391,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 scope.launch {
                     delay(2000)
                     if (loadingSourceKey == key && loadGeneration == gen) {
+                        armSortWatchdog(gen)
                         sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
                     }
                 }
@@ -408,6 +408,8 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             sortsLoaded.value = true
             return
         }
+        sortWatchdogJob?.cancel()
+        sortWatchdogJob = null
         _sorts.value = visible
         val vertical = HomeSettings.layout == HomeSettings.HomeLayout.Vertical
         val active = _activeSortId.value?.takeIf { id -> visible.any { it.id == id } } ?: visible.firstOrNull()?.id
