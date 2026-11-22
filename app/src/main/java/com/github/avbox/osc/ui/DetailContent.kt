@@ -99,6 +99,10 @@ internal fun DetailContent(
             )
         }
 
+        item(key = "sources") {
+            SourceSection(vm, currentSourceName = displaySourceName)
+        }
+
         if (episodes.isNotEmpty()) {
             item(key = "episodes") {
                 EpisodeRow(vm, info, episodes, playIndex, currentFlag)
@@ -152,10 +156,6 @@ internal fun DetailContent(
                     }
                 }
             }
-        }
-
-        item(key = "sources") {
-            SourceSection(vm, currentSourceName = displaySourceName)
         }
 
         item(key = "tmdb_info") {
