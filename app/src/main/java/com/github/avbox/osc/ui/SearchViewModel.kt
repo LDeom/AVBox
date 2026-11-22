@@ -98,6 +98,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
 
     private var suggestJob: Job? = null
     private var searchJob: Job? = null
+    private val activeJsSourceKeys = linkedSetOf<String>()
 
     private var token = 0
     private var arriveSeq = 0
@@ -146,6 +147,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         } catch (ignored: Throwable) {
             AppLog.d("SearchViewModel", "cancel search requests failed")
         }
+        activeJsSourceKeys.forEach(JsLoader::stop)
+        activeJsSourceKeys.clear()
     }
 
     private fun fetchHotSearch() {
@@ -248,6 +251,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         } catch (ignored: Throwable) {
             AppLog.d("SearchViewModel", "cancel previous search requests failed")
         }
+        activeJsSourceKeys.forEach(JsLoader::stop)
+        activeJsSourceKeys.clear()
         for (entry in pendingSources) {
             entry.value.complete(Unit)
         }
@@ -257,9 +262,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         val sources = ApiConfig.get().getSourceBeanList()
             .filter { it.isSearchable() && picked.contains(it.key) }
             .sortedBy { it.key != home.key }
-        sources.filter { it.type == 3 }.forEach { bean ->
-            JsLoader.stop(bean.key)
-        }
+        activeJsSourceKeys.addAll(sources.filter { it.type == 3 }.mapNotNull { it.key })
         arriveSeq = 0
         _results.value = sources.map { SourceResult(it.key.orEmpty(), it.name.orEmpty(), ResultState.Pending, emptyList()) }
         _sitesEmpty.value = sources.isEmpty()
