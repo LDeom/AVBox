@@ -486,8 +486,8 @@ internal fun relativeRefs(text: String): List<String> {
 }
 
 internal fun isSafeRelativeRef(ref: String): Boolean {
-    if (ref.isEmpty() || ref.startsWith('/') || ref.startsWith('\\\\')) return false
-    if (ref.contains('\\\\') || ref.any { it.isISOControl() }) return false
+    if (ref.isEmpty() || ref.startsWith('/') || ref.startsWith('\\')) return false
+    if (ref.contains('\\') || ref.any { it.isISOControl() }) return false
     val segments = ref.split('/')
     return segments.all { it.isNotEmpty() && it != "." && it != ".." }
 }
