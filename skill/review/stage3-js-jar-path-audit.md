@@ -94,3 +94,10 @@ SpiderLoader、JarLoader、JsLoader、JsSpider、QuickJS UriUtil；仅静态审�
 - setCacheByte的DRPY标记固定使用US-ASCII，避免设备默认字符集影响二进制缓存头。
 - 新增8个并发写入任务测试，验证最终文件完整匹配其中一次写入且无残留.tmp/.bak。
 - 当前仅提交源码和测试；未运行Gradle测试或真机验证。
+
+## 第十一轮 Jar 加载生命周期与取消处理（2026-11-22）
+- JarLoader.clear() 的代际递增与运行态清理在同一生命周期锁内执行。
+- parseJar() 捕获开始时的 generation，并将同一代际传递至缓存命中、远程下载、assets 和本地 Jar 的激活步骤；清理后到达的旧任务不得重新注册 ClassLoader。
+- Jar 反射得到的 Proxy/Danmaku 方法先保存在局部变量，只有通过生命周期代际校验后才写入共享注册表，避免清理与加载交错造成旧方法残留或误删新方法。
+- JsLoader 的自定义 JS API Jar 类查找在遇到 InterruptedException 时恢复线程中断标记并停止重试；下载异常路径同样保留中断状态。
+- 本轮为静态源码修复；未运行 Gradle 测试、设备验证或动态 Jar 加载测试。
