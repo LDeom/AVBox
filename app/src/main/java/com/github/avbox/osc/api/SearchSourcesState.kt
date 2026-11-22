@@ -23,17 +23,16 @@ object SearchSourcesState {
     }
 
     fun applySelection(next: Set<String>) {
-        val searchable = ApiConfig.get().getSourceBeanList()
-            .filter(SourceBean::isSearchable)
-            .map { it.key.orEmpty() }
+        val searchable = currentSearchableSources()
+            .map { it.key }
             .toSet()
         SearchSettingsState.putSourcesForSearch(next, searchable)
         refresh()
     }
 
     private fun build(): Ui {
-        val sources = ApiConfig.get().getSourceBeanList().filter(SourceBean::isSearchable)
-        val keys = sources.map { it.key.orEmpty() }.toSet()
+        val sources = currentSearchableSources()
+        val keys = sources.map { it.key }.toSet()
         val stored = SearchSettingsState.currentSelection()
         val picked = when {
             stored == null -> keys
@@ -42,4 +41,9 @@ object SearchSourcesState {
         }
         return Ui(sources, picked)
     }
+
+    private fun currentSearchableSources(): List<SourceBean> =
+        ApiConfig.get().getSourceBeanList()
+            .filter { it.isSearchable() && it.key.isNotBlank() }
+            .distinctBy { it.key }
 }
