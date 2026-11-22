@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -234,48 +235,128 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
             if (state.overlay.visible) {
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth(0.72f)
-                        .padding(start = 16.dp, bottom = 16.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color.Black.copy(alpha = 0.58f),
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(start = 18.dp, top = 12.dp),
+                    shape = RoundedCornerShape(50),
+                    color = Color.Black.copy(alpha = 0.52f),
+                    shadowElevation = 8.dp,
                 ) {
-                    ChannelInfoSection(
+                    Row(
+                        modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer)
+                            .padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.size(34.dp).background(Color.White.copy(alpha = 0.14f), RoundedCornerShape(50)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = stringResource(R.string.live_channel_list),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+                PlayerCornerButtons(
+                    actions.player,
+                    Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(end = 18.dp, top = 12.dp),
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 20.dp, bottom = 20.dp)
+                        .fillMaxWidth(0.70f)
+                        .widthIn(max = 760.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Black.copy(alpha = 0.64f),
+                    shadowElevation = 12.dp,
+                ) {
+                    LandscapeChannelInfoSection(
                         info = state.channelInfo,
                         timeshift = state.timeshift,
                         overlay = state.overlay,
                     )
-                }
-                IconButton(
-                    onClick = actions.list.onToggleDrawer,
-                    modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp),
-                ) {
-                    Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
                 }
             }
             if (state.channelList.channelDrawerVisible) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.30f))
+                        .background(Color.Black.copy(alpha = 0.24f))
                         .clickable(onClick = actions.list.onDismissDrawer),
                 )
                 Surface(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .fillMaxHeight(0.96f)
-                        .padding(start = 8.dp)
-                        .width(340.dp),
-                    shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp),
-                    color = Color.Black.copy(alpha = 0.46f),
-                    shadowElevation = 20.dp,
+                        .padding(start = 10.dp)
+                        .fillMaxWidth(0.38f)
+                        .widthIn(min = 280.dp, max = 420.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color.Black.copy(alpha = 0.48f),
+                    shadowElevation = 24.dp,
                 ) {
-                    ChannelListSection(
-                        channelList = state.channelList,
-                        onToggleGroup = actions.list.onToggleGroup,
-                        onSelectChannel = actions.list.onSelectChannel,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 14.dp, top = 18.dp, bottom = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.live_channel_list),
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Text(
+                                    text = state.channelInfo.name,
+                                    color = Color.White.copy(alpha = 0.70f),
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = Color.White.copy(alpha = 0.12f),
+                            ) {
+                                Text(
+                                    text = state.channelList.rows.count { it.channel != null }.toString(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            PlayerCornerButton(
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.rotate(180f).size(18.dp),
+                                    )
+                                },
+                                onClick = actions.list.onDismissDrawer,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(1.dp)
+                                .background(Color.White.copy(alpha = 0.14f)),
+                        )
+                        ChannelListSection(
+                            channelList = state.channelList,
+                            onToggleGroup = actions.list.onToggleGroup,
+                            onSelectChannel = actions.list.onSelectChannel,
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
@@ -479,6 +560,98 @@ private fun TimeshiftBar(
             fontSize = 12.sp,
             modifier = Modifier.padding(start = 8.dp),
         )
+    }
+}
+
+@Composable
+private fun LandscapeChannelInfoSection(
+    info: ChannelInfoUi,
+    timeshift: LiveTimeshiftUi,
+    overlay: LiveOverlayUi,
+) {
+    if (info.name.isEmpty()) return
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = RoundedCornerShape(7.dp), color = Color.White.copy(alpha = 0.16f)) {
+                Text(
+                    text = info.num.toString(),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = info.name,
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = Color(0xFFDC4545).copy(alpha = 0.20f),
+            ) {
+                Text(
+                    text = if (timeshift.isBackState) stringResource(R.string.live_replaying) else stringResource(R.string.live_on_air),
+                    color = Color(0xFFFF7777),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+            if (info.sourceText.isNotEmpty()) {
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(text = info.sourceText, color = Color.White.copy(alpha = 0.68f), fontSize = 12.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(9.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = info.currentEpgTime,
+                color = Color.White.copy(alpha = 0.68f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = info.currentEpgTitle,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (overlay.showTimeOn && overlay.timeText.isNotEmpty()) {
+                Text(text = overlay.timeText, color = Color.White.copy(alpha = 0.72f), fontSize = 12.sp)
+            }
+        }
+        if (info.nextEpgTitle.isNotEmpty() || (overlay.showNetSpeedOn && overlay.netSpeedText.isNotEmpty())) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = info.nextEpgTime,
+                    color = Color.White.copy(alpha = 0.48f),
+                    fontSize = 11.sp,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = info.nextEpgTitle,
+                    color = Color.White.copy(alpha = 0.58f),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (overlay.showNetSpeedOn && overlay.netSpeedText.isNotEmpty()) {
+                    Text(text = overlay.netSpeedText, color = Color.White.copy(alpha = 0.62f), fontSize = 11.sp)
+                }
+            }
+        }
     }
 }
 
