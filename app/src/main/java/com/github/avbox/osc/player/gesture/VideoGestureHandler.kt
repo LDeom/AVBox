@@ -60,6 +60,7 @@ class VideoGestureHandler(
     private var mode = Mode.UNDECIDED
     private var downX = 0f
     private var downY = 0f
+    private var downX = 0f
     private var lastX = 0f
     private var moved = false
     private var longPressed = false
@@ -80,6 +81,7 @@ class VideoGestureHandler(
         this.session = session
         this.downX = x
         this.downY = y
+        this.downX = x
         this.lastX = x
         this.mode = Mode.UNDECIDED
         this.moved = false
@@ -137,7 +139,7 @@ class VideoGestureHandler(
     }
 
     private fun decideMode(dx: Float, dy: Float, s: VideoGestureSession): Mode {
-        if (s.locked) return Mode.NONE
+        if (s.locked || !s.gestureEnabled) return Mode.NONE
         if (!s.inPlayback) return Mode.NONE
         val horizontal = kotlin.math.abs(dx) > kotlin.math.abs(dy)
         if (horizontal) {
@@ -147,13 +149,13 @@ class VideoGestureHandler(
         if (s.previewMode) return Mode.NONE
         if (!s.fullScreen && !s.enableInNormal) return Mode.NONE
         if (s.verticalSlidingDisabled) return Mode.NONE
-        return if (lastX >= s.screenWidth / 2f) Mode.VOLUME else Mode.BRIGHTNESS
+        return if (downX >= s.screenWidth / 2f) Mode.VOLUME else Mode.BRIGHTNESS
     }
 
     fun maybeLongPress(): Boolean {
         val s = session ?: return false
         if (moved || longPressed) return false
-        if (s.locked || s.previewMode || s.paused) return false
+        if (s.locked || !s.gestureEnabled || s.previewMode || s.paused) return false
         if (!s.inPlayback) return false
         longPressed = true
         actions.onLongPressStart()
