@@ -271,6 +271,16 @@ class JsLoader {
         }
 
         @JvmStatic
+        fun stop(key: String?) {
+            if (key.isNullOrEmpty()) return
+            try {
+                spiders[key]?.cancelByTag()
+            } catch (th: Throwable) {
+                AppLog.d("JsLoader", "cancel spider failed")
+            }
+        }
+
+        @JvmStatic
         fun stopAll() {
             for (spider in spiders.values) {
                 spider.cancelByTag()
