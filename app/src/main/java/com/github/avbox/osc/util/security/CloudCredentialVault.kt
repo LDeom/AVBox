@@ -16,8 +16,6 @@ object CloudCredentialVault {
 
     private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
     private const val KEY_ALIAS = "avbox_cloud_credentials_v1"
-    private const val TYPE = "AES"
-    private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private val lock = Any()
     private val gson = Gson()
     private val entriesType = object : TypeToken<LinkedHashMap<String, String>>() {}.type
