@@ -227,7 +227,7 @@ class PlaybackStarter(private val host: Host) {
                         GuangYaPanClient.resolveInAppPlaybackUrl(fileId)
                     }
                     if (!host.resolverIsParseResultCurrent(thunderGen)) return@launch
-                    playUrl(thunderGen, playbackUrl, null)
+                    playUrl(thunderGen, playbackUrl, mapOf(MediaSources.HEADER_STRICT_TLS to "true"))
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Throwable) {
