@@ -63,10 +63,7 @@ class HttpGate(private val executor: ExecutorService) {
     }
 
     fun clear() {
-        synchronized(lock) {
-            epoch++
-            pending.clear()
-        }
+        cancelPending()
     }
 
     private fun run(request: Request) {
