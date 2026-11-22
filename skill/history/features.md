@@ -157,3 +157,8 @@
 - LoadEpoch新增受锁保护的runIfCurrent操作，协调加载取消与缓存文件提交。
 - SpiderLoader过期epoch不能提交新Jar缓存，降低快速切换点播源时旧下载覆盖新状态的风险。
 - 增加LoadEpoch当前/过期快照测试；尚未运行Gradle或真机验证。
+
+## 2026-11-22 第3阶段缓存并发写入保护
+- FileUtils.writeSimple串行化原子写入，避免固定临时文件名在并发缓存任务中产生竞争。
+- DRPY二进制缓存标记统一US-ASCII编码。
+- 新增多线程并发写入测试，尚未运行Gradle验证。
