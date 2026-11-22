@@ -1225,12 +1225,11 @@ class PlaybackController {
     }
 
     fun stopPlaybackForPageExit() {
-        starter.cancelPendingCloudResolve()
         st = st.clearSessionFlags()
         music.resetAudioSession()
         timeouts.cancelPendingCompletionDrop()
         cancelInFlight()
-        if (!sourceKey.startsWith("cloud:")) ApiConfig.get().setCurrentPlaySourceKey("")
+        ApiConfig.get().setCurrentPlaySourceKey("")
         music.stopMusicSession()
     }
 
