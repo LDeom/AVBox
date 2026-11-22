@@ -81,3 +81,8 @@
 - 定位并审查 SpiderLoader、JarLoader、JsLoader、JsSpider及QuickJS UriUtil入口。
 - 记录JS API Jar缓存下载非原子写入等待验证风险，新增审查记录 `skill/review/stage3-js-jar-path-audit.md`。
 - 尚未修复或执行Gradle测试，待审阅Http实现与模块相对路径链路后继续。
+
+
+## 2026-11-22 第3阶段 JS API Jar缓存加固
+- 下载改为临时文件写入，校验HTTP状态、非空响应与可用的MD5，关闭响应资源后再替换缓存；失败清理临时文件并保留有效旧缓存。
+- 未执行Gradle测试或设备验证。
