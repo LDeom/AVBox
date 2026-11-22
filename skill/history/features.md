@@ -101,3 +101,9 @@
 - 复核 LivePlayActivity 的 manifest `configChanges`、`onConfigurationChanged`、`applyFullscreen`、`onDestroy` 与共享 PlaybackService 生命周期，以及 BaseActivity 的方向策略和系统栏处理。
 - 当前代码已具备配置变化接管和共享会话保留保护，但旋转是否仍引发 Activity 重建/进程重启尚无真机日志证据，暂不作未经证实的修改。
 - 尚未运行Gradle构建/单测或真机验证。
+
+
+## 2026-11-22 第3阶段 FileUtils模块路径与缓存第三轮
+- 追踪 `FileUtils.loadModule` 的特殊模块名映射、URL_JOIN远程模块、MD5缓存、assets/js-lib/file/clan路径处理及 `setCache`/`getCache` 写入恢复链。
+- 识别缓存直接覆盖写入的中断风险及assets读取使用available()的通用性限制；目前未验证为实际故障，不改变加载语义。
+- 记录更新到 `skill/review/stage3-js-jar-path-audit.md`，等待后续测试基线与针对性修复。
