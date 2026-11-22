@@ -45,4 +45,11 @@ class CloudCookieInjectorTest {
         )
     }
 
+    @Test
+    fun hostLookupRequiresHttpsAndKnownProviderDomain() {
+        assertEquals(true, CloudCookieInjector.matchesAnyProviderHost("https://drive.quark.cn/api"))
+        assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("http://drive.quark.cn/api"))
+        assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("https://example.com/api"))
+    }
+
 }
