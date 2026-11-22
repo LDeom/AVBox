@@ -144,3 +144,10 @@
 
 - 进一步覆盖网络任务排队窗口：旧请求即使尚未创建 OkHttp Call、无法被即时 cancel，也会在真正发起网络请求前再次检查 generation 与当前 URL，从而不会阻塞新源请求。
 - 补充提交：`7418d4232bf3a54b7f0d3e012f4780c34fd85778`。
+
+
+## 第七轮：订阅编辑对话框校验一致性
+- 发现对话框保存按钮原本只判断 `url.isNotBlank()`，而 ViewModel 实际保存前还会过滤 ISO 控制字符。两处规则不完全一致时，ViewModel 可能拒绝保存，但页面仍立即关闭对话框。
+- 保存按钮改为复用 `normalizedSubscribe(name, url)` 的实际规范化校验；只有经过同一套规则后仍有有效 URL 才允许提交。
+- 提交：`ec1ead18d2f24a44ad7773b97f27bb95ea00decf`。
+- 尚未运行 UI 测试或 Gradle 编译。
