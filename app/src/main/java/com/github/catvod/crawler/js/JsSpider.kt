@@ -47,7 +47,7 @@ internal object JsModuleContent {
         if (normalized.startsWith("\uFEFF")) normalized = normalized.substring(1).trim { it <= ' ' }
         val lower = normalized.lowercase(Locale.ROOT)
         return lower.startsWith("<")
-                || Regex("""^\\{\\s*"code"\\s*:\\s*404(?:\\s*[,}])""").containsMatchIn(lower)
+                || Regex("""^\{\s*"code"\s*:\s*404(?:\s*[,}])""").containsMatchIn(lower)
                 || lower.startsWith("404")
                 || lower.startsWith("not found")
     }
