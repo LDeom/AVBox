@@ -1,5 +1,8 @@
 package com.github.avbox.osc.ui.page
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
@@ -17,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -43,11 +47,15 @@ import com.github.avbox.osc.ui.settings.UiSettingsState
 import com.github.avbox.osc.event.UiChange
 import com.github.avbox.osc.event.UiEvents
 import com.github.avbox.osc.util.AppLanguage
+import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.util.DanmuSettingsState
 import com.github.avbox.osc.util.LanguageManager
 import com.github.avbox.osc.util.SearchSettingsState
 import com.github.avbox.osc.util.restartApp
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
@@ -59,6 +67,24 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
     var sliderBuffer by remember(playbackConfig.bufferTimes) { mutableStateOf(playbackConfig.bufferTimes) }
     var sliderThreads by remember(searchConfig.searchThreads) { mutableStateOf(searchConfig.searchThreads) }
     var danmuApiDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val exportLogLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val result = runCatching {
+                    withContext(Dispatchers.IO) { AppLog.exportTo(context, uri) }
+                }
+                Toast.makeText(
+                    context,
+                    context.getString(if (result.isSuccess) R.string.toast_runtime_log_exported else R.string.toast_runtime_log_export_failed),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
 
     val listState = rememberScrollState()
     AppTopBarScaffold(
@@ -154,6 +180,28 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
                         leadingIconRes = R.drawable.ic_pref_nav_live_hidden,
                         checked = uiConfig.navLiveHidden,
                         onCheckedChange = { UiSettingsState.navLiveHidden = it },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            SettingsGroup(title = stringResource(R.string.settings_group_runtime_log)) {
+                SettingsCard(SettingsCardPosition.FIRST) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_runtime_log_enabled),
+                        subtitle = stringResource(R.string.settings_runtime_log_enabled_subtitle),
+                        leadingIconRes = R.drawable.ic_settings_history,
+                        checked = uiConfig.runtimeLogEnabled,
+                        onCheckedChange = { UiSettingsState.runtimeLogEnabled = it },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.LAST) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_runtime_log_export),
+                        subtitle = stringResource(R.string.settings_runtime_log_export_subtitle),
+                        leadingIconRes = R.drawable.ic_settings_history,
+                        onClick = { exportLogLauncher.launch("avbox-runtime-log.txt") },
                     )
                 }
             }
