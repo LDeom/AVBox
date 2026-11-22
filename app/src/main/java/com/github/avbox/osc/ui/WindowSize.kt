@@ -13,6 +13,8 @@ object WindowSize {
 
     const val LARGE_SCREEN_MIN_WIDTH_DP = 600
 
+    const val CONTENT_MAX_WIDTH_DP = 840
+
     @JvmStatic
     fun classify(windowWidthDp: Int): WindowWidthClass = when {
         windowWidthDp < MEDIUM_MIN_WIDTH_DP -> WindowWidthClass.Compact
