@@ -473,3 +473,11 @@ requestScope.launch {                                   // 归属见 §4.4
 | 2026-10-06 | **N4 实施回填**:`catvod` 契约层三文件内部换血、签名守恒(见 §5 N4 实测登记);① `JsLoader`/`JarLoader` 同步下载 `OkGo.execute()` → `Http.getSync`(E1 直连,流语义/中断检查逐字保留);② `Connect.cancelByTag` 删 `OkGo` 通道(经 3.0.4 源码核证与 `cancelDefaultClient` 完全同面、纯去重),自实现遍历与 client 取用不变;③ P8 落地:`javap -p -s` 6 类 219 行前后逐行一致;④ `Http.getSync` 补 internal 注入重载 + `HttpTest` 2 例锁 E1(404 不判定 / 不重试);⑤ 卡口:`com.lzy` 余 1(HttpClients → N5)、`cancelTag` 全库 0;688 用例 0 失败 |
 | 2026-10-06 | **N4 收尾审查轮**(独立只读复核 + 作者复核,见 §5 N4「收尾审查轮」):无阻断/高/中;6 条低危(1 覆盖缺口 + 5 既有/口味差异)全部登记不改;作者侧补齐独立复核的验证边界(okgo `Request.getRawCall/execute` 源码逐点同形核证、`NoBodyRequest`/`HttpUtils.appendHeaders` 抽验、全库无 okgo 额外全局加工、javap 219 行实测签署);**首轮即收敛,本片可收尾** |
 | 2026-10-06 | **N5 收尾回填**:OkGo 彻底移除(见 §5 N5 实测登记);① `HttpClients` 去 okgo 化五项落地(`setOkHttpClient`×2 / `setUserAgent`×2 删除、`UnSafeHostnameVerifier` → `hostnameVerifier { _, _ -> true }`、`HttpLoggingInterceptor`×4 删除、`reloadDns()` 联动保留),连带清 6 条失效 import;② 删 `libs.versions.toml` 两条目 + `app/build.gradle.kts` 依赖;③ §6.2 验收全过:`app/src` 卡口全 0、依赖图无 `com.lzy.net`、APK 29 dex 0 命中、688 用例 0 失败;④ 新增依赖裁剪风险登记(thunder.jar 扫描 0 命中 / fongmi 生态 0 okgo / 上游 50 处均宿主代码;残余=野路子 jar 直接 import,真机走查兜底);⑤ 终态口径核验通过(§0 三条全满足),**N0–N5 六片全部完成(待真机走查)** |
+
+
+## 9. 网络响应取消后的资源释放补充（2026-11-22）
+
+- OkHttp `onResponse` 已收到 `Response`，但协程在调度恢复前被取消时，普通 `resume(response)` 不保证调用方进入 `response.use`；若不提供取消清理回调，响应体可能未关闭，连接无法及时归还连接池。
+- `Http.resumeResponse` 使用 `CancellableContinuation.resume` 的取消回调关闭未能交付给调用方的响应体；正常恢复仍由 `executeChecked` 的 `response.use` 关闭，避免重复改变正常请求语义。
+- `HttpTest.get_closesResponseWhenCancelledAfterDelivery` 锁定“已投递、恢复前取消”路径。
+- 本项为网络资源生命周期修复，不改变重试次数、HTTP 状态码判定、请求头或响应内容。
