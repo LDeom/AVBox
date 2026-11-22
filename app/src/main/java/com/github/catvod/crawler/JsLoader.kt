@@ -203,6 +203,10 @@ class JsLoader {
                 val jarKey = requireNotNull(MD5.string2MD5(jarUrl)) { "jar md5 is null" }
                 val jarMd5 = if (urls.size > 1) urls[1].trim { it <= ' ' } else ""
                 classLoader = loadJarInternal(jarUrl, jarMd5, jarKey, generation)
+                if (classLoader == null) {
+                    AppLog.i("echo-getSpider-jsapi-jar-failed site=" + siteKey)
+                    return SpiderNull()
+                }
             }
             var sp: Spider? = null
             try {
