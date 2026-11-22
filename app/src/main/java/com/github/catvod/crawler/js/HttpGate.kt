@@ -43,12 +43,21 @@ class HttpGate(private val executor: ExecutorService) {
 
     fun finish() {
         var next: Request? = null
+        val dropped = ArrayList<Request>()
+        val shutdown = executor.isShutdown
         synchronized(lock) {
-            if (!executor.isShutdown) next = pending.pollFirst()
+            if (!shutdown) {
+                next = pending.pollFirst()
+            } else {
+                while (true) {
+                    dropped.add(pending.pollFirst() ?: break)
+                }
+            }
             if (next == null && inFlight > 0) inFlight--
-            if (next == null) pending.clear()
         }
         if (next != null) run(next)
+        val reason = if (shutdown) "executor shutdown" else "cancelled"
+        for (request in dropped) request.fail(reason)
     }
 
     fun cancelPending() {
