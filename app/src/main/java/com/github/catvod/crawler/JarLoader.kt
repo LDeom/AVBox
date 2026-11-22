@@ -413,6 +413,9 @@ class JarLoader {
                 FileOutputStream(temp).use { output ->
                     val buffer = ByteArray(16384)
                     while (true) {
+                        if (Thread.currentThread().isInterrupted) {
+                            throw InterruptedException("Asset Jar copy interrupted")
+                        }
                         val length = source.read(buffer)
                         if (length < 0) break
                         output.write(buffer, 0, length)
