@@ -80,43 +80,61 @@ object ConfigParser {
     @JvmStatic
     fun parseSites(infoJson: JsonObject): List<SourceBean> {
         val sites: MutableList<SourceBean> = ArrayList()
-        for (opt in infoJson.get("sites").asJsonArray) {
-            val obj = opt as JsonObject
-            if (!obj.has("key") || !obj.has("type") || !obj.has("api")) {
-                AppLog.i("echo-skip incomplete site config: " + obj)
+        val siteArray = infoJson.get("sites")
+        if (siteArray == null || !siteArray.isJsonArray) return sites
+        for (opt in siteArray.asJsonArray) {
+            if (!opt.isJsonObject) {
+                AppLog.i("echo-skip non-object site config")
                 continue
             }
-            val sb = SourceBean()
-            val siteKey = obj.get("key").asString.trim { it <= ' ' }
-            sb.key = siteKey
-            sb.name = if (obj.has("name")) obj.get("name").asString.trim { it <= ' ' } else siteKey
-            sb.type = obj.get("type").asInt
-            sb.api = obj.get("api").asString.trim { it <= ' ' }
-            sb.searchable = DefaultConfig.safeJsonInt(obj, "searchable", 1)
-            sb.quickSearch = DefaultConfig.safeJsonInt(obj, "quickSearch", 1)
-            sb.changeable = DefaultConfig.safeJsonInt(obj, "changeable", 1)
-            if (siteKey.startsWith("py_")) {
-                sb.filterable = 1
-            } else {
-                sb.filterable = DefaultConfig.safeJsonInt(obj, "filterable", 1)
-            }
-            sb.playerUrl = DefaultConfig.safeJsonString(obj, "playUrl", "")
-            sb.ext = DefaultConfig.safeJsonString(obj, "ext", "")
-            sb.jar = DefaultConfig.safeJsonString(obj, "jar", "")
-            sb.playerType = DefaultConfig.safeJsonInt(obj, "playerType", -1)
-            sb.categories = DefaultConfig.safeJsonStringList(obj, "categories")
-            sb.timeout = DefaultConfig.safeJsonInt(obj, "timeout", 0)
-            sb.clickSelector = DefaultConfig.safeJsonString(obj, "click", "")
-            sb.style = DefaultConfig.safeJsonString(obj, "style", "")
-            sb.icon = DefaultConfig.safeJsonString(obj, "icon", "")
-            sb.hide = DefaultConfig.safeJsonInt(obj, "hide", 0)
-            sb.indexs = DefaultConfig.safeJsonInt(obj, "indexs", 0)
-            sb.danmaku = DefaultConfig.safeJsonInt(obj, "danmaku", 1)
-            sb.header = parseHeaderObject(obj, "header")
-            val extPreview = sb.ext
-            AppLog.i("echo-site:" + sb.name + " icon:" + sb.icon
+            try {
+                val obj = opt.asJsonObject
+                val keyValue = obj.get("key")
+                val typeValue = obj.get("type")
+                val apiValue = obj.get("api")
+                if (keyValue == null || !keyValue.isJsonPrimitive || !keyValue.asJsonPrimitive.isString
+                    || typeValue == null || !typeValue.isJsonPrimitive || !typeValue.asJsonPrimitive.isNumber
+                    || apiValue == null || !apiValue.isJsonPrimitive || !apiValue.asJsonPrimitive.isString) {
+                    AppLog.i("echo-skip incomplete site config: " + obj)
+                    continue
+                }
+                val siteKey = keyValue.asString.trim { it <= ' ' }
+                val api = apiValue.asString.trim { it <= ' ' }
+                if (siteKey.isEmpty() || api.isEmpty()) {
+                    AppLog.i("echo-skip empty site key or api")
+                    continue
+                }
+                val sb = SourceBean()
+                sb.key = siteKey
+                val nameValue = obj.get("name")
+                sb.name = if (nameValue != null && nameValue.isJsonPrimitive && nameValue.asJsonPrimitive.isString)
+                    nameValue.asString.trim { it <= ' ' } else siteKey
+                sb.type = typeValue.asInt
+                sb.api = api
+                sb.searchable = DefaultConfig.safeJsonInt(obj, "searchable", 1)
+                sb.quickSearch = DefaultConfig.safeJsonInt(obj, "quickSearch", 1)
+                sb.changeable = DefaultConfig.safeJsonInt(obj, "changeable", 1)
+                sb.filterable = if (siteKey.startsWith("py_")) 1 else DefaultConfig.safeJsonInt(obj, "filterable", 1)
+                sb.playerUrl = DefaultConfig.safeJsonString(obj, "playUrl", "")
+                sb.ext = DefaultConfig.safeJsonString(obj, "ext", "")
+                sb.jar = DefaultConfig.safeJsonString(obj, "jar", "")
+                sb.playerType = DefaultConfig.safeJsonInt(obj, "playerType", -1)
+                sb.categories = DefaultConfig.safeJsonStringList(obj, "categories")
+                sb.timeout = DefaultConfig.safeJsonInt(obj, "timeout", 0)
+                sb.clickSelector = DefaultConfig.safeJsonString(obj, "click", "")
+                sb.style = DefaultConfig.safeJsonString(obj, "style", "")
+                sb.icon = DefaultConfig.safeJsonString(obj, "icon", "")
+                sb.hide = DefaultConfig.safeJsonInt(obj, "hide", 0)
+                sb.indexs = DefaultConfig.safeJsonInt(obj, "indexs", 0)
+                sb.danmaku = DefaultConfig.safeJsonInt(obj, "danmaku", 1)
+                sb.header = parseHeaderObject(obj, "header")
+                val extPreview = sb.ext
+                AppLog.i("echo-site:" + sb.name + " icon:" + sb.icon
                     + " ext:" + (if (extPreview != null && extPreview.length > 160) extPreview.substring(0, 160) else extPreview))
-            sites.add(sb)
+                sites.add(sb)
+            } catch (th: Throwable) {
+                AppLog.e("ConfigParser", th)
+            }
         }
         return sites
     }
@@ -154,8 +172,12 @@ object ConfigParser {
     fun parseLiveSettingItems(livesGroups: JsonArray): ArrayList<LiveSettingItem> {
         val liveSettingItemList = ArrayList<LiveSettingItem>()
         for (i in 0 until livesGroups.size()) {
-            val jsonObject = livesGroups.get(i).asJsonObject
-            val name = if (jsonObject.has("name")) jsonObject.get("name").asString else "线路" + (i + 1) // i18n: keep(数据默认名,进 bean 且被 ConfigParserTest 锁定)
+            val item = livesGroups.get(i)
+            val name = if (item.isJsonObject) {
+                val nameValue = item.asJsonObject.get("name")
+                if (nameValue != null && nameValue.isJsonPrimitive && nameValue.asJsonPrimitive.isString)
+                    nameValue.asString else "线路" + (i + 1)
+            } else "线路" + (i + 1)
             val liveSettingItem = LiveSettingItem()
             liveSettingItem.itemIndex = i
             liveSettingItem.itemName = name
@@ -168,9 +190,10 @@ object ConfigParser {
     fun parseHosts(hostsArray: JsonArray): MutableMap<String, String> {
         val hosts: MutableMap<String, String> = HashMap()
         for (i in 0 until hostsArray.size()) {
-            val entry = hostsArray.get(i).asString
-            val parts = RegexUtils.getPattern("=").split(entry, 2)
-            if (parts.size == 2) {
+            val item = hostsArray.get(i)
+            if (!item.isJsonPrimitive || !item.asJsonPrimitive.isString) continue
+            val parts = RegexUtils.getPattern("=").split(item.asString, 2)
+            if (parts.size == 2 && parts[0].isNotEmpty() && parts[1].isNotEmpty()) {
                 hosts[parts[0]] = parts[1]
             }
         }
