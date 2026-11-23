@@ -237,7 +237,8 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 state = state,
                 actions = actions,
                 modifier = Modifier.fillMaxSize(),
-                showCornerButtons = state.overlay.visible,
+                showCornerButtons = false,
+                drawFullscreenControls = false,
                 blurVideo = state.channelList.channelDrawerVisible,
             )
             if (state.overlay.visible) {
@@ -250,24 +251,17 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                     color = Color.Black.copy(alpha = 0.52f),
                     shadowElevation = 8.dp,
                 ) {
-                    Row(
-                        modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer)
-                            .padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier.size(34.dp).background(Color.White.copy(alpha = 0.14f), RoundedCornerShape(50)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = stringResource(R.string.live_channel_list),
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)) {
+                        PlayerCornerButton(
+                            icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.live_exit_fullscreen), tint = Color.White) },
+                            onClick = actions.player.onExitFullscreen,
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(text = stringResource(R.string.live_channel_list), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
                 PlayerCornerButtons(
@@ -431,14 +425,17 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 shape = RoundedCornerShape(50),
                 color = Color.Black.copy(alpha = 0.52f),
             ) {
-                Row(
-                    modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer)
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.live_channel_list), color = Color.White, fontSize = 13.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)) {
+                    PlayerCornerButton(
+                        icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.live_exit_fullscreen), tint = Color.White) },
+                        onClick = actions.player.onExitFullscreen,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Row(modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.live_channel_list), color = Color.White, fontSize = 13.sp)
+                    }
                 }
             }
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd).statusBarsPadding())
@@ -487,6 +484,7 @@ private fun PlayerArea(
     actions: LivePlayActions,
     modifier: Modifier,
     showCornerButtons: Boolean = true,
+    drawFullscreenControls: Boolean = true,
     blurVideo: Boolean = false,
 ) {
     val videoView = actions.player.videoView()
@@ -560,7 +558,7 @@ private fun PlayerArea(
             if (showCornerButtons) {
                 PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
             }
-        } else if (state.overlay.visible) {
+        } else if (state.overlay.visible && drawFullscreenControls) {
             IconButton(
                 onClick = actions.player.onExitFullscreen,
                 modifier = Modifier.align(Alignment.TopStart),
