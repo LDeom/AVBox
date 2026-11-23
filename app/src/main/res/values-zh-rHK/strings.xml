@@ -92,29 +92,4 @@
     <string name="following_empty">暫無追劇</string>
     <string name="settings_group_runtime_log">運行日誌</string><string name="settings_runtime_log_enabled">啟用運行日誌</string><string name="settings_runtime_log_enabled_subtitle">開啟後記錄應用診斷資訊，關閉後停止寫入日誌檔</string><string name="settings_runtime_log_export">匯出運行日誌</string><string name="settings_runtime_log_export_subtitle">儲存日誌檔，方便排查播放或設定問題</string><string name="toast_runtime_log_exported">運行日誌已匯出</string><string name="toast_runtime_log_export_failed">匯出運行日誌失敗</string>
 
-    <string name="settings_group_cloud_drive">網盤 Cookie</string>
-    <string name="settings_cloud_drive">雲盤 Cookie 設定</string>
-    <string name="settings_cloud_drive_subtitle">分別保存各網盤 Cookie，供對應來源使用</string>
-    <string name="cloud_drive_accounts">網盤列表</string>
-    <string name="cloud_drive_aliyun">阿里雲盤</string>
-    <string name="cloud_drive_quark">夸克網盤</string>
-    <string name="cloud_drive_baidu">百度網盤</string>
-    <string name="cloud_drive_uc">UC 網盤</string>
-    <string name="cloud_drive_guangya">光鴨網盤</string>
-    <string name="cloud_drive_xunlei">迅雷雲盤</string>
-    <string name="cloud_drive_tianyi">天翼雲盤</string>
-    <string name="cloud_drive_123">123 雲盤</string>
-    <string name="cloud_drive_cookie_notice">請按網盤分別填寫 Cookie。憑據使用 Android Keystore 加密保存，不會寫入一般設定檔或執行日誌。能否自動使用取決於對應來源及請求橋接支援。</string>
-    <string name="cloud_drive_cookie_input">Cookie</string>
-    <string name="cloud_drive_cookie_placeholder">貼上該網盤的 Cookie</string>
-    <string name="cloud_drive_cookie_saved">Cookie 已加密保存</string>
-    <string name="cloud_drive_not_logged_in">未偵測到有效登入憑證，請先完成網盤登入。</string>
-    <string name="cloud_drive_cookie_save_failed">Cookie 保存失敗</string>
-    <string name="cloud_drive_cookie_cleared">Cookie 已清除</string>
-    <string name="cloud_drive_cookie_invalid">Cookie 不可包含換行字元</string>
-    <string name="cloud_drive_cookie_copy">複製 Cookie</string>
-    <string name="cloud_drive_cookie_copied">Cookie 已複製到剪貼簿，請注意隱私安全。</string>
-<string name="cloud_drive_login_loading">正在載入登入頁面 %1$d%%</string>
-<string name="cloud_drive_login_page_error">登入網頁載入失敗（錯誤 %1$d），請檢查網絡後重試。</string>
-<string name="cloud_drive_login_http_error">登入網頁返回 HTTP %1$d，請重試或使用其他登入方式。</string>
-</resources>
+    </resources>
