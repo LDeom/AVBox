@@ -58,3 +58,8 @@
 ## 静态核对补充
 - 直播 ViewModel 的日志 API 导入已补齐。
 - AppLog 单元测试增加进程内 operation ID 单调递增断言；测试尚未执行。
+
+
+## 构建失败修复（2026-11-23）
+- GitHub Actions Run #79 编译失败，定位到 4 组源码错误：手势处理器漏导入 AppLog；云盘 WebView 控件变量静态类型为 WebView导致自定义缩放方法不可见；设置页缺 Context 导入；OkHttp HttpUrl.parse 已移为扩展函数且被编译器报 deprecated 错误。
+- 已针对以上问题修复源码。未运行构建或测试，遵循 APK 构建由用户手动触发的约束。

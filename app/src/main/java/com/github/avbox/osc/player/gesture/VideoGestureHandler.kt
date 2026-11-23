@@ -1,5 +1,7 @@
 package com.github.avbox.osc.player.gesture
 
+import com.github.avbox.osc.util.AppLog
+
 interface VideoGestureActions {
 
     fun inPlayback(): Boolean

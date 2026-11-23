@@ -48,7 +48,7 @@ import org.json.JSONObject
 import kotlin.math.roundToInt
 
 class CloudDriveLoginActivity : BaseActivity() {
-    private var loginWebView: WebView? = null
+    private var loginWebView: DesktopPanWebView? = null
     private var lastLoggedProgressBucket = -1
 
     companion object {

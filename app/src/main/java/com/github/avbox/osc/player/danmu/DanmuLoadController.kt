@@ -18,6 +18,7 @@ import master.flame.danmaku.ui.widget.DanmakuView
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 private const val DANMU_FONT_WEIGHT = 500
 private const val DANMU_MARGIN_DP = 12
@@ -335,7 +336,7 @@ class DanmuLoadController(
     private fun sourceSummary(danmu: String?): String {
         if (danmu.isNullOrEmpty()) return ""
         if (danmu.startsWith("http", ignoreCase = true)) {
-            val host = runCatching { okhttp3.HttpUrl.parse(danmu)?.host }.getOrNull()
+            val host = runCatching { danmu.toHttpUrlOrNull()?.host }.getOrNull()
             return if (host.isNullOrBlank()) "remote source" else "remote host=" + host
         }
         if (danmu.startsWith("file", ignoreCase = true)) return "file source"
