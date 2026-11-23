@@ -69,8 +69,11 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -203,16 +206,24 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val configuration = LocalConfiguration.current
     val tabletLandscape = configuration.smallestScreenWidthDp >= 600 &&
         configuration.screenWidthDp > configuration.screenHeightDp
-    val longestChannelLabelWidth = state.channelList.rows.maxOfOrNull { row ->
-        val label = (row.channel?.channelName ?: row.group?.groupName).orEmpty()
-        label.sumOf { if (it.code > 0x2ff) 15 else 8 }
-    } ?: 0
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val longestChannelLabelWidth = with(density) {
+        state.channelList.rows.maxOfOrNull { row ->
+            val label = (row.channel?.channelName ?: row.group?.groupName).orEmpty()
+            textMeasurer.measure(
+                text = AnnotatedString(label),
+                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                maxLines = 1,
+            ).size.width.toDp()
+        } ?: 0.dp
+    }
     // Account for the two-column drawer: the channel-name column occupies 60%
     // of the content width. Cap only at the actual window width to avoid clipping.
     val tabletDrawerMaxWidth = (configuration.screenWidthDp.dp - 20.dp).coerceAtLeast(1.dp)
-    val tabletDrawerWidth = (longestChannelLabelWidth.dp / 0.60f + 112.dp).coerceAtMost(tabletDrawerMaxWidth)
+    val tabletDrawerWidth = (longestChannelLabelWidth / 0.60f + 112.dp).coerceAtMost(tabletDrawerMaxWidth)
     val phoneDrawerMaxWidth = (configuration.screenWidthDp.dp - 16.dp).coerceAtLeast(1.dp)
-    val phoneDrawerWidth = (longestChannelLabelWidth.dp / 0.60f + 112.dp).coerceAtMost(phoneDrawerMaxWidth)
+    val phoneDrawerWidth = (longestChannelLabelWidth / 0.60f + 112.dp).coerceAtMost(phoneDrawerMaxWidth)
     if (tabletLandscape) {
         Box(
             modifier = Modifier
