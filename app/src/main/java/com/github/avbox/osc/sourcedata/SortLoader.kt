@@ -164,6 +164,25 @@ class SortLoader(
             "jsonValid=false"
         }
         AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " hash=" + sortJson.hashCode() + " shape=" + responseShape)
+        // Reject structurally unusable homeContent responses before parsing/caching them.
+        val responseUsable = try {
+            val root = JsonParser.parseString(sortJson)
+            if (!root.isJsonObject) false else {
+                val obj = root.asJsonObject
+                val classArray = obj.get("class")
+                val recArray = obj.get("list")
+                val hasClassArray = classArray != null && classArray.isJsonArray
+                val hasRecArray = recArray != null && recArray.isJsonArray
+                val hasNonEmptyClasses = hasClassArray && classArray.asJsonArray.size() > 0
+                val hasNonEmptyRec = hasRecArray && recArray.asJsonArray.size() > 0
+                (hasClassArray || hasRecArray) && (hasNonEmptyClasses || hasNonEmptyRec)
+            }
+        } catch (ignored: Throwable) { false }
+        if (!responseUsable) {
+            AppLog.i("echo--getSort-spider-invalid:$sourceKey reason=empty-or-invalid-structure")
+            postSortFailure(sourceKey)
+            return
+        }
         val sortXml = withContext(Dispatchers.IO) { resultParser.sortJson(sortResult, sortJson) }
         AppLog.i("echo--getSort-spider-parsed:$sourceKey parsed=" + (sortXml != null) + " classCount=" + (sortXml?.classes?.sortList?.size ?: -1))
         attachSortSource(sourceKey, sortXml)
