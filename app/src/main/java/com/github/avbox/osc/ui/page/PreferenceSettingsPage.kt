@@ -123,7 +123,9 @@ fun PreferenceSettingsScreen(onNavigateBack: () -> Unit) {
                         onSelect = { columns -> UiSettingsState.collectColumns = columns },
                     )
                 }
-            }Spacer(Modifier.height(28.dp))
+            }
+
+            Spacer(Modifier.height(28.dp))
 
             SettingsGroup(title = stringResource(R.string.settings_group_privacy)) {
                 SettingsCard(SettingsCardPosition.FIRST) {
