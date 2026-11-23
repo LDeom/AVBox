@@ -66,7 +66,7 @@ object CrashDiagnostics {
                     current.stackTrace.take(MAX_FRAMES_PER_CAUSE).forEach { frame ->
                         line("  at " + frame.className + "." + frame.methodName +
                             "(" + (frame.fileName ?: "Unknown Source") +
-                            if (frame.lineNumber >= 0) ":" + frame.lineNumber else "" + ")")
+                            (if (frame.lineNumber >= 0) ":" + frame.lineNumber else "") + ")")
                     }
                     current = current.cause
                     depth++
