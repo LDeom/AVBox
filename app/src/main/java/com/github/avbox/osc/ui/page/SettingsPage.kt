@@ -48,7 +48,6 @@ import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.ui.ConfigManageActivity
 import com.github.avbox.osc.ui.PlaySettingsActivity
 import com.github.avbox.osc.ui.PreferenceSettingsActivity
-import com.github.avbox.osc.ui.CloudDriveSettingsActivity
 import com.github.avbox.osc.ui.ThemeSettingsActivity
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
 import com.github.avbox.osc.ui.components.AVBoxBottomSheet
@@ -213,16 +212,7 @@ fun SettingsPage(
                         iconRes = R.drawable.ic_settings_preference,
                         onClick = { PreferenceSettingsActivity.start(context) },
                     )
-                }
-                SettingsCard(SettingsCardPosition.LAST) {
-                    SettingsRow(
-                        title = stringResource(R.string.settings_cloud_drive),
-                        subtitle = stringResource(R.string.settings_cloud_drive_subtitle),
-                        iconRes = R.drawable.ic_settings_api,
-                        onClick = { CloudDriveSettingsActivity.start(context) },
-                    )
-                }
-            }
+                }}
 
             SettingsGroup(title = null) {
                 SettingsCard(SettingsCardPosition.FIRST) {
