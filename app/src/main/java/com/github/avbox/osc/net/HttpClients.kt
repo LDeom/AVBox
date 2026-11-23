@@ -371,7 +371,8 @@ object HttpClients {
     fun init() {
         Probe.step("httpDohClient") { initDnsOverHttps() }
 
-        val builder = OkHttpClient.Builder()Probe.step("httpClients") {
+        val builder = OkHttpClient.Builder()
+        Probe.step("httpClients") {
             builder.dns(CustomDns())
             builder.proxySelector(proxySelector())
             builder.proxyAuthenticator(proxyAuthenticator())
