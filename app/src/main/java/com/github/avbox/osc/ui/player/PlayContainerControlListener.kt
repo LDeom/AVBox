@@ -23,7 +23,6 @@ class PlayContainerControlListener(private val container: PlayContainer) : VodCo
                     container.applyDanmuSettings(false)
                 },
                 onSettingsApplied = { forColor -> container.applyDanmuSettings(forColor) },
-                onSourceChanged = { container.reloadSelectedDanmuSource() },
             ),
         )
     }
