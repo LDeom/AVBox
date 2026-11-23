@@ -415,11 +415,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
             )
             if (!state.frame.isFullBox) {
                 ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
-                ChannelListSection(
+                LandscapeChannelListSection(
                     channelList = state.channelList,
-                    onToggleGroup = actions.list.onToggleGroup,
+                    onSelectGroup = actions.list.onSelectGroup,
                     onSelectChannel = actions.list.onSelectChannel,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    outlinedText = false,
                 )
             }
         }
