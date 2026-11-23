@@ -587,6 +587,8 @@ class CastSheetState(
 )
 
 interface PlayerActions {
+    val supportsSourceLineSwitch: Boolean
+
     fun toggleControls()
     fun keepControlsAlive()
 
@@ -604,6 +606,8 @@ interface PlayerActions {
     fun onTimeEndClicked()
     fun onTimeEndLongClicked()
     fun onTimeResetClicked()
+    fun onSourceClicked()
+    fun onLineClicked()
     fun onEpisodeClicked()
     fun onCastClicked()
     fun onSubtitleClicked()

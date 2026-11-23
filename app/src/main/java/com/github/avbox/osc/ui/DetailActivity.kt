@@ -197,6 +197,44 @@ class DetailActivity : BaseActivity(), PageHost {
 
     override fun onPlaybackLinesExhausted(): Boolean = startDetailFallbackAfterLinesExhausted()
 
+    override fun supportsSourceLineSwitch(): Boolean = true
+
+    override fun showSourceSelector() {
+        val candidates = vm.sourceChips.value
+        if (candidates.isEmpty()) {
+            Toast.makeText(this, getString(R.string.detail_empty_source), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val labels = candidates.map { it.name }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.detail_switch_source)
+            .setItems(labels) { _, which ->
+                candidates.getOrNull(which)?.let { chip ->
+                    vm.candidateForKey(chip.key)?.let(vm::switchSource)
+                }
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
+    override fun showLineSelector() {
+        val flags = vm.vodInfo?.seriesFlags.orEmpty()
+            .mapNotNull { it.name?.takeIf(String::isNotBlank) }
+        if (flags.isEmpty()) {
+            Toast.makeText(this, getString(R.string.detail_line), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val current = vm.vodInfo?.playFlag
+        android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.detail_line)
+            .setSingleChoiceItems(flags.toTypedArray(), flags.indexOf(current)) { dialog, which ->
+                flags.getOrNull(which)?.let(vm::onFlagClick)
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.common_cancel, null)
+            .show()
+    }
+
     override fun showEpisodeSheet() {
         if (vm.vodInfo != null) vm.showEpisodeSheet()
     }

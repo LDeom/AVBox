@@ -162,6 +162,7 @@ fun PlayerBottomBar(
             PlayerActionRow(
                 state = state,
                 actions = actions,
+                showSourceLineSwitch = !portraitActions && actions.supportsSourceLineSwitch,
                 modifier = Modifier.padding(top = 6.dp),
             )
         }
@@ -201,6 +202,7 @@ internal const val OVERLAY_PILL_ALPHA = 0.2f
 private fun PlayerActionRow(
     state: PlayerUiState,
     actions: PlayerActions,
+    showSourceLineSwitch: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val actionBox = playerDim(R.dimen.vs_70)
@@ -214,6 +216,22 @@ private fun PlayerActionRow(
             horizontalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_12)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (showSourceLineSwitch) {
+                TransportButton(
+                    iconRes = R.drawable.ic_detail_switch_source,
+                    contentDescription = stringResource(R.string.detail_switch_source),
+                    box = actionBox,
+                    iconSize = actionIcon,
+                    onClick = actions::onSourceClicked,
+                )
+                TransportButton(
+                    iconRes = R.drawable.ic_detail_line,
+                    contentDescription = stringResource(R.string.detail_line),
+                    box = actionBox,
+                    iconSize = actionIcon,
+                    onClick = actions::onLineClicked,
+                )
+            }
             TransportButton(
                 iconRes = R.drawable.player_ic_menu_episodes,
                 contentDescription = stringResource(R.string.detail_episodes),

@@ -194,10 +194,8 @@ private fun LivePasswordDialog(
 }
 
 private const val PHONE_DRAWER_HEIGHT = 0.86f
-private const val PHONE_DRAWER_WIDTH = 0.66f
 private val PHONE_DRAWER_MAX_WIDTH = 320.dp
 private const val TABLET_DRAWER_HEIGHT = 0.88f
-private const val TABLET_DRAWER_WIDTH = 0.32f
 private val TABLET_DRAWER_MIN_WIDTH = 240.dp
 private val TABLET_DRAWER_MAX_WIDTH = 340.dp
 
@@ -206,6 +204,18 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val configuration = LocalConfiguration.current
     val tabletLandscape = configuration.smallestScreenWidthDp >= 600 &&
         configuration.screenWidthDp > configuration.screenHeightDp
+    val longestChannelLabelWidth = state.channelList.rows.maxOfOrNull { row ->
+        val label = (row.channel?.channelName ?: row.group?.groupName).orEmpty()
+        label.sumOf { if (it.code > 0x2ff) 15 else 8 }
+    } ?: 0
+    val tabletDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceIn(
+        TABLET_DRAWER_MIN_WIDTH,
+        minOf(TABLET_DRAWER_MAX_WIDTH, configuration.screenWidthDp.dp * 0.48f),
+    )
+    val phoneDrawerWidth = (longestChannelLabelWidth.dp + 72.dp).coerceIn(
+        200.dp,
+        minOf(PHONE_DRAWER_MAX_WIDTH, configuration.screenWidthDp.dp * 0.66f),
+    )
     if (tabletLandscape) {
         Box(
             modifier = Modifier
@@ -297,11 +307,11 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                         .align(Alignment.CenterStart)
                         .fillMaxHeight(TABLET_DRAWER_HEIGHT)
                         .padding(start = 10.dp)
-                        .fillMaxWidth(TABLET_DRAWER_WIDTH)
-                        .widthIn(min = TABLET_DRAWER_MIN_WIDTH, max = TABLET_DRAWER_MAX_WIDTH),
+                        .width(tabletDrawerWidth),
                     shape = RoundedCornerShape(22.dp),
-                    color = Color.Black.copy(alpha = 0.24f),
-                    shadowElevation = 24.dp,
+                    color = Color.Black.copy(alpha = 0.28f),
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -348,10 +358,6 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                                 onClick = actions.list.onDismissDrawer,
                             )
                         }
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(1.dp)
-                                .background(Color.White.copy(alpha = 0.14f)),
-                        )
                         LandscapeChannelListSection(
                             channelList = state.channelList,
                             onSelectGroup = actions.list.onSelectGroup,
@@ -445,10 +451,11 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.30f)).clickable(onClick = actions.list.onDismissDrawer))
             Surface(
                 modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight(PHONE_DRAWER_HEIGHT)
-                    .fillMaxWidth(PHONE_DRAWER_WIDTH).widthIn(max = PHONE_DRAWER_MAX_WIDTH).padding(start = 8.dp),
+                    .width(phoneDrawerWidth).padding(start = 8.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = Color.Black.copy(alpha = 0.20f),
-                shadowElevation = 20.dp,
+                color = Color.Black.copy(alpha = 0.28f),
+                shadowElevation = 0.dp,
+                tonalElevation = 0.dp,
             ) {
                 Column(Modifier.fillMaxSize()) {
                     Row(
@@ -466,7 +473,6 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                             onClick = actions.list.onDismissDrawer,
                         )
                     }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.15f)))
                     ChannelListSection(
                         channelList = state.channelList,
                         onToggleGroup = actions.list.onToggleGroup,

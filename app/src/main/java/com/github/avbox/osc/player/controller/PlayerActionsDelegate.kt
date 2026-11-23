@@ -21,6 +21,9 @@ import java.util.Locale
 private const val SEEK_MAX = 1000
 
 internal class PlayerActionsDelegate(private val host: VideoPlayerController) : PlayerActions {
+    override val supportsSourceLineSwitch: Boolean
+        get() = host.listener?.supportsSourceLineSwitch() == true
+
 
     private val idleHideMillis = 10000L
 
@@ -180,6 +183,18 @@ internal class PlayerActionsDelegate(private val host: VideoPlayerController) : 
             it.put("st", 0)
             it.put("et", 0)
         }
+    }
+
+    override fun onSourceClicked() {
+        if (!supportsSourceLineSwitch) return
+        host.listener?.showSourceSelector()
+        keepControlsAlive()
+    }
+
+    override fun onLineClicked() {
+        if (!supportsSourceLineSwitch) return
+        host.listener?.showLineSelector()
+        keepControlsAlive()
     }
 
     override fun onEpisodeClicked() {

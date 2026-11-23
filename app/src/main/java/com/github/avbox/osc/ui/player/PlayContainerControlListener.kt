@@ -32,6 +32,17 @@ class PlayContainerControlListener(private val container: PlayContainer) : VodCo
         return danmu.toggle()
     }
 
+    override fun supportsSourceLineSwitch(): Boolean =
+        container.pageHostRef?.supportsSourceLineSwitch() == true
+
+    override fun showSourceSelector() {
+        container.pageHostRef?.showSourceSelector()
+    }
+
+    override fun showLineSelector() {
+        container.pageHostRef?.showLineSelector()
+    }
+
     override fun showEpisodes() {
         container.pageHostRef?.showEpisodeSheet()
     }

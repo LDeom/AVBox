@@ -35,6 +35,12 @@ interface VodControlListener {
 
     fun showDanmuSetting()
 
+    fun supportsSourceLineSwitch(): Boolean = false
+
+    fun showSourceSelector()
+
+    fun showLineSelector()
+
     fun showEpisodes()
 
     fun toggleDanmu(): Boolean

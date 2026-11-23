@@ -16,6 +16,12 @@ interface PageHost {
 
     fun requestNotificationPermission()
 
+    fun supportsSourceLineSwitch(): Boolean = false
+
+    fun showSourceSelector() {}
+
+    fun showLineSelector() {}
+
     fun showEpisodeSheet()
 
     fun onPlaybackLinesExhausted(): Boolean
