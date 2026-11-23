@@ -10,6 +10,7 @@ import com.github.avbox.osc.util.KVKeys
 import com.github.avbox.osc.util.KV
 import com.github.avbox.osc.util.AppLog
 
+import java.net.URLDecoder
 import java.util.HashMap
 
 class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderLoader) {
@@ -103,9 +104,8 @@ class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderL
 
     private fun proxyDirect(param: MutableMap<String, String>): Array<Any?>? {
         try {
-            var url = param["url"]
-            if (url.isNullOrEmpty()) return null
-            url = URLDecoder.decode(url, "UTF-8")
+            val rawUrl = param["url"]?.takeIf { it.isNotBlank() } ?: return null
+            val url = URLDecoder.decode(rawUrl, "UTF-8")
             if (!url.startsWith("http://") && !url.startsWith("https://")) return null
             if (!DefaultConfig.isVideoFormat(url)) return null
             if (url.contains(".m3u8")) {
