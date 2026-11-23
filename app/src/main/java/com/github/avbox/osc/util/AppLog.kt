@@ -89,9 +89,9 @@ object AppLog {
             val output = context.contentResolver.openOutputStream(uri, "w")
                 ?: throw IllegalStateException("Unable to open log export destination")
             OutputStreamWriter(output, StandardCharsets.UTF_8).buffered().use { writer ->
-                writer.write("AVBox runtime log export; sensitive values are redacted.\\n")
+                writer.write("AVBox runtime log export; sensitive values are redacted.\n")
                 if (files.isEmpty()) {
-                    writer.write("No runtime log entries have been recorded.\\n")
+                    writer.write("No runtime log entries have been recorded.\n")
                 } else {
                     files.forEach { file ->
                         BufferedReader(InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)).use { reader ->
