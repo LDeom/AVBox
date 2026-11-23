@@ -250,7 +250,6 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
         videoSizeReadyListener = null
         if (!handedOver) engine?.detach(this)
         overlays.cancelPreloadToast()
-        overlays.cancelDanmuPluginLoad()
         danmuLoadController?.destroy()
         danmuLoadController = null
         kernelView = null
