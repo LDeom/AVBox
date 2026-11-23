@@ -151,7 +151,7 @@ class SortLoader(
             postSortFailure(sourceKey)
             return
         }
-        AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " head=" + sortJson.take(240))
+        AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " hash=" + sortJson.hashCode())
         val sortXml = withContext(Dispatchers.IO) { resultParser.sortJson(sortResult, sortJson) }
         AppLog.i("echo--getSort-spider-parsed:$sourceKey parsed=" + (sortXml != null) + " classCount=" + (sortXml?.classes?.sortList?.size ?: -1))
         attachSortSource(sourceKey, sortXml)
