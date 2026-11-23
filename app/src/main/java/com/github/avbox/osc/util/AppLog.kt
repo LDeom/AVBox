@@ -28,7 +28,7 @@ object AppLog {
 
     @Volatile
     private var fileLogEnabled = false
-    private val FILE_LOG_PREFIXES = arrayOf("echo-preload", "echo-setDataSource", "echo-play-cache", "echo-kv", "echo-progress", "echo-bar-draw", "echo-exo", "echo-music", "echo-lyric", "echo-sub", "echo-danmu", "echo-p2", "echo-p3", "echo-p4", "echo-p5", "clearCache", "echo--jar", "echo-local-src", "echo-setTrack", "echo-autoRetry", "echo-player", "echo-switch", "echo-goPlayUrl", "echo-history", "echo-iso", "echo-render", "echo-surface", "echo-output-size", "echo-picture", "echo-anime4k", "echo--list", "echo--getList", "echo--parse", "echo--getSort", "echo--sort", "echo-detail", "echo-thunder", "echo-proxy", "echo-home-backdrop", "echo-cast", "echo-resolvePlayUrl", "echo-playM3u8", "echo-tmdb", "echo-live", "echo-load", "echo-zero-start", "echo-storage", "echo-config-refresh", "echo-boot", "echo-webview-login", "event:")
+    private val FILE_LOG_PREFIXES = arrayOf("echo-preload", "echo-setDataSource", "echo-play-cache", "echo-kv", "echo-progress", "echo-bar-draw", "echo-exo", "echo-music", "echo-lyric", "echo-sub", "echo-danmu", "echo-p2", "echo-p3", "echo-p4", "echo-p5", "clearCache", "echo--jar", "echo-local-src", "echo-setTrack", "echo-autoRetry", "echo-player", "echo-switch", "echo-goPlayUrl", "echo-history", "echo-iso", "echo-render", "echo-surface", "echo-output-size", "echo-picture", "echo-anime4k", "echo--list", "echo--getList", "echo--parse", "echo--getSort", "echo--sort", "echo-detail", "echo-thunder", "echo-proxy", "echo-home-backdrop", "echo-cast", "echo-resolvePlayUrl", "echo-playM3u8", "echo-tmdb", "echo-live", "echo-load", "echo-zero-start", "echo-storage", "echo-config-refresh", "echo-boot", "echo-crash", "echo-crash-exit", "echo-webview-login", "event:")
     private const val FILE_LOG_NAME = "preload_debug.log"
     private const val FILE_LOG_BACKUP = ".1"
     internal const val FILE_LOG_MAX_BYTES = 8L * 1024 * 1024
@@ -73,12 +73,16 @@ object AppLog {
         fileLogEnabled = enabled
     }
 
+    fun isFileLoggingEnabled(): Boolean = fileLogEnabled
+
     fun exportTo(context: Context, uri: Uri) {
         val executor = synchronized(AppLog::class.java) { fileLogExecutor }
         executor?.submit {}?.get(10, TimeUnit.SECONDS)
         val files = listOf(
             File(context.filesDir, FILE_LOG_NAME + FILE_LOG_BACKUP),
             File(context.filesDir, FILE_LOG_NAME),
+            File(context.filesDir, "avbox_crash.log.1"),
+            File(context.filesDir, "avbox_crash.log"),
         ).filter { it.isFile && it.length() > 0L }
         val output = context.contentResolver.openOutputStream(uri, "w")
             ?: throw IllegalStateException("Unable to open log export destination")
