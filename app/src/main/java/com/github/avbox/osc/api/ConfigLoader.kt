@@ -111,6 +111,14 @@ class ConfigLoader(private val owner: ApiConfig) {
                     runLoadConfig(false, callback)
                     return
                 }
+                if (!ConfigParser.isUsableVodConfig(json)) {
+                    if (switchToNextApiLine(apiUrl)) {
+                        runLoadConfig(false, callback)
+                    } else {
+                        callback.error(ApiConfig.str(R.string.toast_config_parse_failed))
+                    }
+                    return
+                }
                 clearApiLinesIfUnmatched(apiUrl)
                 owner.parseJson(apiUrl, json)
                 AppLog.operationEvent(operationId, "config.vod.load", "success")
@@ -138,6 +146,15 @@ class ConfigLoader(private val owner: ApiConfig) {
                     if (switchApiCollectionIfNeeded(apiUrl, body)) {
                         FileUtils.saveCache(cache, body)
                         runLoadConfig(false, callback)
+                        return
+                    }
+                    if (!ConfigParser.isUsableVodConfig(body)) {
+                        if (switchToNextApiLine(apiUrl)) {
+                            runLoadConfig(false, callback)
+                        } else {
+                            AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=invalid_vod_config")
+                            callback.error(ApiConfig.str(R.string.toast_config_parse_failed))
+                        }
                         return
                     }
                     clearApiLinesIfUnmatched(apiUrl)
@@ -176,6 +193,14 @@ class ConfigLoader(private val owner: ApiConfig) {
                             runLoadConfig(false, callback)
                             return
                         }
+                        if (!ConfigParser.isUsableVodConfig(json)) {
+                            if (switchToNextApiLine(apiUrl)) {
+                                runLoadConfig(false, callback)
+                            } else {
+                                callback.error(ApiConfig.str(R.string.toast_config_parse_failed))
+                            }
+                            return
+                        }
                         clearApiLinesIfUnmatched(apiUrl)
                         owner.parseJson(apiUrl, json)
                         AppLog.operationEvent(operationId, "config.vod.load", "success")
@@ -184,6 +209,10 @@ class ConfigLoader(private val owner: ApiConfig) {
                     } catch (th: Throwable) {
                         AppLog.e("ApiConfig", th)
                     }
+                }
+                if (switchToNextApiLine(apiUrl)) {
+                    runLoadConfig(false, callback)
+                    return
                 }
                 AppLog.operationEvent(operationId, "config.vod.load", "failure", "errorType=config_load")
                     callback.error(ApiConfig.str(R.string.toast_config_fetch_failed, error))
@@ -528,6 +557,33 @@ class ConfigLoader(private val owner: ApiConfig) {
             }
         }
         return ""
+    }
+    
+    /**
+     * Advance to the next configured repository when the current child source
+     * cannot be fetched or does not contain a usable VOD configuration.
+     */
+    private fun switchToNextApiLine(currentUrl: String): Boolean {
+        val apiLines = KV.get(KVKeys.API_LINE_LIST, ArrayList<String>())
+        if (apiLines.isEmpty() || KV.get(KVKeys.API_LINE_SOURCE, "").isEmpty()) return false
+        val currentIndex = apiLines.indexOfFirst { HistoryHelper.apiLineUrl(it) == currentUrl }
+        val startIndex = if (currentIndex >= 0) currentIndex + 1 else 0
+        for (index in startIndex until apiLines.size) {
+            val nextUrl = HistoryHelper.apiLineUrl(apiLines[index])
+            if (nextUrl.isEmpty() || nextUrl == currentUrl || BootGuard.isDisabledSource(nextUrl)) continue
+            KV.put(KVKeys.API_URL, nextUrl)
+            HistoryHelper.setApiHistory(nextUrl)
+            val liveUrl = KV.get(KVKeys.LIVE_API_URL, "")
+            if (liveUrl.isEmpty() || liveUrl == currentUrl) {
+                KV.put(KVKeys.LIVE_API_URL, nextUrl)
+                HistoryHelper.setLiveApiHistory(nextUrl)
+            }
+            owner.invalidateVodConfig()
+            ApiLineSignal.notifyChanged()
+            AppLog.i("echo-multi-repo-fallback: " + (currentIndex + 1) + " -> " + (index + 1))
+            return true
+        }
+        return false
     }
 
     private fun switchApiCollectionIfNeeded(apiUrl: String, jsonStr: String): Boolean {

@@ -216,6 +216,17 @@ class ConfigParserTest {
     }
 
     @Test
+    fun isUsableVodConfig_requiresAtLeastOneCompleteSite() {
+        assertTrue(ConfigParser.isUsableVodConfig(
+            "{\\"sites\\":[{\\"key\\":\\"a\\",\\"type\\":1,\\"api\\":\\"https://a/api\\"}]}",
+        ))
+        assertFalse(ConfigParser.isUsableVodConfig("{\\"sites\\":[]}"))
+        assertFalse(ConfigParser.isUsableVodConfig("{\\"sites\\":[{\\"key\\":\\"a\\"}]}"))
+        assertFalse(ConfigParser.isUsableVodConfig("{\\"urls\\":[\\"https://a/config.json\\"]}"))
+        assertFalse(ConfigParser.isUsableVodConfig("not json"))
+    }
+
+    @Test
     fun isDepotJson_matchesOnlyUrlsWithoutSites() {
         assertTrue(ConfigParser.isDepotJson(json("{\"urls\":[{\"name\":\"仓A\",\"url\":\"http://a/1\"}]}")))
         assertFalse(ConfigParser.isDepotJson(json("{\"urls\":[]}")))

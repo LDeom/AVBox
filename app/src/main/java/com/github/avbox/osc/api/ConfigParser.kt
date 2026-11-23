@@ -168,6 +168,23 @@ object ConfigParser {
         return urls != null && urls.isJsonArray && urls.asJsonArray.size() > 0
     }
 
+    /**
+     * A repository child is usable only when it is a normal VOD config
+     * containing at least one complete site. A depot index or arbitrary JSON
+     * must not be treated as a successfully loaded VOD source.
+     */
+    @JvmStatic
+    fun isUsableVodConfig(content: String?): Boolean {
+        if (content.isNullOrBlank()) return false
+        return try {
+            val json = gson.fromJson(trimJsonObject(content), JsonObject::class.java)
+            json != null && !isDepotJson(json) && parseSites(json).isNotEmpty()
+        } catch (th: Throwable) {
+            AppLog.d("ConfigParser", "invalid VOD config")
+            false
+        }
+    }
+
     @JvmStatic
     fun parseLiveSettingItems(livesGroups: JsonArray): ArrayList<LiveSettingItem> {
         val liveSettingItemList = ArrayList<LiveSettingItem>()
