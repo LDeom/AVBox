@@ -367,28 +367,108 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val previewHeight = (shortEdge * 9f / 16f)
         .coerceAtLeast(150.dp)
         .coerceAtMost(maxOf(150.dp, longEdge / 2))
-    Column(modifier = Modifier.fillMaxSize()) {
-        PlayerArea(
-            state = state,
-            actions = actions,
-            modifier = if (state.frame.isFullBox) {
-                Modifier.fillMaxSize()
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.Black)
-                    .statusBarsPadding()
-                    .height(previewHeight)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(if (state.frame.isFullBox) Color.Black else MaterialTheme.colorScheme.surfaceContainer)
+            .pointerInput(state.channelList.channelDrawerVisible, state.frame.isFullBox) {
+                val edge = 28.dp.toPx()
+                val trigger = 72.dp.toPx()
+                var startX = -1f
+                var drag = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { startX = it.x; drag = 0f },
+                    onDragEnd = {
+                        if (!state.channelList.channelDrawerVisible && startX >= 0f && startX <= edge && drag > trigger) actions.list.onToggleDrawer()
+                        startX = -1f
+                    },
+                    onDragCancel = { startX = -1f },
+                    onHorizontalDrag = { _, amount ->
+                        drag += amount
+                        if (!state.channelList.channelDrawerVisible && startX >= 0f && startX <= edge && drag > trigger) {
+                            actions.list.onToggleDrawer()
+                            startX = -1f
+                        }
+                    },
+                )
             },
-        )
-        if (!state.frame.isFullBox) {
-            ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
-            ChannelListSection(
-                channelList = state.channelList,
-                onToggleGroup = actions.list.onToggleGroup,
-                onSelectChannel = actions.list.onSelectChannel,
-                modifier = Modifier.weight(1f),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            PlayerArea(
+                state = state,
+                actions = actions,
+                modifier = if (state.frame.isFullBox) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Color.Black)
+                        .statusBarsPadding()
+                        .height(previewHeight)
+                },
             )
+            if (!state.frame.isFullBox) {
+                ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
+                ChannelListSection(
+                    channelList = state.channelList,
+                    onToggleGroup = actions.list.onToggleGroup,
+                    onSelectChannel = actions.list.onSelectChannel,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        if (state.frame.isFullBox && state.overlay.visible) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 12.dp, top = 8.dp),
+                shape = RoundedCornerShape(50),
+                color = Color.Black.copy(alpha = 0.52f),
+            ) {
+                Row(
+                    modifier = Modifier.clickable(onClick = actions.list.onToggleDrawer)
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.live_channel_list), color = Color.White, fontSize = 13.sp)
+                }
+            }
+            PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd).statusBarsPadding())
+        }
+        if (state.frame.isFullBox && state.channelList.channelDrawerVisible) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.30f)).clickable(onClick = actions.list.onDismissDrawer))
+            Surface(
+                modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight(0.94f)
+                    .fillMaxWidth(0.82f).widthIn(max = 380.dp).padding(start = 8.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = Color.Black.copy(alpha = 0.20f),
+                shadowElevation = 20.dp,
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.live_channel_list), color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(state.channelInfo.name, color = Color.White.copy(alpha = 0.72f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Text(state.channelList.rows.count { it.channel != null }.toString(), color = Color.White, fontSize = 12.sp)
+                        Spacer(Modifier.width(10.dp))
+                        PlayerCornerButton(
+                            icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.rotate(180f)) },
+                            onClick = actions.list.onDismissDrawer,
+                        )
+                    }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.15f)))
+                    ChannelListSection(
+                        channelList = state.channelList,
+                        onToggleGroup = actions.list.onToggleGroup,
+                        onSelectChannel = actions.list.onSelectChannel,
+                        modifier = Modifier.weight(1f).fillMaxWidth().blur(0.dp),
+                    )
+                }
+            }
         }
     }
 }
