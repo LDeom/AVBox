@@ -46,6 +46,14 @@ class CloudCookieInjectorTest {
     }
 
     @Test
+    fun loginCookieGateRejectsTrackingOnlyCookiesAndAcceptsCandidate() {
+        assertEquals(true, CloudDriveProviderCatalog.hasLoginCookie("quark", mapOf("cookie_token" to "abc")))
+        assertEquals(false, CloudDriveProviderCatalog.hasLoginCookie("quark", mapOf("theme" to "dark")))
+        assertEquals(false, CloudDriveProviderCatalog.hasLoginCookie("quark", mapOf("__uid" to "")))
+        assertEquals(false, CloudDriveProviderCatalog.hasLoginCookie("unknown", mapOf("token" to "abc")))
+    }
+
+    @Test
     fun hostLookupRequiresHttpsAndKnownProviderDomain() {
         assertEquals(true, CloudCookieInjector.matchesAnyProviderHost("https://drive.uc.cn/api"))
         assertEquals(false, CloudCookieInjector.matchesAnyProviderHost("https://sub.drive.uc.cn/api"))

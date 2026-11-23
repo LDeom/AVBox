@@ -656,6 +656,7 @@
     <string name="cloud_drive_login_instruction">Complete QR-code or account sign-in below, then save the login state.</string>
     <string name="cloud_drive_login_save">Finish and save login</string>
     <string name="cloud_drive_login_cookie_missing">No cookies found for the supported provider domains. Confirm that sign-in is complete.</string>
+    <string name="cloud_drive_not_logged_in">No valid sign-in credentials detected. Please complete provider login first.</string>
     <string name="cloud_drive_cookie_save_failed">Could not save login state</string>
     <string name="cloud_drive_cookie_cleared">Login state cleared</string>
     <string name="cloud_drive_cookie_copy">Copy Cookie</string>

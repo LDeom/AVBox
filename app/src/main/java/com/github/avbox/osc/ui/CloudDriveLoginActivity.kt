@@ -285,7 +285,21 @@ class CloudDriveLoginActivity : BaseActivity() {
                                         .takeIf { it.isNotBlank() }
                                         ?.let { raw -> cookiesByHost.put(host, raw) }
                                 }
-                                if (cookiesByHost.length() == 0) {
+                                val cookieValues = mutableMapOf<String, String>()
+                                provider.cookieHosts.forEach { host ->
+                                    manager.getCookie("https://$host/").orEmpty().split(";").forEach { item ->
+                                        val separator = item.indexOf('=')
+                                        if (separator > 0) {
+                                            val name = item.substring(0, separator).trim()
+                                            val value = item.substring(separator + 1).trim()
+                                            if (name.isNotEmpty() && value.isNotEmpty()) cookieValues[name] = value
+                                        }
+                                    }
+                                }
+                                if (!CloudDriveProviderCatalog.hasLoginCookie(provider.id, cookieValues)) {
+                                    message = context.getString(R.string.cloud_drive_not_logged_in)
+                                    AppLog.i("echo-webview-login provider=${provider.id} cookie-save=blocked:not-logged-in")
+                                } else if (cookiesByHost.length() == 0) {
                                     message = context.getString(R.string.cloud_drive_login_cookie_missing)
                                 } else {
                                     runCatching { CloudCredentialVault.write(provider.id, cookiesByHost.toString()) }

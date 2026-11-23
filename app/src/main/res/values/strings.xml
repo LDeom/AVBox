@@ -656,6 +656,7 @@
     <string name="cloud_drive_login_instruction">请在下方官方网页完成扫码或账号登录。登录成功后点击“保存登录状态”。</string>
     <string name="cloud_drive_login_save">完成登录并保存</string>
     <string name="cloud_drive_login_cookie_missing">未检测到该网盘支持域名的 Cookie，请确认已完成登录。</string>
+    <string name="cloud_drive_not_logged_in">未检测到有效登录凭据，请先完成网盘登录。</string>
     <string name="cloud_drive_cookie_save_failed">登录状态保存失败</string>
     <string name="cloud_drive_cookie_cleared">登录状态已清除</string>
     <string name="cloud_drive_cookie_copy">复制 Cookie</string>

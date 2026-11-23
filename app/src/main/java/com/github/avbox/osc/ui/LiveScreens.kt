@@ -193,6 +193,14 @@ private fun LivePasswordDialog(
     )
 }
 
+private const val PHONE_DRAWER_HEIGHT = 0.86f
+private const val PHONE_DRAWER_WIDTH = 0.66f
+private val PHONE_DRAWER_MAX_WIDTH = 320.dp
+private const val TABLET_DRAWER_HEIGHT = 0.88f
+private const val TABLET_DRAWER_WIDTH = 0.32f
+private val TABLET_DRAWER_MIN_WIDTH = 240.dp
+private val TABLET_DRAWER_MAX_WIDTH = 340.dp
+
 @Composable
 private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     val configuration = LocalConfiguration.current
@@ -293,10 +301,10 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .fillMaxHeight(0.96f)
+                        .fillMaxHeight(TABLET_DRAWER_HEIGHT)
                         .padding(start = 10.dp)
-                        .fillMaxWidth(0.38f)
-                        .widthIn(min = 280.dp, max = 420.dp),
+                        .fillMaxWidth(TABLET_DRAWER_WIDTH)
+                        .widthIn(min = TABLET_DRAWER_MIN_WIDTH, max = TABLET_DRAWER_MAX_WIDTH),
                     shape = RoundedCornerShape(22.dp),
                     color = Color.Black.copy(alpha = 0.24f),
                     shadowElevation = 24.dp,
@@ -438,8 +446,8 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
         if (state.frame.isFullBox && state.channelList.channelDrawerVisible) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.30f)).clickable(onClick = actions.list.onDismissDrawer))
             Surface(
-                modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight(0.94f)
-                    .fillMaxWidth(0.82f).widthIn(max = 380.dp).padding(start = 8.dp),
+                modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight(PHONE_DRAWER_HEIGHT)
+                    .fillMaxWidth(PHONE_DRAWER_WIDTH).widthIn(max = PHONE_DRAWER_MAX_WIDTH).padding(start = 8.dp),
                 shape = RoundedCornerShape(20.dp),
                 color = Color.Black.copy(alpha = 0.20f),
                 shadowElevation = 20.dp,

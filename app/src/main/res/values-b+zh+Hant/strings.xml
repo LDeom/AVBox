@@ -653,6 +653,7 @@
     <string name="cloud_drive_cookie_input">Cookie</string>
     <string name="cloud_drive_cookie_placeholder">貼上該網盤的 Cookie</string>
     <string name="cloud_drive_cookie_saved">Cookie 已加密保存</string>
+    <string name="cloud_drive_not_logged_in">未偵測到有效登入憑證，請先完成網盤登入。</string>
     <string name="cloud_drive_cookie_save_failed">Cookie 保存失敗</string>
     <string name="cloud_drive_cookie_cleared">Cookie 已清除</string>
     <string name="cloud_drive_cookie_invalid">Cookie 不可包含換行字元</string>
