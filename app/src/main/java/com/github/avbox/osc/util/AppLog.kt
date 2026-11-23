@@ -76,31 +76,38 @@ object AppLog {
     fun isFileLoggingEnabled(): Boolean = fileLogEnabled
 
     fun exportTo(context: Context, uri: Uri) {
-        val executor = synchronized(AppLog::class.java) { fileLogExecutor }
-        executor?.submit {}?.get(10, TimeUnit.SECONDS)
-        val files = listOf(
-            File(context.filesDir, FILE_LOG_NAME + FILE_LOG_BACKUP),
-            File(context.filesDir, FILE_LOG_NAME),
-            File(context.filesDir, "avbox_crash.log.1"),
-            File(context.filesDir, "avbox_crash.log"),
-        ).filter { it.isFile && it.length() > 0L }
-        val output = context.contentResolver.openOutputStream(uri, "w")
-            ?: throw IllegalStateException("Unable to open log export destination")
-        OutputStreamWriter(output, StandardCharsets.UTF_8).buffered().use { writer ->
-            writer.write("AVBox runtime log export; sensitive values are redacted.\n")
-            if (files.isEmpty()) {
-                writer.write("No runtime log entries have been recorded.\n")
-            } else {
-                files.forEach { file ->
-                    BufferedReader(InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)).use { reader ->
-                        while (true) {
-                            val line = reader.readLine() ?: break
-                            writer.write(sanitizeLogLine(line))
-                            writer.newLine()
+        Log.i(TAG, "echo-runtime-log-export phase=start")
+        try {
+            val executor = synchronized(AppLog::class.java) { fileLogExecutor }
+            executor?.submit {}?.get(10, TimeUnit.SECONDS)
+            val files = listOf(
+                File(context.filesDir, FILE_LOG_NAME + FILE_LOG_BACKUP),
+                File(context.filesDir, FILE_LOG_NAME),
+                File(context.filesDir, "avbox_crash.log.1"),
+                File(context.filesDir, "avbox_crash.log"),
+            ).filter { it.isFile && it.length() > 0L }
+            val output = context.contentResolver.openOutputStream(uri, "w")
+                ?: throw IllegalStateException("Unable to open log export destination")
+            OutputStreamWriter(output, StandardCharsets.UTF_8).buffered().use { writer ->
+                writer.write("AVBox runtime log export; sensitive values are redacted.\\n")
+                if (files.isEmpty()) {
+                    writer.write("No runtime log entries have been recorded.\\n")
+                } else {
+                    files.forEach { file ->
+                        BufferedReader(InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)).use { reader ->
+                            while (true) {
+                                val line = reader.readLine() ?: break
+                                writer.write(sanitizeLogLine(line))
+                                writer.newLine()
+                            }
                         }
                     }
                 }
             }
+            Log.i(TAG, "echo-runtime-log-export phase=success fileCount=" + files.size)
+        } catch (error: Throwable) {
+            Log.e(TAG, "echo-runtime-log-export phase=fail type=" + error.javaClass.simpleName)
+            throw error
         }
     }
 
