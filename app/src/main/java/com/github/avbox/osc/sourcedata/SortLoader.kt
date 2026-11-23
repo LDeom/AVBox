@@ -9,6 +9,7 @@ import com.github.avbox.osc.player.thirdparty.RemoteTVBox
 import com.github.avbox.osc.util.BoundedCall
 import com.github.avbox.osc.util.AppLog
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -151,7 +152,18 @@ class SortLoader(
             postSortFailure(sourceKey)
             return
         }
-        AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " hash=" + sortJson.hashCode())
+        val responseShape = try {
+            val root = JsonParser.parseString(sortJson)
+            if (root.isJsonObject) {
+                val obj = root.asJsonObject
+                val classCount = if (obj.has("class") && obj.get("class").isJsonArray) obj.getAsJsonArray("class").size() else -1
+                val listCount = if (obj.has("list") && obj.get("list").isJsonArray) obj.getAsJsonArray("list").size() else -1
+                "object=true classField=" + obj.has("class") + " classCount=" + classCount + " listField=" + obj.has("list") + " listCount=" + listCount
+            } else "object=false rootType=" + root.javaClass.simpleName
+        } catch (ignored: Throwable) {
+            "jsonValid=false"
+        }
+        AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " hash=" + sortJson.hashCode() + " shape=" + responseShape)
         val sortXml = withContext(Dispatchers.IO) { resultParser.sortJson(sortResult, sortJson) }
         AppLog.i("echo--getSort-spider-parsed:$sourceKey parsed=" + (sortXml != null) + " classCount=" + (sortXml?.classes?.sortList?.size ?: -1))
         attachSortSource(sourceKey, sortXml)
