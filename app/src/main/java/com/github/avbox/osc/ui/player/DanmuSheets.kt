@@ -78,19 +78,6 @@ fun DanmuSettingSheet(sheet: DanmuSettingSheetState, onDismiss: () -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
             }
-                SheetLabelRow("弹幕来源") {
-                SheetChipRow(
-                    listOf("视频源自带", "JS 插件源"),
-                    if (DanmuSettingsState.sourceMode == DanmuSettingsState.SOURCE_JS_PLUGIN) 1 else 0,
-                    onSelect = { index ->
-                        val mode = if (index == 1) DanmuSettingsState.SOURCE_JS_PLUGIN else DanmuSettingsState.SOURCE_VIDEO
-                        if (mode != DanmuSettingsState.sourceMode) {
-                            DanmuSettingsState.sourceMode = mode
-                            sheet.onSourceChanged(mode)
-                        }
-                    },
-                )
-            }
             SheetLabelRow(stringResource(R.string.danmu_color)) {
                     SheetChipRow(
                         listOf(

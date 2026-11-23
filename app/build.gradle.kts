@@ -148,7 +148,6 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.ffmpeg.decoder)
     implementation(libs.media3.effect)
-    implementation(project(":quickjs"))
     implementation(project(":pyramid"))
 
     implementation(libs.xx.permissions)

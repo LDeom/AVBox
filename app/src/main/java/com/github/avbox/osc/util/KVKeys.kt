@@ -94,7 +94,6 @@ object KVKeys {
     const val DANMU_RANDOM_COLOR = "danmu_random_color"
     const val DANMU_API = "danmu_api"
     const val DANMU_API_USE_DEFAULT = "danmu_api_use_default"
-    const val DANMU_SOURCE_MODE = "danmu_source_mode"
     const val SOURCE_NAME_CACHE = "source_name_cache"
     const val SUBSCRIBE_LIST = "subscribe_list"
     const val LIVE_SUBSCRIBE_LIST = "live_subscribe_list"
