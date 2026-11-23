@@ -14,6 +14,11 @@ pluginManagement {
             if (requested.id.id == "com.chaquo.python") {
                 useModule("com.chaquo.python:gradle:${requested.version}")
             }
+            // Resolve Kotlin Android directly through the canonical Gradle plugin
+            // artifact instead of depending on the plugin-marker artifact.
+            if (requested.id.id == "org.jetbrains.kotlin.android") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
         }
     }
 }
