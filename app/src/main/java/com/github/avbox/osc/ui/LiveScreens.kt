@@ -399,6 +399,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
             PlayerArea(
                 state = state,
                 actions = actions,
+                drawFullscreenControls = false,
                 modifier = if (state.frame.isFullBox) {
                     Modifier.fillMaxSize()
                 } else {
