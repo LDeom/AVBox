@@ -48,7 +48,7 @@ class EngineSurfaceRenderView @JvmOverloads constructor(
     }
 
     override fun setVideoSize(videoWidth: Int, videoHeight: Int) {
-        if (videoWidth > 0 && videoHeight > 0) {
+        if (!released && videoWidth > 0 && videoHeight > 0) {
             this.videoWidth = videoWidth
             this.videoHeight = videoHeight
             requestLayout()
@@ -56,11 +56,13 @@ class EngineSurfaceRenderView @JvmOverloads constructor(
     }
 
     override fun setVideoRotation(degree: Int) {
+        if (released) return
         videoRotationDegree = degree
         rotation = degree.toFloat()
     }
 
     override fun setScaleType(scaleType: Int) {
+        if (released) return
         this.scaleType = scaleType
         requestLayout()
     }
@@ -70,7 +72,11 @@ class EngineSurfaceRenderView @JvmOverloads constructor(
     override fun doScreenShot(): Bitmap? = null
 
     override fun release() {
+        if (released) return
         released = true
+        holder.removeCallback(this)
+        AppLog.i("echo-surface: release player=" + (mediaPlayer != null) +
+            " valid=" + (holder.surface?.isValid == true))
         mediaPlayer?.detachVideoSurface()
         mediaPlayer = null
     }
