@@ -84,8 +84,8 @@ class SourceResultParser(
             }
             return data
         } catch (e: Exception) {
-            val head = if (json == null) "null" else json.substring(0, Math.min(200, json.length))
-            AppLog.i("echo--parse-fail-sortJson: ex=$e head=$head")
+            val bodyInfo = if (json == null) "null" else "chars=" + json.length + " hash=" + json.hashCode()
+            AppLog.i("echo--parse-fail-sortJson: ex=$e body=$bodyInfo")
             return null
         }
     }
@@ -101,8 +101,8 @@ class SourceResultParser(
             }
             return data
         } catch (e: Exception) {
-            val head = if (xml == null) "null" else xml.substring(0, Math.min(200, xml.length))
-            AppLog.i("echo--parse-fail-sortXml: ex=$e head=$head")
+            val bodyInfo = if (xml == null) "null" else "chars=" + xml.length + " hash=" + xml.hashCode()
+            AppLog.i("echo--parse-fail-sortXml: ex=$e body=$bodyInfo")
             return null
         }
     }
@@ -145,8 +145,8 @@ class SourceResultParser(
             throw e
         } catch (e: Exception) {
             if (result != null) {
-                val head = if (text == null) "null" else text.substring(0, Math.min(200, text.length))
-                AppLog.i("echo--parse-fail-xml:$sourceKey ex=$e head=$head")
+                val bodyInfo = if (text == null) "null" else "chars=" + text.length + " hash=" + text.hashCode()
+                AppLog.i("echo--parse-fail-xml:$sourceKey ex=$e body=$bodyInfo")
             }
             if (searchResult === result) {
                 postEmptySearchResult(result, sourceKey, searchToken)
@@ -206,8 +206,8 @@ class SourceResultParser(
             throw e
         } catch (e: Exception) {
             if (result != null) {
-                val head = if (json == null) "null" else json.substring(0, Math.min(200, json.length))
-                AppLog.i("echo--parse-fail-json:$sourceKey ex=$e head=$head")
+                val bodyInfo = if (json == null) "null" else "chars=" + json.length + " hash=" + json.hashCode()
+                AppLog.i("echo--parse-fail-json:$sourceKey ex=$e body=$bodyInfo")
             }
             if (searchResult === result) {
                 postEmptySearchResult(result, sourceKey, searchToken)
