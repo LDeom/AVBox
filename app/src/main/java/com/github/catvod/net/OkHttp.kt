@@ -59,7 +59,7 @@ class OkHttp {
                 client?.let { return it }
                 val base = baseClientProvider?.invoke()
                 if (base != null) return base.newBuilder().dns(dns()).build().also { client = it }
-                val builder = OkHttpClient.Builder().dns(dns()).addNetworkInterceptor(CloudCookieNetworkInterceptor).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+                val builder = OkHttpClient.Builder().dns(dns()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                 proxySelectorProvider?.invoke()?.let { builder.proxySelector(it) }
                 proxyAuthenticatorProvider?.invoke()?.let { builder.proxyAuthenticator(it) }
                 setOkHttpSsl(builder)
