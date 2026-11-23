@@ -147,11 +147,13 @@ class SortLoader(
             }, sourceBean.playTimeoutSeconds() * 1000L, "echo--getSort--" + sourceBean.key)
         }
         if (sortJson == null) {
-            AppLog.i("echo--getSort-spider-null:$sourceKey")
+            AppLog.i("echo--getSort-spider-null:$sourceKey (homeContent returned null)")
             postSortFailure(sourceKey)
             return
         }
+        AppLog.i("echo--getSort-spider-response:$sourceKey chars=" + sortJson.length + " head=" + sortJson.take(240))
         val sortXml = withContext(Dispatchers.IO) { resultParser.sortJson(sortResult, sortJson) }
+        AppLog.i("echo--getSort-spider-parsed:$sourceKey parsed=" + (sortXml != null) + " classCount=" + (sortXml?.classes?.sortList?.size ?: -1))
         attachSortSource(sourceKey, sortXml)
         if (sortXml == null) {
             postSortFailure(sourceKey)
