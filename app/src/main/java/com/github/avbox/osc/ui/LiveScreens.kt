@@ -80,6 +80,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.view.ViewGroup
 import androidx.compose.ui.viewinterop.AndroidView
+import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.player.core.PlayState
@@ -195,10 +196,7 @@ private fun LivePasswordDialog(
 }
 
 private const val PHONE_DRAWER_HEIGHT = 0.86f
-private val PHONE_DRAWER_MAX_WIDTH = 320.dp
 private const val TABLET_DRAWER_HEIGHT = 0.88f
-private val TABLET_DRAWER_MIN_WIDTH = 240.dp
-private val TABLET_DRAWER_MAX_WIDTH = 340.dp
 
 @Composable
 private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
@@ -209,15 +207,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
         val label = (row.channel?.channelName ?: row.group?.groupName).orEmpty()
         label.sumOf { if (it.code > 0x2ff) 15 else 8 }
     } ?: 0
-    // A narrow window or transient configuration during rotation can make the
-    // screen-derived maximum smaller than the design minimum. Dp.coerceIn()
-    // throws when min > max, which previously crashed LiveReadyContent.
-    // Fit the drawer to the longest channel/group label plus its controls and padding.
-    // Only the physical window width remains as a hard safety boundary.
+    // Account for the two-column drawer: the channel-name column occupies 60%
+    // of the content width. Cap only at the actual window width to avoid clipping.
     val tabletDrawerMaxWidth = (configuration.screenWidthDp.dp - 20.dp).coerceAtLeast(1.dp)
-    val tabletDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceAtMost(tabletDrawerMaxWidth)
+    val tabletDrawerWidth = (longestChannelLabelWidth.dp / 0.60f + 112.dp).coerceAtMost(tabletDrawerMaxWidth)
     val phoneDrawerMaxWidth = (configuration.screenWidthDp.dp - 16.dp).coerceAtLeast(1.dp)
-    val phoneDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceAtMost(phoneDrawerMaxWidth)
+    val phoneDrawerWidth = (longestChannelLabelWidth.dp / 0.60f + 112.dp).coerceAtMost(phoneDrawerMaxWidth)
     if (tabletLandscape) {
         Box(
             modifier = Modifier
@@ -509,7 +504,11 @@ private fun PlayerArea(
                     // A configuration change can replace the surrounding Compose branch
                     // while the player keeps the same native View instance. Detach it
                     // from the previous AndroidViewHolder before the new holder adds it.
-                    (videoView.parent as? ViewGroup)?.removeView(videoView)
+                    val previousParent = videoView.parent as? ViewGroup
+                    if (previousParent != null) {
+                        AppLog.i("live-player-view reparent from " + previousParent.javaClass.simpleName)
+                        previousParent.removeView(videoView)
+                    }
                     videoView
                 },
                 modifier = Modifier.fillMaxSize(),
