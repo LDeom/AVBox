@@ -11,7 +11,7 @@ import com.github.avbox.osc.util.KVKeys
  */
 internal object BuiltinSourceCatalog {
 
-    private const val VERSION = "4"
+    private const val VERSION = "5"
     private const val SPLIT = "\t"
 
     private val replacedVodSources = listOf(
@@ -48,11 +48,11 @@ internal object BuiltinSourceCatalog {
 
     private val previousBuiltinVodSources = listOf(
         "https://gh-proxy.com/https://raw.githubusercontent.com/niubihu1/tvbox/main/%E8%87%AA%E7%94%A8%E4%BB%93%E5%BA%93.txt",
+        "https://fastly.jsdelivr.net/gh/niubihu1/tvbox@main/自用仓库.txt",
     )
 
-    private val vodSources = listOf(
-        source("自用仓库（多仓点播）", "https://fastly.jsdelivr.net/gh/niubihu1/tvbox@main/自用仓库.txt"),
-    )
+    // VOD subscriptions are no longer installed or bundled by default.
+    private val vodSources = emptyList<String>()
 
     private val liveSources = listOf(
         source("Clun IPTV 直播", "https://clun.top/lib/iptv.m3u"),
