@@ -2,7 +2,6 @@ package com.github.catvod.crawler.js
 
 import android.util.Base64
 
-import com.github.avbox.osc.net.CloudCookieInjector
 import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.util.AppLog
 import com.google.common.net.HttpHeaders
@@ -53,7 +52,7 @@ class Connect {
             }
             val okHttpClient = withTimeout(req, base)
             client = okHttpClient
-            val headers = CloudCookieInjector.applyForUrl(url, req.getHeader()).toHeaders()
+            val headers = req.getHeader().toHeaders()
             return okHttpClient.newCall(getRequest(url, req, headers, session?.tag ?: tag))
         }
 
