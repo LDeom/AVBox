@@ -78,6 +78,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.view.ViewGroup
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.LiveChannelGroup
@@ -211,24 +212,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
     // A narrow window or transient configuration during rotation can make the
     // screen-derived maximum smaller than the design minimum. Dp.coerceIn()
     // throws when min > max, which previously crashed LiveReadyContent.
-    val tabletDrawerMaxWidth = minOf(
-        TABLET_DRAWER_MAX_WIDTH,
-        configuration.screenWidthDp.dp * 0.48f,
-    ).coerceAtLeast(1.dp)
-    val tabletDrawerMinWidth = minOf(TABLET_DRAWER_MIN_WIDTH, tabletDrawerMaxWidth)
-    val tabletDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceIn(
-        tabletDrawerMinWidth,
-        tabletDrawerMaxWidth,
-    )
-    val phoneDrawerMaxWidth = minOf(
-        PHONE_DRAWER_MAX_WIDTH,
-        configuration.screenWidthDp.dp * 0.66f,
-    ).coerceAtLeast(1.dp)
-    val phoneDrawerMinWidth = minOf(200.dp, phoneDrawerMaxWidth)
-    val phoneDrawerWidth = (longestChannelLabelWidth.dp + 72.dp).coerceIn(
-        phoneDrawerMinWidth,
-        phoneDrawerMaxWidth,
-    )
+    // Fit the drawer to the longest channel/group label plus its controls and padding.
+    // Only the physical window width remains as a hard safety boundary.
+    val tabletDrawerMaxWidth = (configuration.screenWidthDp.dp - 20.dp).coerceAtLeast(1.dp)
+    val tabletDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceAtMost(tabletDrawerMaxWidth)
+    val phoneDrawerMaxWidth = (configuration.screenWidthDp.dp - 16.dp).coerceAtLeast(1.dp)
+    val phoneDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceAtMost(phoneDrawerMaxWidth)
     if (tabletLandscape) {
         Box(
             modifier = Modifier
@@ -486,11 +475,12 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                             onClick = actions.list.onDismissDrawer,
                         )
                     }
-                    ChannelListSection(
+                    LandscapeChannelListSection(
                         channelList = state.channelList,
-                        onToggleGroup = actions.list.onToggleGroup,
+                        onSelectGroup = actions.list.onSelectGroup,
                         onSelectChannel = actions.list.onSelectChannel,
-                        modifier = Modifier.weight(1f).fillMaxWidth().blur(0.dp),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        outlinedText = false,
                     )
                 }
             }
@@ -515,7 +505,13 @@ private fun PlayerArea(
     ) {
         if (videoView != null) {
             AndroidView(
-                factory = { videoView },
+                factory = {
+                    // A configuration change can replace the surrounding Compose branch
+                    // while the player keeps the same native View instance. Detach it
+                    // from the previous AndroidViewHolder before the new holder adds it.
+                    (videoView.parent as? ViewGroup)?.removeView(videoView)
+                    videoView
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -887,6 +883,7 @@ private fun LandscapeChannelListSection(
     onSelectGroup: (Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
     modifier: Modifier,
+    outlinedText: Boolean = true,
 ) {
     val groups = channelList.rows.mapNotNull { row ->
         if (row.channel == null) row.group else null
@@ -958,12 +955,11 @@ private fun LandscapeChannelListSection(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            OutlinedListText(
+                            ChannelDrawerText(
                                 text = group.groupName.orEmpty(),
-                                style = TextStyle(
-                                    fontSize = 13.sp,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                ),
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                outlined = outlinedText,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             Text(
@@ -1106,12 +1102,11 @@ private fun LandscapeChannelListSection(
                                 }
                             }
                             Spacer(modifier = Modifier.width(10.dp))
-                            OutlinedListText(
+                            ChannelDrawerText(
                                 text = channel.channelName.orEmpty(),
-                                style = TextStyle(
-                                    fontSize = 13.sp,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                ),
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                outlined = outlinedText,
                                 modifier = Modifier.weight(1f),
                             )
                             if (selected) {
@@ -1126,6 +1121,33 @@ private fun LandscapeChannelListSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChannelDrawerText(
+    text: String,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    fontWeight: FontWeight,
+    outlined: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    if (outlined) {
+        OutlinedListText(
+            text = text,
+            style = TextStyle(fontSize = fontSize, fontWeight = fontWeight),
+            modifier = modifier,
+        )
+    } else {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier,
+        )
     }
 }
 
