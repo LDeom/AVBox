@@ -10,6 +10,7 @@ import android.os.SystemClock
 import com.github.catvod.crawler.JsLoader
 import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.boot.BootGuard
+import com.github.avbox.osc.boot.CrashDiagnostics
 import com.github.avbox.osc.data.AppDataManager
 import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.net.HttpClients
@@ -55,6 +56,7 @@ class App : Application() {
         instance = this
         AppContextHolder.install(this)
         BootGuard.install()
+        CrashDiagnostics.install(this)
         bootMark("bootGuard")
         initParams()
         bootMark("initParams")
