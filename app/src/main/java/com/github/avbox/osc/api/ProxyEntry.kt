@@ -25,7 +25,8 @@ class ProxyEntry(private val owner: ApiConfig, private val spiderLoader: SpiderL
         val siteKey = param["siteKey"]
         val action = param["do"]
 
-        val isJs = "js" == action
+        // Danmaku requests identify JS-backed sources with site=js (do=danmu).
+        val isJs = "js" == action || ("danmu" == action && "js" == param["site"])
         val isPy = "py" == action
         val isLive = KV.get(KVKeys.PLAYER_IS_LIVE, false)
         val isApiJs = api.contains(".js")
