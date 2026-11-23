@@ -208,13 +208,26 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
         val label = (row.channel?.channelName ?: row.group?.groupName).orEmpty()
         label.sumOf { if (it.code > 0x2ff) 15 else 8 }
     } ?: 0
+    // A narrow window or transient configuration during rotation can make the
+    // screen-derived maximum smaller than the design minimum. Dp.coerceIn()
+    // throws when min > max, which previously crashed LiveReadyContent.
+    val tabletDrawerMaxWidth = minOf(
+        TABLET_DRAWER_MAX_WIDTH,
+        configuration.screenWidthDp.dp * 0.48f,
+    ).coerceAtLeast(1.dp)
+    val tabletDrawerMinWidth = minOf(TABLET_DRAWER_MIN_WIDTH, tabletDrawerMaxWidth)
     val tabletDrawerWidth = (longestChannelLabelWidth.dp + 84.dp).coerceIn(
-        TABLET_DRAWER_MIN_WIDTH,
-        minOf(TABLET_DRAWER_MAX_WIDTH, configuration.screenWidthDp.dp * 0.48f),
+        tabletDrawerMinWidth,
+        tabletDrawerMaxWidth,
     )
+    val phoneDrawerMaxWidth = minOf(
+        PHONE_DRAWER_MAX_WIDTH,
+        configuration.screenWidthDp.dp * 0.66f,
+    ).coerceAtLeast(1.dp)
+    val phoneDrawerMinWidth = minOf(200.dp, phoneDrawerMaxWidth)
     val phoneDrawerWidth = (longestChannelLabelWidth.dp + 72.dp).coerceIn(
-        200.dp,
-        minOf(PHONE_DRAWER_MAX_WIDTH, configuration.screenWidthDp.dp * 0.66f),
+        phoneDrawerMinWidth,
+        phoneDrawerMaxWidth,
     )
     if (tabletLandscape) {
         Box(
