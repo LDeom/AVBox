@@ -1,5 +1,6 @@
 package com.github.avbox.osc.sourcedata
 
+import com.github.avbox.osc.bean.AbsSortXml
 import com.github.avbox.osc.bean.AbsXml
 import com.github.avbox.osc.ui.DetailResponseGuard
 import com.google.gson.Gson
@@ -26,6 +27,26 @@ class SourceResultParserRoutingTest {
 
     private fun newParser(search: SourceChannel<AbsXml?>, detail: SourceChannel<AbsXml?>) =
         SourceResultParser(gson, search, detail, PushDetailResolver(gson, detail))
+
+    @Test
+    fun sortJsonAcceptsTvBoxClassAndIdNameAliases() {
+        val parser = newParser(RecordingChannel(), RecordingChannel())
+        val parsed = parser.sortJson(null, """{"class":[{"type_id":"11","type_name":"电影"},{"id":"22","name":"电视剧"},{"type_id":"","type_name":"无效"}],"list":[]}""")
+        val categories = parsed?.classes?.sortList.orEmpty()
+        assertEquals(2, categories.size)
+        assertEquals("11", categories[0].id)
+        assertEquals("电影", categories[0].name)
+        assertEquals("22", categories[1].id)
+        assertEquals("电视剧", categories[1].name)
+    }
+
+    @Test
+    fun emptySortJsonReturnsEmptyCategoriesRatherThanNull() {
+        val parser = newParser(RecordingChannel(), RecordingChannel())
+        val parsed = parser.sortJson(null, "{}")
+        assertTrue(parsed != null)
+        assertEquals(0, parsed?.classes?.sortList?.size ?: -1)
+    }
 
     @Test
     fun searchChannelReceivesSearchResult() {
